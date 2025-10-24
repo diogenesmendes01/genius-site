@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GENIUS Academia de Lenguas - Domine Português em 2 Anos. 7 Países | Certificação Inclusa">
+    <meta property="og:title" content="GENIUS Academia de Lenguas - Aprenda Português">
+    <meta property="og:description" content="Domine Português em 2 Anos. 7 Países | Certificação Inclusa">
+    <meta property="og:image" content="/assets/og-image.jpg">
+    <meta property="og:type" content="website">
+    <title>GENIUS Academia de Lenguas - Aprenda Português</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png">
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header__content">
+                <div class="header__logo">
+                    <svg class="logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="18" fill="#0EA5E9"/>
+                        <path d="M20 8L22 12L26 10L24 14L28 16L24 18L26 22L22 20L20 24L18 20L14 22L16 18L12 16L16 14L14 10L18 12L20 8Z" fill="white"/>
+                        <circle cx="20" cy="20" r="3" fill="#F97316"/>
+                    </svg>
+                    <span class="logo-text">GENIUS</span>
+                </div>
+
+                <nav class="header__nav">
+                    <div class="country-selector">
+                        <button class="country-selector__button" id="countryButton">
+                            <span class="country-flag" id="currentFlag">🇨🇷</span>
+                            <span id="currentCountry">Costa Rica</span>
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+                            </svg>
+                        </button>
+                        <div class="country-selector__dropdown" id="countryDropdown">
+                            <button class="country-option" data-country="cr" data-flag="🇨🇷" data-name="Costa Rica">
+                                <span class="country-flag">🇨🇷</span> Costa Rica
+                            </button>
+                            <button class="country-option" data-country="pa" data-flag="🇵🇦" data-name="Panamá">
+                                <span class="country-flag">🇵🇦</span> Panamá
+                            </button>
+                            <button class="country-option" data-country="sv" data-flag="🇸🇻" data-name="El Salvador">
+                                <span class="country-flag">🇸🇻</span> El Salvador
+                            </button>
+                            <button class="country-option" data-country="hn" data-flag="🇭🇳" data-name="Honduras">
+                                <span class="country-flag">🇭🇳</span> Honduras
+                            </button>
+                            <button class="country-option" data-country="ni" data-flag="🇳🇮" data-name="Nicaragua">
+                                <span class="country-flag">🇳🇮</span> Nicaragua
+                            </button>
+                            <button class="country-option" data-country="gt" data-flag="🇬🇹" data-name="Guatemala">
+                                <span class="country-flag">🇬🇹</span> Guatemala
+                            </button>
+                            <button class="country-option" data-country="bz" data-flag="🇧🇿" data-name="Belize">
+                                <span class="country-flag">🇧🇿</span> Belize
+                            </button>
+                        </div>
+                    </div>
+                    <a href="#contact" class="btn btn--primary btn--header">Prueba Gratis</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero__content">
+                <div class="hero__text">
+                    <div class="hero__badge">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <span>Mejor Escuela de Portugués 2024</span>
+                    </div>
+                    <h1 class="hero__title">Domine Português en 2 Años</h1>
+                    <p class="hero__subtitle">
+                        Aprenda con profesores nativos brasileños. Certificación Celpe-Bras incluida.
+                        <strong>Clases online y presenciales</strong> en toda América Central.
+                    </p>
+                    <div class="hero__ctas">
+                        <a href="#contact" class="btn btn--primary btn--large">
+                            Comenzar Ahora
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </a>
+                        <a href="#methodology" class="btn btn--secondary btn--large">
+                            Conoce la Metodología
+                        </a>
+                    </div>
+                    <div class="hero__stats">
+                        <div class="stat">
+                            <div class="stat__number">10,000+</div>
+                            <div class="stat__label">Alumnos</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat__number">4.9★</div>
+                            <div class="stat__label">Valoración</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat__number">20</div>
+                            <div class="stat__label">Años</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat__number">7</div>
+                            <div class="stat__label">Países</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero__image">
+                    <div class="hero__image-placeholder">
+                        <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="80" r="30" fill="#0EA5E9" opacity="0.2"/>
+                            <circle cx="100" cy="80" r="25" fill="#0EA5E9" opacity="0.4"/>
+                            <rect x="70" y="120" width="60" height="50" rx="4" fill="#0369A1" opacity="0.3"/>
+                            <circle cx="60" cy="150" r="15" fill="#F97316" opacity="0.5"/>
+                            <circle cx="140" cy="150" r="15" fill="#10B981" opacity="0.5"/>
+                        </svg>
+                        <p style="margin-top: 1rem; color: #6B7280;">Hero Image - 1920×1080</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Proof Bar -->
+    <section class="proof-bar">
+        <div class="container">
+            <p class="proof-bar__text">Certificados y reconocidos por:</p>
+            <div class="proof-bar__logos">
+                <div class="partner-logo">Celpe-Bras</div>
+                <div class="partner-logo">DIPLE</div>
+                <div class="partner-logo">MEC Brasil</div>
+                <div class="partner-logo">Universidad</div>
+                <div class="partner-logo">ISO 9001</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Methodology Section -->
+    <section class="methodology" id="methodology">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Nuestra Metodología</h2>
+                <p class="section-subtitle">
+                    El método GENIUS combina inmersión total, práctica constante y feedback personalizado
+                    para garantizar tu fluidez en portugués.
+                </p>
+            </div>
+
+            <div class="methodology__grid">
+                <div class="methodology-card">
+                    <div class="methodology-card__icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M32 8C18.745 8 8 18.745 8 32C8 45.255 18.745 56 32 56C45.255 56 56 45.255 56 32C56 18.745 45.255 8 32 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M32 20V32L40 40" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 24C16 24 20 20 24 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M40 20C40 20 44 20 48 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="methodology-card__title">Inmersión Total</h3>
+                    <p class="methodology-card__description">
+                        Sumérgete en el portugués desde el primer día. Clases 100% en portugués
+                        con profesores nativos brasileños.
+                    </p>
+                </div>
+
+                <div class="methodology-card">
+                    <div class="methodology-card__icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 32C20 32 24 28 32 28C40 28 44 32 44 32" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 40C12 40 16 36 24 36C32 36 36 40 36 40" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M28 24C28 24 32 20 40 20C48 20 52 24 52 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="methodology-card__title">Práctica Constante</h3>
+                    <p class="methodology-card__description">
+                        Conversación real desde la primera clase. Grupos reducidos y sesiones
+                        individuales de conversación.
+                    </p>
+                </div>
+
+                <div class="methodology-card">
+                    <div class="methodology-card__icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M32 8L38 26L56 26L42 38L48 56L32 44L16 56L22 38L8 26L26 26L32 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="32" cy="32" r="8" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <h3 class="methodology-card__title">Feedback Personalizado</h3>
+                    <p class="methodology-card__description">
+                        Correcciones inmediatas y seguimiento individual de tu progreso.
+                        Tu profesor conoce tus objetivos.
+                    </p>
+                </div>
+
+                <div class="methodology-card">
+                    <div class="methodology-card__icon">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="12" y="12" width="40" height="40" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <path d="M20 12V8C20 8 20 4 24 4H40C40 4 44 4 44 8V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M28 28L32 32L40 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M20 44H44" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="methodology-card__title">Certificación Oficial</h3>
+                    <p class="methodology-card__description">
+                        Prepárate para el Celpe-Bras, el único certificado de portugués
+                        reconocido por el gobierno brasileño.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section class="courses" id="courses">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Encuentra tu Curso Ideal</h2>
+                <p class="section-subtitle">
+                    Programas diseñados para diferentes objetivos. Todos incluyen certificación internacional.
+                </p>
+            </div>
+
+            <div class="courses__grid">
+                <div class="course-card">
+                    <div class="course-card__image">
+                        <div class="course-card__image-placeholder">
+                            <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+                                <rect x="30" y="30" width="40" height="40" rx="4" fill="#0EA5E9" opacity="0.3"/>
+                                <circle cx="50" cy="40" r="10" fill="#0369A1" opacity="0.5"/>
+                            </svg>
+                            <p style="font-size: 0.875rem; color: #6B7280; margin-top: 0.5rem;">800×600</p>
+                        </div>
+                    </div>
+                    <div class="course-card__content">
+                        <div class="course-card__badge">Más Popular</div>
+                        <h3 class="course-card__title">Portugués para Negocios</h3>
+                        <p class="course-card__description">
+                            Ideal para profesionales que necesitan portugués en el ámbito corporativo.
+                            Vocabulario técnico, presentaciones y negociaciones.
+                        </p>
+                        <ul class="course-card__features">
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                24 meses de duración
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                3 clases por semana
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Certificación Celpe-Bras
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Material exclusivo
+                            </li>
+                        </ul>
+                        <a href="#contact" class="btn btn--primary btn--block">Ver Detalles</a>
+                    </div>
+                </div>
+
+                <div class="course-card">
+                    <div class="course-card__image">
+                        <div class="course-card__image-placeholder">
+                            <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+                                <circle cx="50" cy="50" r="20" fill="#F97316" opacity="0.3"/>
+                                <path d="M40 40L60 60M40 60L60 40" stroke="#F97316" stroke-width="4" opacity="0.5"/>
+                            </svg>
+                            <p style="font-size: 0.875rem; color: #6B7280; margin-top: 0.5rem;">800×600</p>
+                        </div>
+                    </div>
+                    <div class="course-card__content">
+                        <h3 class="course-card__title">Portugués para Viajes</h3>
+                        <p class="course-card__description">
+                            Perfecto para quienes planean viajar a Brasil. Aprende lo esencial para
+                            comunicarte en situaciones cotidianas.
+                        </p>
+                        <ul class="course-card__features">
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                6 meses de duración
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                2 clases por semana
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Foco conversacional
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Cultura brasileña
+                            </li>
+                        </ul>
+                        <a href="#contact" class="btn btn--secondary btn--block">Ver Detalles</a>
+                    </div>
+                </div>
+
+                <div class="course-card">
+                    <div class="course-card__image">
+                        <div class="course-card__image-placeholder">
+                            <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+                                <rect x="25" y="30" width="50" height="40" rx="4" fill="#10B981" opacity="0.3"/>
+                                <rect x="35" y="40" width="30" height="3" fill="#10B981" opacity="0.5"/>
+                                <rect x="35" y="48" width="30" height="3" fill="#10B981" opacity="0.5"/>
+                            </svg>
+                            <p style="font-size: 0.875rem; color: #6B7280; margin-top: 0.5rem;">800×600</p>
+                        </div>
+                    </div>
+                    <div class="course-card__content">
+                        <h3 class="course-card__title">Preparación para Exámenes</h3>
+                        <p class="course-card__description">
+                            Curso intensivo enfocado en aprobar el Celpe-Bras u otros exámenes oficiales
+                            de portugués.
+                        </p>
+                        <ul class="course-card__features">
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                12 meses de duración
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                4 clases por semana
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Simulacros semanales
+                            </li>
+                            <li>
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Garantía de aprobación
+                            </li>
+                        </ul>
+                        <a href="#contact" class="btn btn--secondary btn--block">Ver Detalles</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Lo Que Dicen Nuestros Alumnos</h2>
+                <p class="section-subtitle">
+                    Más de 10,000 estudiantes han transformado sus vidas aprendiendo portugués con GENIUS
+                </p>
+            </div>
+
+            <div class="testimonials__grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-card__rating">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                    </div>
+                    <p class="testimonial-card__quote">
+                        "GENIUS cambió mi vida profesional. Conseguí trabajo en una empresa brasileña
+                        gracias a mi certificación Celpe-Bras. Los profesores son excelentes."
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #0EA5E9, #0369A1);"></div>
+                        </div>
+                        <div class="testimonial-card__info">
+                            <div class="testimonial-card__name">María González</div>
+                            <div class="testimonial-card__role">Profesional Marketing - Costa Rica</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="testimonial-card__rating">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                    </div>
+                    <p class="testimonial-card__quote">
+                        "La mejor inversión que he hecho. En 6 meses ya podía mantener conversaciones
+                        completas en portugués. Ahora viajo a Brasil cada año."
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #F97316, #EA580C);"></div>
+                        </div>
+                        <div class="testimonial-card__info">
+                            <div class="testimonial-card__name">Carlos Méndez</div>
+                            <div class="testimonial-card__role">Ingeniero - Panamá</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <div class="testimonial-card__rating">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#F97316">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                    </div>
+                    <p class="testimonial-card__quote">
+                        "Aprobé el Celpe-Bras a la primera. El curso de preparación es muy completo
+                        y los simulacros me dieron mucha confianza. 100% recomendado."
+                    </p>
+                    <div class="testimonial-card__author">
+                        <div class="testimonial-card__avatar">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #10B981, #059669);"></div>
+                        </div>
+                        <div class="testimonial-card__info">
+                            <div class="testimonial-card__name">Ana Sofía Ramírez</div>
+                            <div class="testimonial-card__role">Estudiante - Guatemala</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact/CTA Section -->
+    <section class="cta" id="contact">
+        <div class="container">
+            <div class="cta__content">
+                <h2 class="cta__title">Comienza tu Prueba Gratuita Hoy</h2>
+                <p class="cta__subtitle">
+                    Primera clase gratis. Sin compromiso. Conoce a nuestros profesores y metodología.
+                </p>
+                <form class="cta__form" id="contactForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="text" id="name" name="name" placeholder="Tu nombre completo" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="email" name="email" placeholder="Tu email" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <input type="tel" id="phone" name="phone" placeholder="WhatsApp" required>
+                        </div>
+                        <div class="form-group">
+                            <select id="course" name="course" required>
+                                <option value="">Curso de interés</option>
+                                <option value="business">Portugués para Negocios</option>
+                                <option value="travel">Portugués para Viajes</option>
+                                <option value="exam">Preparación para Exámenes</option>
+                                <option value="general">Curso General</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--large btn--block">
+                        Reservar Clase Gratis
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </form>
+                <p class="cta__note">
+                    Al registrarte, aceptas recibir comunicaciones de GENIUS Academia.
+                    Puedes cancelar en cualquier momento.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer__content">
+                <div class="footer__brand">
+                    <div class="footer__logo">
+                        <svg class="logo-icon" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" fill="#0EA5E9"/>
+                            <path d="M20 8L22 12L26 10L24 14L28 16L24 18L26 22L22 20L20 24L18 20L14 22L16 18L12 16L16 14L14 10L18 12L20 8Z" fill="white"/>
+                            <circle cx="20" cy="20" r="3" fill="#F97316"/>
+                        </svg>
+                        <span class="logo-text">GENIUS</span>
+                    </div>
+                    <p class="footer__tagline">
+                        Academia de Lenguas especializada en portugués brasileño.
+                        Presente en 7 países de América Central.
+                    </p>
+                    <div class="footer__social">
+                        <a href="#" class="footer__social-link" aria-label="Facebook">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="footer__social-link" aria-label="Instagram">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="footer__social-link" aria-label="WhatsApp">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer__links">
+                    <div class="footer__column">
+                        <h4 class="footer__heading">Cursos</h4>
+                        <ul class="footer__list">
+                            <li><a href="#courses">Portugués para Negocios</a></li>
+                            <li><a href="#courses">Portugués para Viajes</a></li>
+                            <li><a href="#courses">Preparación Exámenes</a></li>
+                            <li><a href="#courses">Curso General</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer__column">
+                        <h4 class="footer__heading">Empresa</h4>
+                        <ul class="footer__list">
+                            <li><a href="#methodology">Metodología</a></li>
+                            <li><a href="#testimonials">Testimonios</a></li>
+                            <li><a href="#">Sobre Nosotros</a></li>
+                            <li><a href="#">Blog</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer__column">
+                        <h4 class="footer__heading">Soporte</h4>
+                        <ul class="footer__list">
+                            <li><a href="#contact">Contacto</a></li>
+                            <li><a href="#">Preguntas Frecuentes</a></li>
+                            <li><a href="#">Política de Privacidad</a></li>
+                            <li><a href="#">Términos y Condiciones</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer__column">
+                        <h4 class="footer__heading">Países</h4>
+                        <ul class="footer__list">
+                            <li><a href="#">Costa Rica</a></li>
+                            <li><a href="#">Panamá</a></li>
+                            <li><a href="#">El Salvador</a></li>
+                            <li><a href="#">Honduras</a></li>
+                            <li><a href="#">Nicaragua</a></li>
+                            <li><a href="#">Guatemala</a></li>
+                            <li><a href="#">Belize</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer__bottom">
+                <p class="footer__copyright">
+                    &copy; 2025 GENIUS Academia de Lenguas. Todos los derechos reservados.
+                </p>
+                <p class="footer__credits">
+                    Certificado por Celpe-Bras y reconocido por el MEC de Brasil
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>

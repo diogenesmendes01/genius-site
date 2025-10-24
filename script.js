@@ -1,0 +1,481 @@
+/**
+ * GENIUS ACADEMIA DE LENGUAS - LANDING PAGE
+ * JavaScript for interactive features
+ */
+
+// ============================================
+// COUNTRY SELECTOR
+// ============================================
+const countryButton = document.getElementById('countryButton');
+const countryDropdown = document.getElementById('countryDropdown');
+const currentFlag = document.getElementById('currentFlag');
+const currentCountry = document.getElementById('currentCountry');
+const countryOptions = document.querySelectorAll('.country-option');
+
+// Toggle dropdown
+countryButton.addEventListener('click', (e) => {
+  e.stopPropagation();
+  countryDropdown.classList.toggle('active');
+});
+
+// Select country
+countryOptions.forEach(option => {
+  option.addEventListener('click', (e) => {
+    const flag = option.dataset.flag;
+    const name = option.dataset.name;
+    const countryCode = option.dataset.country;
+
+    // Update button
+    currentFlag.textContent = flag;
+    currentCountry.textContent = name;
+
+    // Close dropdown
+    countryDropdown.classList.remove('active');
+
+    // Store selection in localStorage
+    localStorage.setItem('selectedCountry', JSON.stringify({
+      flag,
+      name,
+      code: countryCode
+    }));
+
+    // Update hero image based on country (when images are available)
+    updateHeroImage(countryCode);
+
+    // Update WhatsApp numbers or other country-specific content
+    updateCountryContent(countryCode);
+  });
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!countryButton.contains(e.target) && !countryDropdown.contains(e.target)) {
+    countryDropdown.classList.remove('active');
+  }
+});
+
+// Load saved country on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const savedCountry = localStorage.getItem('selectedCountry');
+  if (savedCountry) {
+    const { flag, name } = JSON.parse(savedCountry);
+    currentFlag.textContent = flag;
+    currentCountry.textContent = name;
+  }
+});
+
+// ============================================
+// HERO IMAGE SWITCHER
+// ============================================
+function updateHeroImage(countryCode) {
+  const heroImage = document.querySelector('.hero__image-placeholder');
+  if (heroImage) {
+    // When real images are available, update src
+    // heroImage.src = `/assets/images/hero-${countryCode}.webp`;
+    console.log(`Hero image updated for country: ${countryCode}`);
+  }
+}
+
+// ============================================
+// COUNTRY-SPECIFIC CONTENT
+// ============================================
+const countryContent = {
+  cr: {
+    phone: '+506-xxxx-xxxx',
+    whatsapp: 'https://wa.me/506xxxxxxxx'
+  },
+  pa: {
+    phone: '+507-xxxx-xxxx',
+    whatsapp: 'https://wa.me/507xxxxxxxx'
+  },
+  sv: {
+    phone: '+503-xxxx-xxxx',
+    whatsapp: 'https://wa.me/503xxxxxxxx'
+  },
+  hn: {
+    phone: '+504-xxxx-xxxx',
+    whatsapp: 'https://wa.me/504xxxxxxxx'
+  },
+  ni: {
+    phone: '+505-xxxx-xxxx',
+    whatsapp: 'https://wa.me/505xxxxxxxx'
+  },
+  gt: {
+    phone: '+502-xxxx-xxxx',
+    whatsapp: 'https://wa.me/502xxxxxxxx'
+  },
+  bz: {
+    phone: '+501-xxxx-xxxx',
+    whatsapp: 'https://wa.me/501xxxxxxxx'
+  }
+};
+
+function updateCountryContent(countryCode) {
+  const content = countryContent[countryCode];
+  if (content) {
+    // Update phone numbers, WhatsApp links, etc.
+    const whatsappLinks = document.querySelectorAll('a[href*="wa.me"]');
+    whatsappLinks.forEach(link => {
+      link.href = content.whatsapp;
+    });
+    console.log(`Content updated for country: ${countryCode}`);
+  }
+}
+
+// ============================================
+// SMOOTH SCROLL
+// ============================================
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      const headerOffset = 80;
+      const elementPosition = target.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  });
+});
+
+// ============================================
+// FORM VALIDATION & SUBMISSION
+// ============================================
+const contactForm = document.getElementById('contactForm');
+
+if (contactForm) {
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Get form data
+    const formData = new FormData(contactForm);
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      course: formData.get('course'),
+      country: JSON.parse(localStorage.getItem('selectedCountry') || '{}').code || 'cr'
+    };
+
+    // Validate
+    if (!validateForm(data)) {
+      return;
+    }
+
+    // Submit (integrate with your backend)
+    try {
+      const submitButton = contactForm.querySelector('button[type="submit"]');
+      const originalText = submitButton.innerHTML;
+
+      // Loading state
+      submitButton.disabled = true;
+      submitButton.innerHTML = 'Enviando...';
+
+      // Simulate API call (replace with actual endpoint)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Success
+      submitButton.innerHTML = '¡Enviado! ✓';
+      submitButton.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+
+      // Reset form
+      setTimeout(() => {
+        contactForm.reset();
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+        submitButton.style.background = '';
+
+        // Show success message
+        alert('¡Gracias! Te contactaremos pronto para tu clase gratuita.');
+      }, 2000);
+
+      // Send to analytics
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'form_submission', {
+          event_category: 'engagement',
+          event_label: 'contact_form'
+        });
+      }
+
+    } catch (error) {
+      console.error('Form submission error:', error);
+      alert('Hubo un error. Por favor intenta de nuevo.');
+    }
+  });
+}
+
+function validateForm(data) {
+  // Name validation
+  if (data.name.length < 2) {
+    alert('Por favor ingresa tu nombre completo');
+    return false;
+  }
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(data.email)) {
+    alert('Por favor ingresa un email válido');
+    return false;
+  }
+
+  // Phone validation
+  if (data.phone.length < 8) {
+    alert('Por favor ingresa un número de teléfono válido');
+    return false;
+  }
+
+  // Course validation
+  if (!data.course) {
+    alert('Por favor selecciona un curso de interés');
+    return false;
+  }
+
+  return true;
+}
+
+// ============================================
+// SCROLL ANIMATIONS
+// ============================================
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('fade-in');
+      observer.unobserve(entry.target);
+    }
+  });
+}, observerOptions);
+
+// Observe all sections for animation
+document.addEventListener('DOMContentLoaded', () => {
+  const sections = document.querySelectorAll('.methodology-card, .course-card, .testimonial-card');
+  sections.forEach(section => observer.observe(section));
+});
+
+// ============================================
+// HEADER SCROLL BEHAVIOR
+// ============================================
+let lastScroll = 0;
+const header = document.querySelector('.header');
+
+window.addEventListener('scroll', () => {
+  const currentScroll = window.pageYOffset;
+
+  // Add shadow on scroll
+  if (currentScroll > 10) {
+    header.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+  } else {
+    header.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+  }
+
+  lastScroll = currentScroll;
+});
+
+// ============================================
+// STATS COUNTER ANIMATION
+// ============================================
+function animateCounter(element, target, duration = 2000) {
+  const start = 0;
+  const increment = target / (duration / 16);
+  let current = start;
+
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= target) {
+      element.textContent = formatStatNumber(target);
+      clearInterval(timer);
+    } else {
+      element.textContent = formatStatNumber(Math.floor(current));
+    }
+  }, 16);
+}
+
+function formatStatNumber(num) {
+  if (num >= 10000) {
+    return (num / 1000).toFixed(0) + ',000+';
+  }
+  return num.toString();
+}
+
+// Animate stats when visible
+const statsObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const statNumbers = entry.target.querySelectorAll('.stat__number');
+      statNumbers.forEach((stat, index) => {
+        const text = stat.textContent;
+        if (text.includes('+')) {
+          const number = parseInt(text.replace(/[^0-9]/g, ''));
+          if (index === 0) animateCounter(stat, 10000); // 10,000+ Alumnos
+        }
+      });
+      statsObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.5 });
+
+const heroStats = document.querySelector('.hero__stats');
+if (heroStats) {
+  statsObserver.observe(heroStats);
+}
+
+// ============================================
+// KEYBOARD NAVIGATION
+// ============================================
+document.addEventListener('keydown', (e) => {
+  // Close dropdown with Escape
+  if (e.key === 'Escape' && countryDropdown.classList.contains('active')) {
+    countryDropdown.classList.remove('active');
+  }
+});
+
+// ============================================
+// WHATSAPP FLOATING BUTTON (Optional)
+// ============================================
+function createWhatsAppButton() {
+  const savedCountry = localStorage.getItem('selectedCountry');
+  const countryCode = savedCountry ? JSON.parse(savedCountry).code : 'cr';
+  const whatsappUrl = countryContent[countryCode]?.whatsapp || 'https://wa.me';
+
+  const button = document.createElement('a');
+  button.href = whatsappUrl;
+  button.target = '_blank';
+  button.rel = 'noopener noreferrer';
+  button.className = 'whatsapp-float';
+  button.setAttribute('aria-label', 'Contactar por WhatsApp');
+  button.innerHTML = `
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+    </svg>
+  `;
+
+  // Add styles
+  const style = document.createElement('style');
+  style.textContent = `
+    .whatsapp-float {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 60px;
+      height: 60px;
+      background: #25D366;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+      z-index: 999;
+      cursor: pointer;
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 768px) {
+      .whatsapp-float {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 56px;
+        height: 56px;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+  document.body.appendChild(button);
+}
+
+// Uncomment to enable WhatsApp floating button
+// window.addEventListener('DOMContentLoaded', createWhatsAppButton);
+
+// ============================================
+// ANALYTICS & TRACKING
+// ============================================
+function trackEvent(category, action, label) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', action, {
+      event_category: category,
+      event_label: label
+    });
+  }
+  console.log('Event tracked:', { category, action, label });
+}
+
+// Track CTA clicks
+document.querySelectorAll('.btn--primary').forEach(btn => {
+  btn.addEventListener('click', () => {
+    trackEvent('engagement', 'cta_click', btn.textContent.trim());
+  });
+});
+
+// Track course card interactions
+document.querySelectorAll('.course-card').forEach((card, index) => {
+  card.addEventListener('click', () => {
+    const courseTitle = card.querySelector('.course-card__title').textContent;
+    trackEvent('courses', 'course_view', courseTitle);
+  });
+});
+
+// ============================================
+// PERFORMANCE MONITORING
+// ============================================
+window.addEventListener('load', () => {
+  // Log page load time
+  if (window.performance) {
+    const perfData = window.performance.timing;
+    const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
+    console.log(`Page loaded in ${pageLoadTime}ms`);
+  }
+});
+
+// ============================================
+// ERROR HANDLING
+// ============================================
+window.addEventListener('error', (e) => {
+  console.error('JavaScript Error:', e.message);
+  // Send to error tracking service if available
+});
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+function throttle(func, limit) {
+  let inThrottle;
+  return function(...args) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  };
+}
+
+// ============================================
+// CONSOLE WELCOME MESSAGE
+// ============================================
+console.log('%cGENIUS Academia de Lenguas', 'font-size: 24px; font-weight: bold; color: #0EA5E9;');
+console.log('%c¡Aprende Português con nosotros!', 'font-size: 14px; color: #F97316;');
+console.log('Website: https://geniusacademia.com');

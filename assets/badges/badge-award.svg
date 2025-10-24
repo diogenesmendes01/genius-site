@@ -1,0 +1,16 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Trophy -->
+  <circle cx="100" cy="80" r="35" fill="#F97316"/>
+  <rect x="85" y="105" width="30" height="40" rx="4" fill="#EA580C"/>
+  <rect x="75" y="140" width="50" height="8" rx="4" fill="#C2410C"/>
+
+  <!-- Medal Circle -->
+  <circle cx="100" cy="80" r="30" fill="#FCD34D"/>
+
+  <!-- Star in medal -->
+  <path d="M100 65L103 74L112 74L105 80L108 89L100 83L92 89L95 80L88 74L97 74L100 65Z" fill="#F97316"/>
+
+  <!-- Text -->
+  <text x="100" y="170" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#111827" text-anchor="middle">MEJOR ESCUELA</text>
+  <text x="100" y="185" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#F97316" text-anchor="middle">2024</text>
+</svg>
