@@ -1,0 +1,13 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="100" cy="100" r="90" fill="#F97316"/>
+  <circle cx="100" cy="100" r="85" fill="#FFFFFF"/>
+  <circle cx="100" cy="100" r="75" fill="#F97316" opacity="0.1"/>
+
+  <!-- Star -->
+  <path d="M100 45L108.09 73.18L137.63 73.18L113.77 90.45L121.86 118.63L100 101.36L78.14 118.63L86.23 90.45L62.37 73.18L91.91 73.18L100 45Z" fill="#FCD34D"/>
+
+  <!-- Rating Text -->
+  <text x="100" y="145" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="800" fill="#111827" text-anchor="middle">4.9</text>
+  <text x="100" y="165" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" fill="#6B7280" text-anchor="middle">DE 5</text>
+</svg>

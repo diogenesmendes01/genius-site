@@ -175,35 +175,55 @@ if (contactForm) {
       submitButton.disabled = true;
       submitButton.innerHTML = 'Enviando...';
 
-      // Simulate API call (replace with actual endpoint)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call API
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
 
-      // Success
-      submitButton.innerHTML = '¡Enviado! ✓';
-      submitButton.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+      const result = await response.json();
 
-      // Reset form
-      setTimeout(() => {
-        contactForm.reset();
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalText;
-        submitButton.style.background = '';
+      if (response.ok && result.success) {
+        // Success
+        submitButton.innerHTML = '¡Enviado! ✓';
+        submitButton.style.background = 'linear-gradient(135deg, #10B981, #059669)';
 
-        // Show success message
-        alert('¡Gracias! Te contactaremos pronto para tu clase gratuita.');
-      }, 2000);
+        // Reset form
+        setTimeout(() => {
+          contactForm.reset();
+          submitButton.disabled = false;
+          submitButton.innerHTML = originalText;
+          submitButton.style.background = '';
 
-      // Send to analytics
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'form_submission', {
-          event_category: 'engagement',
-          event_label: 'contact_form'
-        });
+          // Show success message
+          alert('¡Gracias! Te contactaremos pronto para tu clase gratuita.');
+        }, 2000);
+
+        // Send to analytics
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'form_submission', {
+            event_category: 'engagement',
+            event_label: 'contact_form'
+          });
+        }
+      } else {
+        throw new Error(result.message || 'Error al enviar formulario');
       }
 
     } catch (error) {
       console.error('Form submission error:', error);
-      alert('Hubo un error. Por favor intenta de nuevo.');
+
+      // Reset button
+      const submitButton = contactForm.querySelector('button[type="submit"]');
+      submitButton.disabled = false;
+      submitButton.innerHTML = submitButton.innerHTML.includes('Enviando')
+        ? 'Reservar Clase Gratis'
+        : submitButton.innerHTML;
+
+      alert('Hubo un error. Por favor intenta de nuevo o contáctanos vía WhatsApp.');
     }
   });
 }

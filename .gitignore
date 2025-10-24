@@ -8,6 +8,10 @@ yarn.lock
 .env.local
 .env.*.local
 
+# Build output
+dist/
+build/
+
 # Editor
 .vscode/
 .idea/

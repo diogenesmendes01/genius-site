@@ -1,0 +1,19 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="10" y="70" width="180" height="80" rx="12" fill="#0EA5E9"/>
+  <rect x="15" y="75" width="170" height="70" rx="8" fill="#FFFFFF"/>
+
+  <!-- Icon -->
+  <path d="M100 85C105.523 85 110 80.523 110 75C110 69.477 105.523 65 100 65C94.477 65 90 69.477 90 75C90 80.523 94.477 85 100 85Z" fill="#0EA5E9"/>
+  <path d="M115 95C115 90.029 108.284 86 100 86C91.716 86 85 90.029 85 95V100H115V95Z" fill="#0EA5E9"/>
+
+  <circle cx="75" cy="75" r="7" fill="#0369A1" opacity="0.6"/>
+  <path d="M82 90C82 87 78 85 75 85C72 85 68 87 68 90V92H82V90Z" fill="#0369A1" opacity="0.6"/>
+
+  <circle cx="125" cy="75" r="7" fill="#0369A1" opacity="0.6"/>
+  <path d="M132 90C132 87 128 85 125 85C122 85 118 87 118 90V92H132V90Z" fill="#0369A1" opacity="0.6"/>
+
+  <!-- Text -->
+  <text x="100" y="125" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800" fill="#111827" text-anchor="middle">10,000+</text>
+  <text x="100" y="142" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="600" fill="#6B7280" text-anchor="middle">ALUMNOS</text>
+</svg>
