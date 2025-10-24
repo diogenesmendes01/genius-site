@@ -1,0 +1,24 @@
+{
+  "name": "genius-academia-landing",
+  "version": "1.0.0",
+  "description": "Landing page for GENIUS Academia de Lenguas - Portuguese language school in Central America",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx live-server --port=8000 --open=/index.html",
+    "start": "npx live-server --port=8000",
+    "serve": "npx http-server -p 8000 -o",
+    "preview": "python -m http.server 8000",
+    "test": "echo \"No tests configured yet\" && exit 0"
+  },
+  "keywords": [
+    "landing-page",
+    "education",
+    "portuguese",
+    "language-school"
+  ],
+  "author": "GENIUS Academia de Lenguas",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {},
+  "dependencies": {}
+}

@@ -1,0 +1,22 @@
+{
+  "name": "GENIUS Academia de Lenguas",
+  "short_name": "GENIUS",
+  "description": "Aprenda português con profesores nativos brasileños. Certificación Celpe-Bras incluida.",
+  "icons": [
+    {
+      "src": "/assets/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#0EA5E9",
+  "background_color": "#FFFFFF",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

@@ -396,8 +396,8 @@ function createWhatsAppButton() {
   document.body.appendChild(button);
 }
 
-// Uncomment to enable WhatsApp floating button
-// window.addEventListener('DOMContentLoaded', createWhatsAppButton);
+// Enable WhatsApp floating button
+window.addEventListener('DOMContentLoaded', createWhatsAppButton);
 
 // ============================================
 // ANALYTICS & TRACKING
