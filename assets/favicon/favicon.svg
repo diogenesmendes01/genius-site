@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#0EA5E9"/>
+
+  <!-- Liahona Symbol (Compass) -->
+  <circle cx="256" cy="256" r="200" fill="white" opacity="0.2"/>
+  <circle cx="256" cy="256" r="160" fill="white" opacity="0.3"/>
+
+  <!-- Main Star (Liahona pointer) -->
+  <path d="M256 96L275 168L320 136L288 184L352 208L288 232L320 280L275 248L256 320L237 248L192 280L224 232L160 208L224 184L192 136L237 168L256 96Z" fill="white"/>
+
+  <!-- Center Circle -->
+  <circle cx="256" cy="256" r="40" fill="#F97316"/>
+
+  <!-- Direction markers -->
+  <circle cx="256" cy="120" r="8" fill="white"/>
+  <circle cx="256" cy="392" r="8" fill="white"/>
+  <circle cx="120" cy="256" r="8" fill="white"/>
+  <circle cx="392" cy="256" r="8" fill="white"/>
+</svg>
