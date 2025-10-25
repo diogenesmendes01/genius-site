@@ -3,7 +3,19 @@
     "allow": [
       "Bash(npm run dev:*)",
       "Bash(npm install:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nIntegrate NestJS backend with email functionality\n\nMajor changes:\n- Migrate from static site to NestJS full-stack application\n- Move frontend files to public/ directory (served by NestJS)\n- Implement complete backend API for lead management\n\nBackend Features:\n✅ NestJS backend with TypeScript\n✅ POST /api/leads endpoint with validation\n✅ Email service using Nodemailer (Gmail)\n✅ Email templates with HTML formatting\n✅ DTO validation with class-validator\n✅ CORS enabled for API access\n✅ Static file serving for frontend\n✅ Environment configuration (.env)\n✅ Hot-reload in development mode\n\nEmail Configuration:\n- Sends to: contato@geniusacademia.com\n- Development mode: logs to console\n- Production mode: sends real emails via Gmail\n- App Password support for Gmail authentication\n\nAPI Structure:\n- src/main.ts - Application entry point\n- src/app.module.ts - Main app module\n- src/leads/ - Leads module (controller, service, DTO)\n- src/email/ - Email module (service)\n\nFrontend Updates:\n- Updated script.js to call /api/leads endpoint\n- Form now sends data to backend API\n- Error handling and success messages\n- All files moved to public/ directory\n\nDevelopment:\n- npm run dev - Start development server\n- npm run build - Build for production  \n- npm run start:prod - Run production server\n\nDocumentation:\n- BACKEND_GUIDE.md - Complete backend setup guide\n- .env.example - Environment variables template\n- nest-cli.json - NestJS CLI configuration\n- tsconfig.json - TypeScript configuration\n\nAll features tested and working! Ready for production deployment.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(timeout 10 bash:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd.exe //c \"taskkill //PID 26392 //F\")",
+      "Bash(cmd.exe /c \"taskkill /PID 26392 /F\")",
+      "Bash(find:*)",
+      "Bash(awk:*)",
+      "Bash(dir \"C:\\Users\\PC Di\\Desktop\\CODIGO\\genius-site\\assets\" /b)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

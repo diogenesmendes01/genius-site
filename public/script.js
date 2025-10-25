@@ -4,125 +4,6 @@
  */
 
 // ============================================
-// COUNTRY SELECTOR
-// ============================================
-const countryButton = document.getElementById('countryButton');
-const countryDropdown = document.getElementById('countryDropdown');
-const currentFlag = document.getElementById('currentFlag');
-const currentCountry = document.getElementById('currentCountry');
-const countryOptions = document.querySelectorAll('.country-option');
-
-// Toggle dropdown
-countryButton.addEventListener('click', (e) => {
-  e.stopPropagation();
-  countryDropdown.classList.toggle('active');
-});
-
-// Select country
-countryOptions.forEach(option => {
-  option.addEventListener('click', (e) => {
-    const flag = option.dataset.flag;
-    const name = option.dataset.name;
-    const countryCode = option.dataset.country;
-
-    // Update button
-    currentFlag.textContent = flag;
-    currentCountry.textContent = name;
-
-    // Close dropdown
-    countryDropdown.classList.remove('active');
-
-    // Store selection in localStorage
-    localStorage.setItem('selectedCountry', JSON.stringify({
-      flag,
-      name,
-      code: countryCode
-    }));
-
-    // Update hero image based on country (when images are available)
-    updateHeroImage(countryCode);
-
-    // Update WhatsApp numbers or other country-specific content
-    updateCountryContent(countryCode);
-  });
-});
-
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-  if (!countryButton.contains(e.target) && !countryDropdown.contains(e.target)) {
-    countryDropdown.classList.remove('active');
-  }
-});
-
-// Load saved country on page load
-window.addEventListener('DOMContentLoaded', () => {
-  const savedCountry = localStorage.getItem('selectedCountry');
-  if (savedCountry) {
-    const { flag, name } = JSON.parse(savedCountry);
-    currentFlag.textContent = flag;
-    currentCountry.textContent = name;
-  }
-});
-
-// ============================================
-// HERO IMAGE SWITCHER
-// ============================================
-function updateHeroImage(countryCode) {
-  const heroImage = document.querySelector('.hero__image-placeholder');
-  if (heroImage) {
-    // When real images are available, update src
-    // heroImage.src = `/assets/images/hero-${countryCode}.webp`;
-    console.log(`Hero image updated for country: ${countryCode}`);
-  }
-}
-
-// ============================================
-// COUNTRY-SPECIFIC CONTENT
-// ============================================
-const countryContent = {
-  cr: {
-    phone: '+506-xxxx-xxxx',
-    whatsapp: 'https://wa.me/506xxxxxxxx'
-  },
-  pa: {
-    phone: '+507-xxxx-xxxx',
-    whatsapp: 'https://wa.me/507xxxxxxxx'
-  },
-  sv: {
-    phone: '+503-xxxx-xxxx',
-    whatsapp: 'https://wa.me/503xxxxxxxx'
-  },
-  hn: {
-    phone: '+504-xxxx-xxxx',
-    whatsapp: 'https://wa.me/504xxxxxxxx'
-  },
-  ni: {
-    phone: '+505-xxxx-xxxx',
-    whatsapp: 'https://wa.me/505xxxxxxxx'
-  },
-  gt: {
-    phone: '+502-xxxx-xxxx',
-    whatsapp: 'https://wa.me/502xxxxxxxx'
-  },
-  bz: {
-    phone: '+501-xxxx-xxxx',
-    whatsapp: 'https://wa.me/501xxxxxxxx'
-  }
-};
-
-function updateCountryContent(countryCode) {
-  const content = countryContent[countryCode];
-  if (content) {
-    // Update phone numbers, WhatsApp links, etc.
-    const whatsappLinks = document.querySelectorAll('a[href*="wa.me"]');
-    whatsappLinks.forEach(link => {
-      link.href = content.whatsapp;
-    });
-    console.log(`Content updated for country: ${countryCode}`);
-  }
-}
-
-// ============================================
 // SMOOTH SCROLL
 // ============================================
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -158,7 +39,7 @@ if (contactForm) {
       email: formData.get('email'),
       phone: formData.get('phone'),
       course: formData.get('course'),
-      country: JSON.parse(localStorage.getItem('selectedCountry') || '{}').code || 'cr'
+      country: 'central-america'
     };
 
     // Validate
@@ -348,22 +229,10 @@ if (heroStats) {
 }
 
 // ============================================
-// KEYBOARD NAVIGATION
-// ============================================
-document.addEventListener('keydown', (e) => {
-  // Close dropdown with Escape
-  if (e.key === 'Escape' && countryDropdown.classList.contains('active')) {
-    countryDropdown.classList.remove('active');
-  }
-});
-
-// ============================================
 // WHATSAPP FLOATING BUTTON (Optional)
 // ============================================
 function createWhatsAppButton() {
-  const savedCountry = localStorage.getItem('selectedCountry');
-  const countryCode = savedCountry ? JSON.parse(savedCountry).code : 'cr';
-  const whatsappUrl = countryContent[countryCode]?.whatsapp || 'https://wa.me';
+  const whatsappUrl = 'https://wa.me/506xxxxxxxx'; // Update with your actual number
 
   const button = document.createElement('a');
   button.href = whatsappUrl;
@@ -496,6 +365,6 @@ function throttle(func, limit) {
 // ============================================
 // CONSOLE WELCOME MESSAGE
 // ============================================
-console.log('%cGENIUS Academia de Lenguas', 'font-size: 24px; font-weight: bold; color: #0EA5E9;');
-console.log('%c¡Aprende Português con nosotros!', 'font-size: 14px; color: #F97316;');
+console.log('%cGENIUS Academia de Lenguas', 'font-size: 24px; font-weight: bold; color: #000E38;');
+console.log('%c¡Aprende Português con nosotros!', 'font-size: 14px; color: #DCAF63;');
 console.log('Website: https://geniusacademia.com');

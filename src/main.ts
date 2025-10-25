@@ -24,7 +24,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  const host = process.env.HOST || '0.0.0.0';
+  await app.listen(port, host);
 
   console.log(`🚀 Servidor rodando em: http://localhost:${port}`);
   console.log(`📄 Site disponível em: http://localhost:${port}`);
