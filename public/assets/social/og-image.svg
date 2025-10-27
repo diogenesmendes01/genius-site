@@ -1,46 +1,46 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background Gradient -->
-  <rect width="1200" height="630" fill="url(#gradient)"/>
+  <!-- Background with GENIUS brand colors -->
+  <rect width="1200" height="630" fill="#000E38"/>
+
+  <!-- Decorative Gold Elements -->
+  <circle cx="100" cy="100" r="60" fill="#DCAF63" opacity="0.1"/>
+  <circle cx="1100" cy="530" r="80" fill="#DCAF63" opacity="0.15"/>
+  <circle cx="200" cy="500" r="40" fill="#DCAF63" opacity="0.2"/>
+  <circle cx="1000" cy="150" r="50" fill="#DCAF63" opacity="0.2"/>
+
+  <!-- Gradient overlay -->
+  <rect width="1200" height="630" fill="url(#goldGradient)" opacity="0.05"/>
   <defs>
-    <linearGradient id="gradient" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0EA5E9"/>
-      <stop offset="100%" stop-color="#0369A1"/>
+    <linearGradient id="goldGradient" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#DCAF63"/>
+      <stop offset="100%" stop-color="#000E38"/>
     </linearGradient>
   </defs>
 
-  <!-- Decorative Elements -->
-  <circle cx="100" cy="100" r="60" fill="white" opacity="0.1"/>
-  <circle cx="1100" cy="530" r="80" fill="white" opacity="0.1"/>
-  <circle cx="200" cy="500" r="40" fill="#F97316" opacity="0.3"/>
-  <circle cx="1000" cy="150" r="50" fill="#10B981" opacity="0.3"/>
-
-  <!-- Logo Icon (simplified) -->
-  <g transform="translate(100, 200)">
-    <circle cx="50" cy="50" r="45" fill="white"/>
-    <path d="M50 20L54 32L66 28L60 40L72 46L60 52L66 64L54 58L50 70L46 58L34 64L40 52L28 46L40 40L34 28L46 32L50 20Z" fill="#0EA5E9"/>
-    <circle cx="50" cy="50" r="8" fill="#F97316"/>
-  </g>
-
-  <!-- Text Content -->
-  <text x="200" y="250" font-family="Inter, sans-serif" font-size="72" font-weight="800" fill="white">
+  <!-- Text Content with GENIUS Branding -->
+  <text x="120" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="96" font-weight="800" fill="#DCAF63">
     GENIUS
   </text>
 
-  <text x="200" y="320" font-family="Inter, sans-serif" font-size="42" font-weight="600" fill="white" opacity="0.95">
+  <text x="120" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="600" fill="white" opacity="0.95">
     Academia de Lenguas
   </text>
 
-  <text x="200" y="400" font-family="Inter, sans-serif" font-size="36" font-weight="500" fill="white" opacity="0.9">
-    Domine Português en 2 Años
+  <text x="120" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="500" fill="white" opacity="0.9">
+    Habla Português con Fluidez
   </text>
 
-  <text x="200" y="460" font-family="Inter, sans-serif" font-size="28" font-weight="400" fill="white" opacity="0.85">
-    7 Países | Certificación Celpe-Bras Incluida
+  <text x="120" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="500" fill="white" opacity="0.9">
+    en 2 Años
+  </text>
+
+  <text x="120" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="#DCAF63" opacity="0.9">
+    Certificación Internacional Incluida
   </text>
 
   <!-- Badge -->
-  <rect x="200" y="490" width="180" height="40" rx="20" fill="#F97316"/>
-  <text x="290" y="516" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">
+  <rect x="120" y="555" width="240" height="50" rx="25" fill="#DCAF63"/>
+  <text x="240" y="587" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" fill="#000E38" text-anchor="middle">
     Primera Clase Gratis
   </text>
 </svg>
