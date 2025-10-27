@@ -1,0 +1,15 @@
+# robots.txt para GENIUS Academia de Lenguas
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://geniusacademia.com/sitemap.xml
+
+# Bloquear arquivos desnecessários
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /manifest.json
+
+# Crawl-delay (opcional)
+Crawl-delay: 0

@@ -181,6 +181,67 @@ window.addEventListener('scroll', () => {
 });
 
 // ============================================
+// MOBILE MENU
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  const mobileToggle = document.querySelector('.mobile-menu-toggle');
+  const mobileNav = document.querySelector('.header__nav');
+  const mobileOverlay = document.querySelector('.mobile-menu-overlay');
+  const navLinks = document.querySelectorAll('.header__nav a');
+
+  if (mobileToggle && mobileNav && mobileOverlay) {
+    // Toggle menu
+    mobileToggle.addEventListener('click', () => {
+      const isActive = mobileNav.classList.contains('active');
+
+      if (isActive) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    // Close menu when clicking overlay
+    mobileOverlay.addEventListener('click', closeMenu);
+
+    // Close menu when clicking nav links
+    navLinks.forEach(link => {
+      link.addEventListener('click', closeMenu);
+    });
+
+    // Close menu on ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && mobileNav.classList.contains('active')) {
+        closeMenu();
+      }
+    });
+
+    function openMenu() {
+      mobileToggle.classList.add('active');
+      mobileNav.classList.add('active');
+      mobileOverlay.classList.add('active');
+      mobileToggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMenu() {
+      mobileToggle.classList.remove('active');
+      mobileNav.classList.remove('active');
+      mobileOverlay.classList.remove('active');
+      mobileToggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+
+    // Close menu on window resize to desktop
+    window.addEventListener('resize', debounce(() => {
+      if (window.innerWidth > 767 && mobileNav.classList.contains('active')) {
+        closeMenu();
+      }
+    }, 250));
+  }
+});
+
+// ============================================
 // STATS COUNTER ANIMATION
 // ============================================
 function animateCounter(element, target, duration = 2000) {

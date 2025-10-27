@@ -260,6 +260,97 @@ textarea {
   gap: var(--spacing-md);
 }
 
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 1001;
+}
+
+.mobile-menu-toggle span {
+  width: 28px;
+  height: 3px;
+  background: var(--color-primary-navy);
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.mobile-menu-toggle.active span:nth-child(1) {
+  transform: rotate(45deg) translate(8px, 8px);
+}
+
+.mobile-menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-toggle.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Mobile Navigation */
+@media (max-width: 767px) {
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .header__nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    background: var(--color-white);
+    flex-direction: column;
+    padding: var(--spacing-3xl) var(--spacing-lg);
+    box-shadow: var(--shadow-xl);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    gap: var(--spacing-lg);
+    align-items: flex-start;
+  }
+
+  .header__nav.active {
+    right: 0;
+  }
+
+  .nav-link {
+    width: 100%;
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .btn--header {
+    width: 100%;
+    text-align: center;
+    margin-top: var(--spacing-md);
+  }
+
+  /* Overlay */
+  .mobile-menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 14, 56, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .mobile-menu-overlay.active {
+    display: block;
+    opacity: 1;
+  }
+}
+
 /* ============================================
    HERO SECTION
    ============================================ */
@@ -1589,6 +1680,25 @@ textarea {
   .level-step:nth-child(6) {
     margin-left: 0 !important;
   }
+
+  .level-badge {
+    width: 80px;
+    height: 80px;
+    font-size: 1.8rem;
+  }
+
+  .level-info {
+    padding: var(--spacing-md);
+    min-height: 80px;
+  }
+
+  .level-info h3 {
+    font-size: var(--font-size-body-large);
+  }
+
+  .level-info__objective {
+    font-size: var(--font-size-body);
+  }
 }
 
 /* Rich Numbered List */
@@ -1672,6 +1782,90 @@ textarea {
   font-size: var(--font-size-body-large);
   margin-bottom: var(--spacing-xl);
   opacity: 0.9;
+}
+
+/* ============================================
+   ADDITIONAL MOBILE RESPONSIVENESS
+   ============================================ */
+@media (max-width: 768px) {
+  /* Rich Numbered List - Reduce logo size */
+  .rich-list-number {
+    width: 60px;
+    height: 60px;
+  }
+
+  .rich-list-item {
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+
+  .rich-list-content h3 {
+    font-size: var(--font-size-body-large);
+  }
+
+  .rich-list-content p {
+    font-size: var(--font-size-body);
+  }
+
+  /* Timeline - Reduce padding and adjust positioning */
+  .timeline {
+    padding-left: var(--spacing-xl);
+  }
+
+  .timeline::before {
+    left: 6px;
+    width: 3px;
+  }
+
+  .timeline-marker {
+    left: -28px;
+    width: 16px;
+    height: 16px;
+    border: 3px solid var(--color-white);
+    box-shadow: 0 0 0 2px var(--color-primary-gold);
+  }
+
+  .timeline-content h3 {
+    font-size: var(--font-size-h3);
+  }
+
+  /* Feature Cards - Better mobile grid */
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .feature-card {
+    padding: var(--spacing-md);
+  }
+
+  /* Values List */
+  .values-list li {
+    font-size: var(--font-size-body);
+    padding-left: var(--spacing-md);
+  }
+
+  /* Hero Internal */
+  .hero--internal {
+    padding: var(--spacing-xl) 0;
+  }
+
+  .hero--internal .hero__title {
+    font-size: var(--font-size-h1);
+  }
+
+  .hero--internal .hero__subtitle {
+    font-size: var(--font-size-body-large);
+  }
+
+  /* Content Wrapper */
+  .content-wrapper {
+    padding: 0;
+  }
+
+  .content-block h2 {
+    font-size: var(--font-size-h2);
+  }
 }
 
 /* ============================================
