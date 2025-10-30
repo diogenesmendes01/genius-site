@@ -3,49 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="google-site-verification" content="Q7iDE3gWwfFN8hIyAJqZIYfkQ2W_R5YOpjz6MgZObig" />
 
     <!-- Primary Meta Tags -->
-    <title>Nuestra Metodología - GENIUS Academia de Lenguas</title>
-    <meta name="title" content="Nuestra Metodología - GENIUS Academia de Lenguas">
-    <meta name="description" content="Metodología GENIUS: aprendizaje comunicativo del portugués brasileño. Progresión A1 a C2, profesores nativos, clases personalizadas y certificación CELPE-BRAS.">
-    <meta name="keywords" content="metodología portugués, cómo aprender portugués, niveles cefr portugués, a1 a c2 portugués, celpe-bras, método comunicativo">
-    <meta name="author" content="GENIUS Academia de Lenguas">
-    <meta name="robots" content="index, follow">
+    <title>Metodología - GENIUS Academia de Lenguas</title>
+    <meta name="title" content="Metodología - GENIUS Academia de Lenguas">
+    <meta name="description" content="Descubre cómo enseñamos portugués brasileño con profesores nativos. Conversación real desde el primer día.">
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://geniusacademia.com/metodologia.html">
-    <meta property="og:title" content="Nuestra Metodología - GENIUS Academia de Lenguas">
-    <meta property="og:description" content="Metodología comunicativa y progresiva para aprender portugués: desde nivel básico (A1) hasta dominio profesional (C2).">
-    <meta property="og:image" content="/assets/social/og-image.jpg">
-    <meta property="og:locale" content="es_CR">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://geniusacademia.com/metodologia.html">
-    <meta property="twitter:title" content="Nuestra Metodología - GENIUS Academia de Lenguas">
-    <meta property="twitter:description" content="Aprende portugués con metodología comunicativa: A1 a C2, profesores nativos y certificación.">
-    <meta property="twitter:image" content="/assets/social/og-image.jpg">
-
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://geniusacademia.com/metodologia.html">
-
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#000E38">
-
-    <!-- Favicon (Modern + Fallback) -->
+    <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" sizes="32x32">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-
-    <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <!-- Manifest -->
-    <link rel="manifest" href="/manifest.json">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,6 +22,364 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
+
+    <style>
+        /* Hero Interno Metodologia */
+        .hero-interno {
+            padding: 6rem 0 4rem;
+            background: linear-gradient(180deg, #000E38 0%, #001a5c 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-interno::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(220, 175, 99, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-interno__content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-interno__title {
+            font-family: var(--font-family-primary);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-white);
+            margin-bottom: 1rem;
+        }
+
+        .hero-interno__subtitle {
+            font-size: 1.125rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        .hero-badges {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .badge-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(220, 175, 99, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .badge-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(220, 175, 99, 0.4);
+            transform: translateY(-5px);
+        }
+
+        .badge-card__icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            color: var(--color-primary-gold);
+        }
+
+        .badge-card__title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-white);
+            margin-bottom: 0.25rem;
+        }
+
+        .badge-card__text {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Seção Professores */
+        .teachers-section {
+            padding: 5rem 0;
+            background: var(--color-white);
+        }
+
+        .section-header-center {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 3rem;
+        }
+
+        .section-header-center h2 {
+            font-family: var(--font-family-primary);
+            font-size: 2.5rem;
+            color: var(--color-primary-navy);
+            margin-bottom: 1rem;
+        }
+
+        .section-header-center p {
+            font-size: 1.125rem;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        .teachers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .teacher-card {
+            background: var(--color-white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .teacher-card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            transform: translateY(-5px);
+        }
+
+        .teacher-card__image {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text-secondary);
+            font-size: 0.875rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .teacher-card__content {
+            padding: 1.5rem;
+        }
+
+        .teacher-card__name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--color-primary-navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .teacher-card__bio {
+            font-size: 0.9375rem;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Como Funciona */
+        .how-it-works {
+            padding: 5rem 0;
+            background: var(--color-background);
+        }
+
+        .steps-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .step-card {
+            position: relative;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .step-number {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.5rem;
+            background: var(--gradient-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-family-primary);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary-navy);
+            box-shadow: 0 4px 15px rgba(220, 175, 99, 0.3);
+        }
+
+        .step-card h3 {
+            font-size: 1.5rem;
+            color: var(--color-primary-navy);
+            margin-bottom: 1rem;
+        }
+
+        .step-card p {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Tipos de Aula */
+        .class-types {
+            padding: 5rem 0;
+            background: var(--color-white);
+        }
+
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 3rem;
+            margin-top: 3rem;
+        }
+
+        .class-type-card {
+            background: var(--color-white);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .class-type-card:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+            transform: translateY(-8px);
+        }
+
+        .class-type-card__badge {
+            display: inline-block;
+            margin: 2rem 2rem 0;
+            padding: 0.5rem 1rem;
+            background: var(--gradient-gold);
+            color: var(--color-primary-navy);
+            font-size: 0.875rem;
+            font-weight: 700;
+            border-radius: 50px;
+        }
+
+        .class-type-card__image {
+            width: 100%;
+            height: 300px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.875rem;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .class-type-card__content {
+            padding: 2rem;
+        }
+
+        .class-type-card__title {
+            font-family: var(--font-family-primary);
+            font-size: 1.75rem;
+            color: var(--color-primary-navy);
+            margin-bottom: 1rem;
+        }
+
+        .class-type-card__description {
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .class-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .class-features li {
+            padding: 0.75rem 0;
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .class-features li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--color-primary-gold);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Metodologia Content */
+        .methodology-content {
+            padding: 5rem 0;
+            background: var(--color-background);
+        }
+
+        .methodology-content .content-block {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+        }
+
+        .methodology-content h2 {
+            font-family: var(--font-family-primary);
+            font-size: 2rem;
+            color: var(--color-primary-navy);
+            margin-bottom: 1.5rem;
+        }
+
+        .methodology-content p {
+            color: var(--color-text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .methodology-content ul {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+
+        .methodology-content ul li {
+            padding: 0.75rem 0 0.75rem 2rem;
+            position: relative;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        .methodology-content ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1.25rem;
+            width: 8px;
+            height: 8px;
+            background: var(--color-primary-gold);
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .hero-interno__title {
+                font-size: 2rem;
+            }
+
+            .class-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .class-type-card {
+                min-width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -74,8 +400,8 @@
 
                 <nav class="header__nav" role="navigation" aria-label="Navegación principal">
                     <a href="/sobre-nos.html" class="nav-link">Sobre Nosotros</a>
-                    <a href="/metodologia.html" class="nav-link active">Metodología</a>
-                    <a href="/#contact" class="btn btn--primary btn--header">Prueba Gratis</a>
+                    <a href="/metodologia.html" class="nav-link">Metodología</a>
+                    <a href="https://geniusidiomas.q10.com" class="btn btn--primary btn--header" target="_blank" rel="noopener noreferrer">Entrar</a>
                 </nav>
             </div>
         </div>
@@ -84,180 +410,249 @@
     <!-- Mobile Menu Overlay -->
     <div class="mobile-menu-overlay"></div>
 
-    <!-- Hero interno -->
-    <section class="hero hero--internal">
+    <!-- Hero Interno -->
+    <section class="hero-interno">
         <div class="container">
-            <h1 class="hero__title">Nuestra Metodología</h1>
-            <p class="hero__subtitle">Aprende portugués de forma natural y efectiva</p>
-        </div>
-    </section>
+            <div class="hero-interno__content">
+                <h1 class="hero-interno__title">Conversación en Portugués</h1>
+                <p class="hero-interno__subtitle">
+                    Aprende portugués brasileño con profesores nativos en un ambiente acogedor.
+                    Desde el primer día, hablas, escuchas y practicas en situaciones reales.
+                </p>
 
-    <!-- Intro -->
-    <section class="content-section">
-        <div class="container">
-            <div class="content-wrapper">
-                <div class="content-block">
-                    <p style="font-size: var(--font-size-body-large); text-align: center; max-width: 800px; margin: 0 auto;">
-                        En Genius – Academia de Lenguas, el alumno no aprende solo palabras: aprende a usar el portugués con seguridad en situaciones reales.
-                    </p>
-                </div>
-
-                <div class="content-block">
-                    <p>Nuestra metodología es <strong>comunicativa, práctica y progresiva</strong>. Eso significa que, desde el primer contacto, el alumno habla, escucha, escribe e interactúa en portugués con profesores nativos, siempre en escenarios que tienen sentido para su vida personal, académica y profesional.</p>
-                    <p>El programa fue diseñado para llevar al alumno desde el nivel básico (A1) hasta el dominio avanzado y profesional del idioma (C2), pasando por comunicación cotidiana, construcción gramatical sólida, vocabulario cultural y, más adelante, lenguaje de trabajo y preparación para entrevistas y certificaciones oficiales.</p>
-                </div>
-
-                <div class="content-block">
-                    <h2>Estructura en Trimestres</h2>
-                    <p>Nuestro recorrido está organizado en trimestres (módulos), cada uno con objetivos claros. La idea es simple: tú sabes exactamente qué vas a aprender, por qué eso importa y cómo se va a evaluar.</p>
-                </div>
-
-                <!-- Niveles - Escada -->
-                <div class="content-block">
-                    <div class="level-staircase">
-                        <div class="level-step">
-                            <div class="level-badge">A1</div>
-                            <div class="level-info">
-                                <h3>Básico 1 - Sobrevivir en Portugués</h3>
-                                <p class="level-info__objective">Presentarse, saludar y comunicar necesidades básicas. Aprenderás a interactuar en situaciones cotidianas como mercado, transporte y consultas médicas.</p>
-                            </div>
+                <div class="hero-badges">
+                    <div class="badge-card">
+                        <div class="badge-card__icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
                         </div>
-
-                        <div class="level-step">
-                            <div class="level-badge">A2</div>
-                            <div class="level-info">
-                                <h3>Básico 2 - Contar Tu Historia</h3>
-                                <p class="level-info__objective">Hablar sobre el pasado, rutinas y planes. Expresar opiniones, describir experiencias personales y manejar situaciones de viaje con confianza.</p>
-                            </div>
-                        </div>
-
-                        <div class="level-step">
-                            <div class="level-badge">B1</div>
-                            <div class="level-info">
-                                <h3>Intermedio 1 - Hablar con Detalle</h3>
-                                <p class="level-info__objective">Consolidar tiempos verbales y estructuras complejas. Participar en conversaciones más largas sobre trabajo, cultura y temas de actualidad.</p>
-                            </div>
-                        </div>
-
-                        <div class="level-step">
-                            <div class="level-badge">B2</div>
-                            <div class="level-info">
-                                <h3>Intermedio 2 - Expresarte con Claridad</h3>
-                                <p class="level-info__objective">Debatir, defender ideas y analizar contenido de medios brasileños. Conversar con fluidez en contextos sociales y profesionales.</p>
-                            </div>
-                        </div>
-
-                        <div class="level-step">
-                            <div class="level-badge">C1</div>
-                            <div class="level-info">
-                                <h3>Avanzado 1 - Naturalidad Cultural</h3>
-                                <p class="level-info__objective">Dominar expresiones coloquiales, modismos y matices culturales. Comprender ironía, humor y producir textos autorales complejos.</p>
-                            </div>
-                        </div>
-
-                        <div class="level-step">
-                            <div class="level-badge">C2</div>
-                            <div class="level-info">
-                                <h3>Avanzado 2 - Portugués Profesional</h3>
-                                <p class="level-info__objective">Dominio completo para contextos corporativos. Preparación para entrevistas, certificaciones oficiales y comunicación de alto nivel profesional.</p>
-                            </div>
-                        </div>
+                        <div class="badge-card__title">4.9</div>
+                        <div class="badge-card__text">Evaluación Promedio</div>
                     </div>
-                </div>
 
-                <!-- Avaliação -->
-                <div class="content-block">
-                    <h2>Evolución Guiada y Evaluación Continua</h2>
-                    <p>Cada trimestre cierra con una evaluación oral y otra escrita para medir:</p>
-                    <ul>
-                        <li>Claridad al hablar</li>
-                        <li>Capacidad de comprender brasileños hablando a velocidad normal</li>
-                        <li>Escritura funcional para tu necesidad (más personal en los niveles básicos, más técnica/profesional en los niveles avanzados)</li>
-                    </ul>
-                    <p>En los niveles intermedio y avanzado también usamos autoevaluación guiada. Esto te ayuda a ver en qué ya estás fuerte y dónde todavía necesitas refuerzo — especialmente en pronunciación, fluidez y vocabulario específico de trabajo.</p>
-                </div>
+                    <div class="badge-card">
+                        <div class="badge-card__icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
+                        <div class="badge-card__title">10,000+</div>
+                        <div class="badge-card__text">Alumnos Activos</div>
+                    </div>
 
-                <!-- Comunicación Real -->
-                <div class="content-block">
-                    <h2>Comunicación Real Desde el Inicio</h2>
-                    <p>Toda la enseñanza se basa en uso real del idioma, no solo teoría.</p>
-                    <p>Eso significa que practicas:</p>
-                    <ul>
-                        <li>Saludos, presentaciones y conversaciones simples desde el primer contacto</li>
-                        <li>Situaciones prácticas como transporte, mercado, consulta médica, pedir ayuda, hacer una compra</li>
-                        <li>Conversaciones de trabajo, negociación y atención a clientes en los niveles más altos</li>
-                        <li>Discusiones de opinión, lectura crítica de noticias y construcción de argumentación a partir del nivel intermedio</li>
-                        <li>Preparación para entrevistas y reuniones profesionales cuando tu objetivo es el mercado laboral en portugués</li>
-                    </ul>
-                    <p><strong>En otras palabras:</strong> el idioma que aprendes aquí es inmediatamente útil.</p>
-                </div>
+                    <div class="badge-card">
+                        <div class="badge-card__icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                            </svg>
+                        </div>
+                        <div class="badge-card__title">200+</div>
+                        <div class="badge-card__text">Profesores Nativos</div>
+                    </div>
 
-                <!-- Profesores -->
-                <div class="content-block">
-                    <h2>Profesores Nativos y Contexto Latino</h2>
-                    <p>Las clases son impartidas por profesores nativos de portugués brasileño, especializados en enseñar a hispanohablantes.</p>
-                    <p><strong>¿Por qué eso importa?</strong></p>
-                    <ul>
-                        <li>Recibes explicación pensada específicamente para quien habla español, no una clase genérica</li>
-                        <li>El profesor ya sabe dónde normalmente te equivocas (falsos cognados, género, pronombres, tiempos verbales)</li>
-                        <li>Tu práctica auditiva es con acento real de brasileños, preparándote para la vida real y no solo para un examen</li>
-                    </ul>
-                    <p>Eso acelera la confianza y reduce la frustración.</p>
-                </div>
-
-                <!-- Online -->
-                <div class="content-block">
-                    <h2>100% Online, Sin Fronteras</h2>
-                    <p>Todo el proceso está diseñado para funcionar a distancia: puedes estudiar desde cualquier lugar, con acompañamiento humano real y base académica seria.</p>
-                    <p>El formato online permite flexibilidad de horario y garantiza continuidad incluso para quien trabaja, tiene familia o vive en otro país. No necesitas viajar ni desplazarte hasta una sede física para tener acceso a profesores brasileños y contenido de nivel universitario.</p>
-                </div>
-
-                <!-- Objetivo -->
-                <div class="content-block">
-                    <h2>Orientado a Objetivo</h2>
-                    <p>Cada alumno llega con un motivo. Nuestro trabajo es prepararte para ese motivo.</p>
-                    <p><strong>Algunos ejemplos comunes:</strong></p>
-                    <ul>
-                        <li>"Voy a viajar a Brasil y quiero poder hablar solo."</li>
-                        <li>"Quiero atender clientes brasileños sin depender de un traductor."</li>
-                        <li>"Necesito portugués para una entrevista de trabajo."</li>
-                        <li>"Quiero el CELPE-Bras."</li>
-                    </ul>
-                    <p>Por eso, en las etapas finales, el programa incluye vocabulario técnico y formal para el entorno corporativo, simulaciones de reuniones y llamadas profesionales, redacción de correos, informes y propuestas, y entrenamiento específico para la certificación CELPE-Bras.</p>
-                    <p><strong>Esto transforma el portugués en una herramienta de trabajo, no solo en un idioma de viaje.</strong></p>
-                </div>
-
-                <!-- Diploma -->
-                <div class="content-block">
-                    <h2>Diploma y Reconocimiento</h2>
-                    <p>Al finalizar el recorrido, el alumno recibe una formación estructurada basada en progresión académica y evaluaciones formales, y tiene acceso a un diploma reconocido a nivel nacional. Eso consolida el estudio como una formación oficial, y no solamente como "clases sueltas de conversación".</p>
-                </div>
-
-                <!-- Resumen -->
-                <div class="content-block">
-                    <h2>En Resumen</h2>
-                    <p>Nuestra metodología fue creada para que tú:</p>
-                    <ol style="font-size: var(--font-size-body-large); line-height: 1.8; color: var(--color-text-secondary);">
-                        <li>Hables desde el inicio</li>
-                        <li>Avances de forma clara y medible (A1 → C2)</li>
-                        <li>Entiendas a brasileños reales</li>
-                        <li>Uses el portugués en contextos personales, sociales y profesionales</li>
-                        <li>Tengas una base formal validada</li>
-                    </ol>
-                    <p style="text-align: center; font-size: var(--font-size-h3); color: var(--color-primary-gold); margin-top: var(--spacing-xl);">
-                        <strong>Es enseñanza viva, con base académica, entregada de forma humana.</strong>
-                    </p>
+                    <div class="badge-card">
+                        <div class="badge-card__icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                        </div>
+                        <div class="badge-card__title">45-60min</div>
+                        <div class="badge-card__text">Clases Dinámicas</div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA -->
-    <section class="cta-section">
+    <!-- Profesores Section -->
+    <section class="teachers-section">
         <div class="container">
-            <h2>Experimenta Nuestra Metodología</h2>
-            <p>Reserva una clase de prueba gratuita y descubre cómo funciona</p>
-            <a href="/#contact" class="btn btn--primary btn--large">Reserva tu Clase Gratis</a>
+            <div class="section-header-center">
+                <h2>Profesores Brasileños Nativos</h2>
+                <p>Aprende con profesores capacitados específicamente para enseñar a hispanohablantes. Conocen tus desafíos y saben exactamente cómo ayudarte a superarlos.</p>
+            </div>
+
+            <div class="teachers-grid">
+                <div class="teacher-card">
+                    <div class="teacher-card__image">
+                        Imagen del profesor 1<br>
+                        Dimensión sugerida: 400x400px
+                    </div>
+                    <div class="teacher-card__content">
+                        <h3 class="teacher-card__name">Prof. Ana Silva</h3>
+                        <p class="teacher-card__bio">Nativa de São Paulo con 8 años de experiencia enseñando portugués. Especializada en niveles iniciales e intermedios.</p>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <div class="teacher-card__image">
+                        Imagen del profesor 2<br>
+                        Dimensión sugerida: 400x400px
+                    </div>
+                    <div class="teacher-card__content">
+                        <h3 class="teacher-card__name">Prof. Carlos Mendes</h3>
+                        <p class="teacher-card__bio">De Rio de Janeiro, experto en portugués de negocios y preparación para certificaciones internacionales.</p>
+                    </div>
+                </div>
+
+                <div class="teacher-card">
+                    <div class="teacher-card__image">
+                        Imagen del profesor 3<br>
+                        Dimensión sugerida: 400x400px
+                    </div>
+                    <div class="teacher-card__content">
+                        <h3 class="teacher-card__name">Profa. Juliana Costa</h3>
+                        <p class="teacher-card__bio">Nativa de Brasília con maestría en lingüística. Especializada en conversación y cultura brasileña.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Como Funciona -->
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-header-center">
+                <h2>Cómo Funciona</h2>
+                <p>Tres simples pasos para empezar tu viaje hacia la fluidez en portugués</p>
+            </div>
+
+            <div class="steps-container">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Elige tu Profesor</h3>
+                    <p>Selecciona al profesor que mejor se adapte a tu estilo de aprendizaje y objetivos. Puedes elegir enfoque en conversación, negocios o preparación para exámenes.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>Agenda y Aprende</h3>
+                    <p>Reserva tus clases en horarios flexibles que se ajusten a tu rutina. Cada sesión está diseñada para maximizar tu práctica oral y comprensión.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Practica y Avanza</h3>
+                    <p>Cada clase te acerca más a la fluidez. Con evaluación continua y feedback personalizado, verás resultados reales en semanas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tipos de Clases -->
+    <section class="class-types">
+        <div class="container">
+            <div class="section-header-center">
+                <h2>Tipos de Clases</h2>
+                <p>Elige el formato que mejor se adapte a tus necesidades y estilo de aprendizaje</p>
+            </div>
+
+            <div class="class-grid">
+                <div class="class-type-card">
+                    <div class="class-type-card__badge">Más Personalizado</div>
+                    <div class="class-type-card__image">
+                        Imagen clase individual<br>
+                        Dimensión sugerida: 600x400px<br>
+                        Mostrar profesor 1:1 con alumno
+                    </div>
+                    <div class="class-type-card__content">
+                        <h3 class="class-type-card__title">Clases Individuales</h3>
+                        <p class="class-type-card__description">
+                            Atención 100% personalizada. El profesor adapta cada clase a tu nivel, objetivos y ritmo de aprendizaje.
+                        </p>
+                        <ul class="class-features">
+                            <li>Duración: 45 minutos</li>
+                            <li>Profesor exclusivo para ti</li>
+                            <li>Horarios totalmente flexibles</li>
+                            <li>Curriculum adaptado a tus objetivos</li>
+                            <li>Avance más rápido</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="class-type-card">
+                    <div class="class-type-card__badge">Más Popular</div>
+                    <div class="class-type-card__image">
+                        Imagen clase grupal<br>
+                        Dimensión sugerida: 600x400px<br>
+                        Mostrar grupo pequeño de alumnos
+                    </div>
+                    <div class="class-type-card__content">
+                        <h3 class="class-type-card__title">Clases en Grupo</h3>
+                        <p class="class-type-card__description">
+                            Aprende junto a compañeros de tu mismo nivel. Practica conversación con otros estudiantes mientras el profesor guía la clase.
+                        </p>
+                        <ul class="class-features">
+                            <li>Duración: 60 minutos</li>
+                            <li>Grupos pequeños (máx. 6 personas)</li>
+                            <li>Mismo nivel de portugués</li>
+                            <li>Práctica con múltiples interlocutores</li>
+                            <li>Ambiente colaborativo</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Metodología Content -->
+    <section class="methodology-content">
+        <div class="container">
+            <div class="content-block">
+                <h2>Nuestra Metodología Comunicativa</h2>
+                <p>En GENIUS Academia de Lenguas, no aprendes solo palabras: aprendes a usar el portugués con seguridad en situaciones reales.</p>
+                <p>Nuestra metodología es comunicativa, práctica y progresiva. Desde el primer contacto, hablas, escuchas, escribes e interactúas en portugués con profesores nativos, siempre en escenarios que tienen sentido para tu vida personal, académica y profesional.</p>
+            </div>
+
+            <div class="content-block">
+                <h2>Evaluación Continua</h2>
+                <p>Cada trimestre incluye evaluaciones orales y escritas para medir:</p>
+                <ul>
+                    <li>Claridad al hablar y pronunciación</li>
+                    <li>Capacidad de comprender brasileños hablando a velocidad normal</li>
+                    <li>Escritura funcional adaptada a tus necesidades</li>
+                    <li>Uso correcto de estructuras gramaticales</li>
+                </ul>
+                <p>También utilizamos autoevaluación guiada en niveles intermedios y avanzados para que identifiques tus fortalezas y áreas de mejora.</p>
+            </div>
+
+            <div class="content-block">
+                <h2>Comunicación Real Desde el Inicio</h2>
+                <p>Toda la enseñanza se basa en uso real del idioma, no solo teoría. Practicas:</p>
+                <ul>
+                    <li>Saludos, presentaciones y conversaciones cotidianas desde la primera clase</li>
+                    <li>Situaciones prácticas: transporte, mercado, consultas médicas, compras</li>
+                    <li>Conversaciones de trabajo y negocios en niveles avanzados</li>
+                    <li>Discusiones de opinión y análisis crítico de noticias</li>
+                    <li>Preparación para entrevistas laborales y certificaciones</li>
+                </ul>
+                <p><strong>El idioma que aprendes aquí es inmediatamente útil.</strong></p>
+            </div>
+
+            <div class="content-block">
+                <h2>Profesores Nativos Especializados</h2>
+                <p>Las clases son impartidas por profesores nativos de portugués brasileño, capacitados específicamente para enseñar a hispanohablantes.</p>
+                <p><strong>Por qué esto importa:</strong></p>
+                <ul>
+                    <li>Explicaciones pensadas para quien habla español</li>
+                    <li>Conocen exactamente dónde los hispanohablantes suelen equivocarse</li>
+                    <li>Práctica auditiva con acento real brasileño</li>
+                    <li>Inmersión cultural auténtica</li>
+                </ul>
+                <p>Esto acelera tu confianza y reduce la frustración en el aprendizaje.</p>
+            </div>
+
+            <div class="content-block">
+                <h2>Online y Presencial</h2>
+                <p>Ofrecemos clases 100% online con la misma calidad que las presenciales, además de opciones presenciales en 7 países de América Central.</p>
+                <p>Tú eliges el formato que mejor se adapte a tu estilo de vida.</p>
+            </div>
         </div>
     </section>
 
@@ -273,12 +668,66 @@
                         Academia de Lenguas especializada en portugués brasileño.
                         Presente en 7 países de América Central.
                     </p>
+                    <div class="footer__social">
+                        <a href="#" class="footer__social-link" aria-label="Facebook">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="footer__social-link" aria-label="Instagram">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                        </a>
+                        <a href="https://wa.me/50671784096" class="footer__social-link" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer__links">
+                    <div class="footer__column">
+                        <h4 class="footer__heading">Cursos</h4>
+                        <ul class="footer__list">
+                            <li><a href="#courses">Portugués para Negocios</a></li>
+                            <li><a href="#courses">Portugués para Viajes</a></li>
+                            <li><a href="#courses">Preparación Exámenes</a></li>
+                            <li><a href="#courses">Clases Particulares</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer__column">
+                        <h4 class="footer__heading">Empresa</h4>
+                        <ul class="footer__list">
+                            <li><a href="/metodologia.html">Metodología</a></li>
+                            <li><a href="/sobre-nos.html">Sobre Nosotros</a></li>
+                            <li><a href="/#contact">Contacto</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer__column">
+                        <h4 class="footer__heading">Países</h4>
+                        <ul class="footer__list">
+                            <li><a href="#">Costa Rica</a></li>
+                            <li><a href="#">Panamá</a></li>
+                            <li><a href="#">El Salvador</a></li>
+                            <li><a href="#">Honduras</a></li>
+                            <li><a href="#">Nicaragua</a></li>
+                            <li><a href="#">Guatemala</a></li>
+                            <li><a href="#">Belize</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
             <div class="footer__bottom">
                 <p class="footer__copyright">
                     &copy; 2025 GENIUS Academia de Lenguas. Todos los derechos reservados.
+                </p>
+                <p class="footer__credits">
+                    Certificado por Celpe-Bras y reconocido por el MEC de Brasil
                 </p>
             </div>
         </div>

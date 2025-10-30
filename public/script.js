@@ -293,7 +293,7 @@ if (heroStats) {
 // WHATSAPP FLOATING BUTTON (Optional)
 // ============================================
 function createWhatsAppButton() {
-  const whatsappUrl = 'https://wa.me/506xxxxxxxx'; // Update with your actual number
+  const whatsappUrl = 'https://wa.me/50671784096';
 
   const button = document.createElement('a');
   button.href = whatsappUrl;
@@ -310,6 +310,24 @@ function createWhatsAppButton() {
   // Add styles
   const style = document.createElement('style');
   style.textContent = `
+    @keyframes whatsapp-shake {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px) rotate(-5deg); }
+      20%, 40%, 60%, 80% { transform: translateX(5px) rotate(5deg); }
+    }
+
+    @keyframes whatsapp-bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-15px); }
+      60% { transform: translateY(-7px); }
+    }
+
+    @keyframes whatsapp-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+
     .whatsapp-float {
       position: fixed;
       bottom: 2rem;
@@ -325,19 +343,26 @@ function createWhatsAppButton() {
       transition: all 0.3s ease;
       z-index: 999;
       cursor: pointer;
+      animation: whatsapp-pulse 2s infinite, whatsapp-bounce 3s ease-in-out 2s infinite;
     }
 
     .whatsapp-float:hover {
-      transform: scale(1.1);
+      transform: scale(1.15);
       box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      animation: whatsapp-shake 0.5s ease-in-out;
     }
 
     @media (max-width: 768px) {
       .whatsapp-float {
-        bottom: 1.5rem;
-        right: 1.5rem;
-        width: 56px;
-        height: 56px;
+        bottom: 1rem;
+        right: 1rem;
+        width: 52px;
+        height: 52px;
+      }
+
+      .whatsapp-float svg {
+        width: 28px;
+        height: 28px;
       }
     }
   `;
@@ -422,6 +447,69 @@ function throttle(func, limit) {
     }
   };
 }
+
+// ============================================
+// HERO ALTERNATING ANIMATION
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  const heroText = document.querySelector('.hero__text');
+  const heroImage = document.querySelector('.hero__image');
+  const indicators = document.querySelectorAll('.hero__indicator');
+
+  if (heroText && heroImage && indicators.length > 0) {
+    let currentSlide = 0;
+    let autoplayInterval;
+
+    function showSlide(index) {
+      if (index === 0) {
+        // Mostrar texto
+        heroText.classList.remove('hero-hidden');
+        heroImage.classList.add('hero-hidden');
+      } else {
+        // Mostrar imagem
+        heroText.classList.add('hero-hidden');
+        heroImage.classList.remove('hero-hidden');
+      }
+
+      // Atualizar indicadores
+      indicators.forEach((indicator, i) => {
+        if (i === index) {
+          indicator.classList.add('active');
+        } else {
+          indicator.classList.remove('active');
+        }
+      });
+
+      currentSlide = index;
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % 2;
+      showSlide(currentSlide);
+    }
+
+    // Autoplay a cada 5 segundos
+    function startAutoplay() {
+      autoplayInterval = setInterval(nextSlide, 5000);
+    }
+
+    function stopAutoplay() {
+      clearInterval(autoplayInterval);
+    }
+
+    // Click nos indicadores
+    indicators.forEach((indicator, index) => {
+      indicator.addEventListener('click', () => {
+        stopAutoplay();
+        showSlide(index);
+        startAutoplay();
+      });
+    });
+
+    // Iniciar autoplay
+    startAutoplay();
+  }
+});
 
 // ============================================
 // CONSOLE WELCOME MESSAGE
