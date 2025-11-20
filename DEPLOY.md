@@ -27,7 +27,7 @@ git push origin main
 5. Configure:
    - **Branch**: `main`
    - **Build Pack**: Docker (detectará automaticamente o Dockerfile)
-   - **Port**: `3000`
+   - **Port**: `3120`
 
 ## Passo 3: Configurar Variáveis de Ambiente
 
@@ -35,7 +35,7 @@ No painel do Coolify, adicione as seguintes variáveis de ambiente:
 
 ### Obrigatórias:
 ```env
-PORT=3000
+PORT=3120
 NODE_ENV=production
 ```
 
@@ -60,7 +60,7 @@ EMAIL_PASS=sua-senha-de-app-do-gmail
 
 - **Backend**: NestJS (Node.js)
 - **Frontend**: HTML/CSS/JS (servido estaticamente)
-- **Porta**: 3000
+- **Porta**: 3120
 - **API**: `/api/leads` (POST)
 
 ## Recursos da Aplicação
@@ -84,7 +84,7 @@ EMAIL_PASS=sua-senha-de-app-do-gmail
 - Verifique os logs de build no Coolify
 
 ### Aplicação não responde
-- Verifique se a porta 3000 está exposta
+- Verifique se a porta 3120 está exposta
 - Confirme que o host está configurado como `0.0.0.0`
 - Verifique os logs da aplicação
 
