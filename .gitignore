@@ -36,3 +36,6 @@ build/
 # Backups
 *.bak
 *.backup
+
+# Runtime data (SQLite, uploads)
+data/
