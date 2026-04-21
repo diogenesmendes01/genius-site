@@ -18,20 +18,31 @@ function parseDate(value: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+/** Trim + treat literal "null" strings as empty (Q10 serialises nulls that way). */
+function cleanStr(v: unknown): string {
+  if (v == null) return '';
+  const s = String(v).trim();
+  return s === 'null' ? '' : s;
+}
+
+/** Q10 serialises booleans as the literal string "true"/"false" sometimes. */
 function isActivo(status: unknown): boolean {
   if (status === true) return true;
-  if (typeof status !== 'string') return false;
-  return status.toLowerCase().includes('activ');
+  const s = cleanStr(status).toLowerCase();
+  return s === 'true' || s.includes('activ');
 }
 
 function sum(list: Item[], field: string): number {
   return list.reduce((acc, x) => acc + (Number(x[field]) || 0), 0);
 }
 
-function groupCount<T extends Item>(list: T[], field: string): Record<string, number> {
+function groupCount<T extends Item>(
+  list: T[],
+  getter: (item: T) => unknown,
+): Record<string, number> {
   const out: Record<string, number> = {};
   for (const item of list) {
-    const key = String(item[field] ?? 'Sin especificar');
+    const key = cleanStr(getter(item)) || 'Sin especificar';
     out[key] = (out[key] ?? 0) + 1;
   }
   return out;
@@ -49,30 +60,24 @@ function currentlyActivePeriods(periodos: Item[]): Item[] {
   return current.length > 0 ? current : active;
 }
 
-/**
- * Extract the consecutive ID from a /periodos record. Q10 exposes it under
- * `Consecutivo` (the canonical field), and some endpoints surface it as
- * `Consecutivo_periodo` when the consecutive belongs to a nested resource.
- * `Codigo`/`Id` only used as last resort — those are human-readable labels
- * (e.g. "PER-2026-I") and passing them to /estudiantes as Periodo yields
- * zero rows on most Q10 plans.
- */
 function periodKey(p: Item): string {
-  return String(
-    p.Consecutivo ?? p.Consecutivo_periodo ?? p.Codigo ?? p.Id ?? '',
+  return (
+    cleanStr(p.Consecutivo) ||
+    cleanStr(p.Consecutivo_periodo) ||
+    cleanStr(p.Codigo) ||
+    cleanStr(p.Id)
   );
 }
 
-/**
- * Best-effort "effective creation date" for a student — tries Fecha_creacion
- * first, falls back to Fecha_matricula. Centralised so filter + chart bucketing
- * use the same derived field; otherwise a student matched via Fecha_matricula
- * would pass the range filter but contribute 0 to the bucket grouped by
- * Fecha_creacion, making `kpis.newStudentsInRange` smaller than the chart.
- */
-function effectiveStudentDate(s: Item): string | null {
-  const v = s.Fecha_creacion ?? s.Fecha_matricula ?? null;
-  return typeof v === 'string' ? v : null;
+/** Assemble a student full name from Q10's split fields. */
+function studentFullName(s: Item): string {
+  // /pagosPendientes nests Estudiante with a pre-joined `Nombre_completo`.
+  const joined = cleanStr(s.Nombre_completo);
+  if (joined) return joined;
+  return [s.Primer_nombre, s.Segundo_nombre, s.Primer_apellido, s.Segundo_apellido]
+    .map(cleanStr)
+    .filter(Boolean)
+    .join(' ');
 }
 
 function isoDate(d: Date): string {
@@ -93,8 +98,7 @@ export class DashboardService {
   ): Promise<T[]> {
     try {
       // Uses getAll so the dashboard sees the whole dataset, not just the
-      // ~50 records Q10 returns on a single unpaginated call. safeArray
-      // normalises any unexpected wrapper shape to [].
+      // ~50 records Q10 returns on a single unpaginated call.
       return safeArray(await this.q10.getAll(path, params)) as T[];
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -105,34 +109,40 @@ export class DashboardService {
   }
 
   /**
-   * Endpoint usage follows Q10-JACK-API.md and the Q10 support confirmation
-   * (ticket with Diógenes): this institution runs the "pagos regulares"
-   * financial model, so:
+   * Shape and field names are aligned with a live /diagnose run against
+   * Genius Idiomas' Q10 tenant (Costa Rica, ETDH, "pagos regulares" model).
    *
-   *   FINANCIAL sources USED:
-   *     - /pagos?Fecha_inicio&Fecha_fin       (actual payments in range)
-   *     - /pagosPendientes?Consecutivo_periodo (outstanding per period — P caps!)
-   *     - /estadocuentaestudiantes             (consolidated per-student balance)
+   * What this plan exposes:
+   *   - /estudiantes?Periodo={Consecutivo}           — Primer_nombre,
+   *     Primer_apellido, Nombre_programa, Nombre_sede, Condicion_matricula,
+   *     Fecha_matricula, Codigo_estudiante (12 digits).
+   *   - /pagos?Fecha_inicio&Fecha_fin                — Codigo_persona (maps
+   *     to Codigo_estudiante), Valor_pagado, Fecha_pago, Nombre_estudiante.
+   *   - /pagosPendientes?Consecutivo_periodo         — Valor_saldo,
+   *     Nombre_producto, Nombre_periodo, Estudiante (nested object with
+   *     Codigo_persona + Nombre_completo).
+   *   - /oportunidades?Fecha_inicio&Fecha_fin        — Consecutivo_oportunidad,
+   *     Nombre_oportunidad, Descripcion_como_se_entero (origin),
+   *     Descripcion_medio_contacto.
+   *   - /contactos, /periodos, /programas, /sedes,
+   *     /mediospublicitarios?Estado=true, /medioscontacto?Estado=true.
    *
-   *   FINANCIAL sources NOT applicable to this plan (Q10 reply):
-   *     - /ordenespago, /facturas             (other financial models only)
-   *
-   *   STUDENT list requires ?Periodo={Consecutivo} — we fan out over active
-   *   periods and dedupe.
-   *
-   *   CRM sources (/oportunidades, /negocios) require Fecha_inicio+Fecha_fin;
-   *   we use a wide window for KPIs that need the full historical dataset.
-   *
-   *   /matriculasProgramas is POST-only per the doc; "enrollments" in the
-   *   funnel derives from the active-period student count (equivalent for
-   *   this school — a student in an active period = a matrícula).
+   * What this plan DOES NOT expose (verified 2026-04-21):
+   *   - /ordenespago, /facturas                      — "no aplica al modelo"
+   *   - /estadocuentaestudiantes                     — "no aplica al modelo
+   *     financiero correspondiente" (Q10 support initially suggested it,
+   *     but the tenant's model forbids it — see diagnostic).
+   *   - /negocios                                    — returns 400 on every
+   *     param combination tried (noparam, Fecha_inicio/fin, Estado,
+   *     Consecutivo_flujo). Not called from here until Q10 clarifies.
+   *   - /matriculasProgramas                         — POST-only per the
+   *     doc. Funnel `enrollments` = active-period student count.
    */
   async overview(rangeDays = 30) {
     const errors: Record<string, string> = {};
     const degraded: Record<string, string> = {};
     const ALL_TIME = { Fecha_inicio: '1900-01-01', Fecha_fin: '2099-12-31' };
 
-    // Range window for /pagos — server-side filtered so we don't drag lifetime.
     const rangeEnd = new Date();
     const rangeStart = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000);
     const RANGE = {
@@ -140,17 +150,17 @@ export class DashboardService {
       Fecha_fin: isoDate(rangeEnd),
     };
 
-    // Non-dependent sources in parallel
-    const [periodos, contactos, opps, deals, estadoCuenta, pagos] = await Promise.all([
+    // Non-dependent sources in parallel. /negocios and /estadocuentaestudiantes
+    // are NOT here — this plan rejects both with 400. Re-add if Q10 enables them.
+    const [periodos, contactos, opps, pagos] = await Promise.all([
       this.tryFetch<Item>('periods', '/periodos', errors),
       this.tryFetch<Item>('contacts', '/contactos', errors),
       this.tryFetch<Item>('opportunities', '/oportunidades', errors, ALL_TIME),
-      this.tryFetch<Item>('deals', '/negocios', errors, ALL_TIME),
-      this.tryFetch<Item>('estadoCuenta', '/estadocuentaestudiantes', errors),
       this.tryFetch<Item>('payments', '/pagos', errors, RANGE),
     ]);
 
-    // Students + pending payments — one call per active period
+    // Students + pending payments — one call per active period (doc requires
+    // Periodo / Consecutivo_periodo).
     const active = currentlyActivePeriods(periodos);
     let students: Item[] = [];
     let pending: Item[] = [];
@@ -184,7 +194,7 @@ export class DashboardService {
       const seenStudents = new Set<string>();
       for (const list of studentLists) {
         for (const s of list) {
-          const id = String(s.Codigo_estudiante ?? s.Codigo ?? s.Id ?? '');
+          const id = cleanStr(s.Codigo_estudiante);
           if (!id || seenStudents.has(id)) continue;
           seenStudents.add(id);
           students.push(s);
@@ -194,76 +204,82 @@ export class DashboardService {
     }
 
     // ─── Students ───
-    const activeStudents = students.filter(
-      (s) =>
-        isActivo(s.Estado) ||
-        String(s.Estado ?? '').toLowerCase().includes('matricul'),
-    );
+    // Q10 /estudiantes?Periodo=X already filters to the active cohort; every
+    // returned record is matriculated. Condicion_matricula tells whether it's
+    // a fresh enrollment ("Nuevo") vs a renewal ("Renovado").
+    const newEnrollmentsThisPeriod = students.filter(
+      (s) => cleanStr(s.Condicion_matricula).toLowerCase() === 'nuevo',
+    ).length;
+
+    const newStudentsInRange = students.filter((s) => {
+      const d = parseDate(s.Fecha_matricula);
+      return d !== null && d.getTime() >= rangeStart.getTime();
+    });
 
     // ─── CRM ───
-    const oppsWon = opps.filter((o) => {
-      const e = String(o.Estado ?? '').toLowerCase();
-      return e.includes('inscri') || e.includes('ganad');
-    }).length;
-    const oppsLost = opps.filter((o) =>
-      String(o.Estado ?? '').toLowerCase().includes('perdi'),
-    ).length;
-    const oppsOpen = Math.max(0, opps.length - oppsWon - oppsLost);
-    const conversionRate =
-      opps.length > 0 ? Math.round((oppsWon / opps.length) * 100) : 0;
+    // This plan's /oportunidades records don't expose a top-level Estado —
+    // the state lives inside Negocio_favorito (nested object). Until we can
+    // reliably parse that, we report total opps and mark the conversion-rate
+    // KPI as degraded so the UI can hide it.
+    const oppsTotal = opps.length;
+    const conversionRateDegraded =
+      oppsTotal === 0 || oppsTotal < Math.max(5, students.length * 0.1);
+    if (conversionRateDegraded) {
+      degraded.conversionRate =
+        oppsTotal === 0
+          ? 'Sin oportunidades en el CRM'
+          : `Sólo ${oppsTotal} oportunidades para ${students.length} matrículas — CRM subutilizado, la tasa no es confiable`;
+    }
 
     // ─── Financial ───
-    // /pagos is already server-side filtered by RANGE (Fecha_inicio/Fecha_fin).
-    const revenueInRange = sum(pagos, 'Valor');
-    const outstandingDebt = sum(pending, 'Valor');
-    const overduePending = pending.filter((p) => {
-      const due = parseDate(p.Fecha_vencimiento);
-      return due !== null && due.getTime() < Date.now();
-    });
-    // Consolidated balances from /estadocuentaestudiantes — useful for
-    // reconciliation. `studentsWithDebt` is an institution-wide figure
-    // (historical + current), so keep it unscoped to mirror the accountant
-    // view. `paidEnrollments` is a funnel metric, so it MUST be scoped to
-    // students in the currently-active periods — otherwise historical paid
-    // students would inflate the funnel above the current-period cohort.
-    const studentsWithDebt = estadoCuenta.filter((e) => Number(e.Saldo) > 0);
+    const revenueInRange = sum(pagos, 'Valor_pagado');
+    const outstandingDebt = sum(pending, 'Valor_saldo');
+    // /pagosPendientes on this plan has no Fecha_vencimiento — overdue count
+    // isn't available. Expose that clearly instead of lying with 0.
+    degraded.overduePending =
+      '/pagosPendientes no expone Fecha_vencimiento en este plan';
 
+    // Students who have at least one payment in the range (intersection
+    // between /pagos Codigo_persona and /estudiantes Codigo_estudiante —
+    // both are the same 12-digit internal person code).
     const currentStudentIds = new Set(
-      students.map((s) => String(s.Codigo_estudiante ?? s.Codigo ?? s.Id ?? '')),
+      students.map((s) => cleanStr(s.Codigo_estudiante)).filter(Boolean),
     );
-    const paidCurrentStudents = estadoCuenta.filter((e) => {
-      if (Number(e.Saldo) !== 0 || Number(e.Total_pagado) <= 0) return false;
-      const id = String(e.Codigo_estudiante ?? e.Codigo ?? e.Id ?? '');
-      return currentStudentIds.has(id);
-    });
+    const paidCodigos = new Set(
+      pagos.map((p) => cleanStr(p.Codigo_persona)).filter(Boolean),
+    );
+    const paidCurrentCount = [...paidCodigos].filter((id) =>
+      currentStudentIds.has(id),
+    ).length;
 
-    // ─── Funnel (see class doc for why enrollments = students.length) ───
+    // ─── Funnel ───
     const funnel = {
-      opportunities: opps.length,
+      opportunities: oppsTotal,
       enrollments: students.length,
-      paidEnrollments: paidCurrentStudents.length,
+      paidEnrollments: paidCurrentCount,
     };
 
-    // Normalise the effective creation date once so the filter and the
-    // bucketByDay call agree on which field to look at (prevents off-by-one
-    // between `kpis.newStudentsInRange` and the chart).
-    const studentsWithEffectiveDate = students
-      .map((s) => ({ ...s, _EffectiveDate: effectiveStudentDate(s) }))
-      .filter((s): s is Item & { _EffectiveDate: string } => {
-        const d = parseDate(s._EffectiveDate);
-        return d !== null && d.getTime() >= rangeStart.getTime();
-      });
     const newStudentsByDay = this.bucketByDay(
-      studentsWithEffectiveDate,
-      '_EffectiveDate',
+      newStudentsInRange,
+      'Fecha_matricula',
       null,
       rangeDays,
     );
-    const revenueByDay = this.bucketByDay(pagos, 'Fecha_pago', 'Valor', rangeDays);
+    const revenueByDay = this.bucketByDay(
+      pagos,
+      'Fecha_pago',
+      'Valor_pagado',
+      rangeDays,
+    );
 
-    const studentsByProgram = groupCount(students, 'Codigo_programa');
-    const studentsBySede = groupCount(students, 'Codigo_sede');
-    const opportunitiesByOrigin = groupCount(opps, 'Origen');
+    // Display-friendly groupings. Use the `Nombre_*` fields so the UI
+    // shows "Curso de Português" instead of the "01" code.
+    const studentsByProgram = groupCount(students, (s) => s.Nombre_programa);
+    const studentsBySede = groupCount(students, (s) => s.Nombre_sede);
+    const opportunitiesByOrigin = groupCount(
+      opps,
+      (o) => o.Descripcion_como_se_entero,
+    );
 
     return {
       range: { days: rangeDays, generatedAt: new Date().toISOString() },
@@ -271,20 +287,17 @@ export class DashboardService {
       errors,
       degraded,
       kpis: {
-        activeStudents: activeStudents.length,
+        activeStudents: students.length,
         totalStudents: students.length,
-        newStudentsInRange: newStudentsByDay.reduce((s, p) => s + p.value, 0),
+        newEnrollmentsThisPeriod,
+        newStudentsInRange: newStudentsInRange.length,
         totalContacts: contactos.length,
-        oppsOpen,
-        oppsWon,
-        oppsLost,
-        conversionRate,
+        oppsTotal,
+        conversionRate: conversionRateDegraded ? null : 0,
         revenueInRange,
         outstandingDebt,
-        overduePending: overduePending.length,
         ordersPending: pending.length,
-        activeDeals: deals.length,
-        studentsWithDebt: studentsWithDebt.length,
+        paidStudents: paidCurrentCount,
       },
       funnel,
       charts: { revenueByDay, newStudentsByDay },
@@ -293,17 +306,36 @@ export class DashboardService {
         studentsBySede,
         opportunitiesByOrigin,
       },
+      // Normalised shapes — frontend stays simple because we do the
+      // field mapping here once instead of scattering it through the UI.
       recent: {
-        students: students.slice(-10).reverse(),
-        opportunities: opps.slice(-10).reverse(),
-        pendingPayments: pending
-          .slice()
-          .sort((a, b) => {
-            const da = parseDate(a.Fecha_vencimiento)?.getTime() ?? Infinity;
-            const db = parseDate(b.Fecha_vencimiento)?.getTime() ?? Infinity;
-            return da - db;
-          })
-          .slice(0, 10),
+        students: students.slice(-10).reverse().map((s) => ({
+          Codigo: cleanStr(s.Codigo_estudiante),
+          Nombres: [s.Primer_nombre, s.Segundo_nombre].map(cleanStr).filter(Boolean).join(' '),
+          Apellidos: [s.Primer_apellido, s.Segundo_apellido].map(cleanStr).filter(Boolean).join(' '),
+          Codigo_programa: cleanStr(s.Nombre_programa) || cleanStr(s.Codigo_programa),
+          Codigo_sede: cleanStr(s.Nombre_sede) || cleanStr(s.Codigo_sede),
+          Estado: cleanStr(s.Condicion_matricula) || 'Matriculado',
+        })),
+        opportunities: opps.slice(-10).reverse().map((o) => ({
+          Codigo: cleanStr(o.Consecutivo_oportunidad),
+          Nombres: cleanStr(o.Nombre_oportunidad),
+          Apellidos: '',
+          Correo: cleanStr(o.Correo_electronico),
+          Telefono: cleanStr(o.Celular ?? o.Telefono),
+          Origen: cleanStr(o.Descripcion_como_se_entero),
+          Estado: cleanStr(o.Nombre_asesor) ? 'Con asesor' : 'Sin asignar',
+        })),
+        pendingPayments: pending.slice(0, 10).map((p) => {
+          const e = p.Estudiante && typeof p.Estudiante === 'object' ? p.Estudiante : {};
+          return {
+            Nombres: studentFullName(e) || '—',
+            Apellidos: '',
+            Concepto: cleanStr(p.Nombre_producto),
+            Valor: Number(p.Valor_saldo) || 0,
+            Fecha_vencimiento: `Período ${cleanStr(p.Nombre_periodo) || '—'}`,
+          };
+        }),
       },
     };
   }

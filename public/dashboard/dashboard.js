@@ -145,7 +145,7 @@ function setFreshness(msg) {
 function render(data) {
   renderPartialBanner(data);
   renderKpis(data.kpis);
-  renderFunnel(data.funnel);
+  renderFunnel(data.funnel, data.degraded);
   renderRevenueChart(data.charts.revenueByDay);
   renderStudentsChart(data.charts.newStudentsByDay);
   renderProgramsChart(data.distributions.studentsByProgram);
@@ -167,6 +167,7 @@ function renderPartialBanner(data) {
 }
 
 function currency(n) {
+  // GTQ symbol happens to be "Q" — matches the Spanish-speaking institution context.
   return new Intl.NumberFormat('es-GT', {
     style: 'currency',
     currency: 'GTQ',
@@ -175,16 +176,25 @@ function currency(n) {
 }
 
 function renderKpis(k) {
-  const cards = [
-    { label: 'Estudiantes activos', value: k.activeStudents, hint: `${k.totalStudents} totales`, accent: true },
-    { label: 'Nuevos en el rango', value: k.newStudentsInRange, hint: `${state.rangeDays} días` },
-    { label: 'Oportunidades abiertas', value: k.oppsOpen, hint: `${k.oppsWon} ganadas · ${k.oppsLost} perdidas` },
-    { label: 'Tasa de conversión', value: `${k.conversionRate}%`, hint: 'ganadas / totales', variant: k.conversionRate >= 30 ? 'success' : '' },
-    { label: 'Ingresos del período', value: currency(k.revenueInRange), hint: `${state.rangeDays} días`, variant: 'success' },
-    { label: 'Deuda pendiente', value: currency(k.outstandingDebt), hint: `${k.overduePending} vencidas`, variant: k.overduePending > 0 ? 'danger' : '' },
-    { label: 'Órdenes pendientes', value: k.ordersPending, hint: 'sin pago registrado' },
-    { label: 'Negocios activos', value: k.activeDeals, hint: 'en el pipeline' },
-  ];
+  // Build the KPI card list, skipping ones whose value is explicitly null
+  // (backend uses null to signal "this KPI isn't reliable on this plan").
+  const cards = [];
+  cards.push({ label: 'Estudiantes activos', value: k.activeStudents, hint: `${k.totalStudents} matriculados`, accent: true });
+  cards.push({ label: 'Nuevos en el rango', value: k.newStudentsInRange, hint: `${state.rangeDays} días` });
+  cards.push({ label: 'Nuevos este período', value: k.newEnrollmentsThisPeriod, hint: 'vs. renovados' });
+  cards.push({ label: 'Contactos en CRM', value: k.totalContacts, hint: 'leads registrados' });
+  cards.push({ label: 'Oportunidades', value: k.oppsTotal, hint: 'total en el CRM' });
+  if (k.conversionRate != null) {
+    cards.push({
+      label: 'Tasa de conversión',
+      value: `${k.conversionRate}%`,
+      hint: 'ganadas / totales',
+      variant: k.conversionRate >= 30 ? 'success' : '',
+    });
+  }
+  cards.push({ label: 'Ingresos del período', value: currency(k.revenueInRange), hint: `${state.rangeDays} días`, variant: 'success' });
+  cards.push({ label: 'Deuda pendiente', value: currency(k.outstandingDebt), hint: `${k.ordersPending} cuotas abiertas`, variant: k.outstandingDebt > 0 ? 'danger' : '' });
+  cards.push({ label: 'Alumnos con pago', value: k.paidStudents, hint: `de ${k.totalStudents} matrículas` });
 
   el('kpiGrid').innerHTML = cards
     .map((c) => {
@@ -200,20 +210,37 @@ function renderKpis(k) {
     .join('');
 }
 
-function renderFunnel(f) {
+function renderFunnel(f, degraded) {
+  // When the CRM is underused (few opportunities vs many enrollments) the
+  // ratio-as-percentage is misleading. Backend flags that via `degraded` and
+  // we show the absolute numbers only.
+  const hidePercent = !!(degraded && degraded.conversionRate);
   const rate = (num, den) => (den > 0 ? Math.round((num / den) * 100) : 0);
   const stages = [
-    { label: 'Oportunidades', value: f.opportunities, sub: 'Total en CRM' },
-    { label: 'Matrículas', value: f.enrollments, sub: `${rate(f.enrollments, f.opportunities)}% del total` },
-    { label: 'Pagadas', value: f.paidEnrollments, sub: `${rate(f.paidEnrollments, f.enrollments)}% del total`, paid: true },
+    {
+      label: 'Oportunidades',
+      value: f.opportunities,
+      sub: 'Total en CRM',
+    },
+    {
+      label: 'Matrículas',
+      value: f.enrollments,
+      sub: hidePercent ? 'Matriculados en el período' : `${rate(f.enrollments, f.opportunities)}% del total`,
+    },
+    {
+      label: 'Con pago',
+      value: f.paidEnrollments,
+      sub: f.enrollments > 0 ? `${rate(f.paidEnrollments, f.enrollments)}% de matrículas` : '—',
+      paid: true,
+    },
   ];
   el('funnel').innerHTML = stages
     .map(
       (s) => `
       <div class="funnel__stage ${s.paid ? 'funnel__stage--paid' : ''}">
-        <div class="funnel__label">${s.label}</div>
-        <div class="funnel__value">${s.value}</div>
-        <div class="funnel__rate">${s.sub}</div>
+        <div class="funnel__label">${escapeHtml(s.label)}</div>
+        <div class="funnel__value">${escapeHtml(String(s.value))}</div>
+        <div class="funnel__rate">${escapeHtml(s.sub)}</div>
       </div>`,
     )
     .join('');
