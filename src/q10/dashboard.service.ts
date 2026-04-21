@@ -55,6 +55,11 @@ export class DashboardService {
    * `errors` so callers can distinguish a legitimately empty list from an
    * upstream failure. This replaces the previous `.catch(() => [])` pattern,
    * which made ERP outages look like healthy zero-KPI dashboards.
+   *
+   * Uses `getAll` so the dashboard sees the full dataset, not just the first
+   * ~50 records that Q10's default pagination returns. If `getAll` returns a
+   * non-array (upstream responded with a wrapped object, etc.), `safeArray`
+   * normalises it to [].
    */
   private async tryFetch<T>(
     key: string,
@@ -62,7 +67,7 @@ export class DashboardService {
     errors: Record<string, string>,
   ): Promise<T[]> {
     try {
-      return safeArray(await this.q10.get(path)) as T[];
+      return safeArray(await this.q10.getAll(path)) as T[];
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errors[key] = message;

@@ -56,6 +56,72 @@ export class Q10ClientService {
     return data;
   }
 
+  /**
+   * Page through a Q10 list endpoint until exhausted. Q10's list endpoints
+   * accept `Limit` and `Offset` query params; the sibling Q10 WhatsApp Chrome
+   * extension forces `Limit=1000&Offset=1` on every call as its workaround,
+   * which taught us two things: (1) the server enforces a small cap
+   * (~50 records per page) if Limit is omitted, and (2) Offset is 1-based,
+   * not 0-based. We page at 500 per request by default — 1000 works but
+   * burns more memory on large schools, and 500 keeps each response under a
+   * safe payload size.
+   *
+   * A `maxRecords` safety cap (default 50k) prevents a pathological endpoint
+   * from looping forever; when hit we log a warn and return what we have so
+   * the dashboard still renders. Mock mode returns the full dataset in one
+   * shot (there's no real pagination to exercise), so we delegate to the
+   * underlying mock `.get` once. The per-page cache is driven by the
+   * existing `.get` cacheKey, which includes the full params object — each
+   * (Limit, Offset) pair is cached independently, so subsequent `getAll`
+   * calls are served from memory.
+   */
+  async getAll<T = unknown>(
+    path: string,
+    params?: Record<string, unknown>,
+    opts?: { pageSize?: number; maxRecords?: number },
+  ): Promise<T[]> {
+    if (this.mock) {
+      const raw = await this.mockSvc.get<unknown>(path, params);
+      return Array.isArray(raw) ? (raw as T[]) : [];
+    }
+
+    const pageSize = opts?.pageSize ?? 500;
+    const maxRecords = opts?.maxRecords ?? 50_000;
+    const out: T[] = [];
+    // Q10 uses 1-based offsets — verified in the sibling WhatsApp plugin's
+    // background/service-worker.js (it forces `Offset=1` on every call).
+    let offset = 1;
+
+    while (out.length < maxRecords) {
+      const page = await this.get<unknown>(path, {
+        ...(params ?? {}),
+        Limit: pageSize,
+        Offset: offset,
+      });
+
+      // Defensive: if the endpoint ever returns a non-array payload (wrapped
+      // object, error shape, etc.) treat it as end-of-pages instead of
+      // throwing. `getAll` is only meaningful for list endpoints.
+      if (!Array.isArray(page)) break;
+
+      out.push(...(page as T[]));
+
+      // Partial page ⇒ we've reached the end. Full page ⇒ there may be more.
+      if (page.length < pageSize) break;
+
+      offset += pageSize;
+    }
+
+    if (out.length >= maxRecords) {
+      this.logger.warn(
+        `[Q10] getAll(${path}) hit maxRecords cap (${maxRecords}) — results truncated`,
+      );
+      return out.slice(0, maxRecords);
+    }
+
+    return out;
+  }
+
   async post<T = unknown>(path: string, body?: unknown): Promise<T> {
     if (this.mock) return this.mockSvc.post<T>(path, body);
     const data = await this.request<T>({ method: 'POST', url: path, data: body });
