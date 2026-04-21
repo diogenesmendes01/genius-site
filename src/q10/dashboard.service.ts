@@ -73,6 +73,12 @@ export class DashboardService {
 
   async overview(rangeDays = 30) {
     const errors: Record<string, string> = {};
+    // Tracks per-KPI notes when a value had to be derived from a fallback
+    // source instead of the primary endpoint. The frontend can surface
+    // these as caveats next to the affected numbers so operators know the
+    // figure came from a degraded path (e.g. lifetime total instead of a
+    // range-filtered sum).
+    const degraded: Record<string, string> = {};
 
     const [
       students,
@@ -82,6 +88,7 @@ export class DashboardService {
       orders,
       payments,
       pending,
+      estadoCuenta,
     ] = await Promise.all([
       this.tryFetch<Item>('students', '/estudiantes', errors),
       this.tryFetch<Item>('opportunities', '/oportunidades', errors),
@@ -90,6 +97,14 @@ export class DashboardService {
       this.tryFetch<Item>('orders', '/ordenespago', errors),
       this.tryFetch<Item>('payments', '/pagos', errors),
       this.tryFetch<Item>('pendingPayments', '/pagospendientes', errors),
+      // Financial fallback source. Many Q10 subscription plans (including
+      // our production plan) do NOT expose /pagos or /pagospendientes —
+      // only /estadocuentaestudiantes. When the primary endpoints fail we
+      // derive outstanding-debt and lifetime-paid figures from here so the
+      // dashboard still shows meaningful numbers instead of zeros. The
+      // sibling Q10 WhatsApp Chrome extension hit the same limitation and
+      // documented it in its background/service-worker.js.
+      this.tryFetch<Item>('accountStatements', '/estadocuentaestudiantes', errors),
     ]);
 
     // ─── Students ───
@@ -111,12 +126,40 @@ export class DashboardService {
 
     // ─── Financial ───
     const paidInRange = payments.filter((p) => withinLastDays(p.Fecha_pago, rangeDays));
-    const revenueInRange = sum(paidInRange, 'Valor');
-    const outstandingDebt = sum(pending, 'Valor');
+    const estadoCuentaAvailable = !errors['accountStatements'];
+
+    // revenueInRange: prefer /pagos (supports Fecha_pago range filter). Fall
+    // back to /estadocuentaestudiantes.Total_pagado (a lifetime figure, NOT
+    // range-filtered — the degraded note makes that caveat explicit so the
+    // frontend can badge the KPI).
+    let revenueInRange = sum(paidInRange, 'Valor');
+    if (errors['payments'] && estadoCuentaAvailable) {
+      revenueInRange = sum(estadoCuenta, 'Total_pagado');
+      degraded['revenueInRange'] =
+        'Derived from estadocuentaestudiantes (lifetime total, not range-filtered)';
+    }
+
+    // outstandingDebt: prefer /pagospendientes (Valor per pending item). Fall
+    // back to /estadocuentaestudiantes.Saldo (current balance due per student).
+    let outstandingDebt = sum(pending, 'Valor');
+    if (errors['pendingPayments'] && estadoCuentaAvailable) {
+      outstandingDebt = sum(estadoCuenta, 'Saldo');
+      degraded['outstandingDebt'] =
+        'Derived from estadocuentaestudiantes (Saldo aggregate)';
+    }
+
+    // overduePending: requires per-item Fecha_vencimiento. estadoCuenta has
+    // no due-date field, so there is no viable fallback — we surface 0 and
+    // explain why via the degraded note.
     const overduePending = pending.filter((p) => {
       const due = parseDate(p.Fecha_vencimiento);
       return due !== null && due.getTime() < Date.now();
     });
+    if (errors['pendingPayments']) {
+      degraded['overduePending'] =
+        'Unavailable: estadocuentaestudiantes has no due-date field';
+    }
+
     const ordersPending = orders.filter((o) =>
       String(o.Estado ?? '').toLowerCase().includes('pend'),
     );
@@ -130,7 +173,16 @@ export class DashboardService {
       ).length,
     };
 
-    const revenueByDay = this.bucketByDay(paidInRange, 'Fecha_pago', 'Valor', rangeDays);
+    // revenueByDay: requires per-payment dates. When /pagos fails there is
+    // no viable fallback (estadoCuenta has no Fecha_pago), so we emit an
+    // empty series and flag the chart as degraded.
+    const revenueByDay = errors['payments']
+      ? []
+      : this.bucketByDay(paidInRange, 'Fecha_pago', 'Valor', rangeDays);
+    if (errors['payments']) {
+      degraded['revenueByDay'] =
+        'Unavailable: estadocuentaestudiantes has no per-payment dates';
+    }
     const newStudentsByDay = this.bucketByDay(
       newStudentsInRange,
       'Fecha_creacion',
@@ -146,6 +198,7 @@ export class DashboardService {
       range: { days: rangeDays, generatedAt: new Date().toISOString() },
       partial: Object.keys(errors).length > 0,
       errors,
+      degraded,
       kpis: {
         activeStudents: activeStudents.length,
         totalStudents: students.length,
