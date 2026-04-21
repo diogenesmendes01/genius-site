@@ -44,3 +44,6 @@ coverage
 # Other
 *.log
 .cache
+
+# Runtime data (SQLite)
+data/

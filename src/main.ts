@@ -1,17 +1,37 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import cookieParser = require('cookie-parser');
+import { mkdirSync } from 'fs';
+import { dirname } from 'path';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
+  // Make sure the SQLite data directory exists before TypeORM tries to open it.
+  const dbPath = process.env.DATABASE_PATH ?? './data/genius.sqlite';
+  mkdirSync(dirname(dbPath), { recursive: true });
+
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
+  app.use(cookieParser());
+
+  const allowed =
+    (process.env.ALLOWED_ORIGINS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
   app.enableCors({
-    origin: true, // Em produção, especifique os domínios permitidos
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowed.length === 0) return callback(null, true);
+      if (allowed.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // Enable validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -20,16 +40,15 @@ async function bootstrap() {
     }),
   );
 
-  // API prefix
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', { exclude: [] });
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3120;
   const host = process.env.HOST || '0.0.0.0';
   await app.listen(port, host);
 
-  console.log(`🚀 Servidor rodando em: http://localhost:${port}`);
-  console.log(`📄 Site disponível em: http://localhost:${port}`);
-  console.log(`🔌 API disponível em: http://localhost:${port}/api`);
+  console.log(`🚀 Genius server running at http://${host}:${port}`);
+  console.log(`📄 Site: /  |  📝 Matrícula: /matricula  |  📊 Dashboard: /dashboard`);
+  console.log(`🔌 API: /api  |  Q10 mock: ${process.env.Q10_MOCK === 'true' ? 'ON' : 'OFF'}`);
 }
 
 bootstrap();

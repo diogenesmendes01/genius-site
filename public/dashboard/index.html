@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Genius Idiomas</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/dashboard/dashboard.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Login view -->
+  <section id="loginView" class="login-view">
+    <div class="login-card">
+      <div class="login-card__brand">
+        <img src="/logo-genius.png" alt="Genius Idiomas" class="login-card__logo">
+        <h1 class="login-card__title">Panel Administrativo</h1>
+        <p class="login-card__subtitle">Ingresa con tu cuenta autorizada</p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" name="email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div class="alert alert-error" id="loginError"></div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginButton">
+          Ingresar
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Dashboard view -->
+  <section id="appView" class="app-view hidden">
+    <header class="app-header">
+      <div class="app-header__brand">
+        <img src="/logo-genius.png" alt="Genius" class="app-header__logo">
+        <div>
+          <div class="app-header__title">Dashboard Operativo</div>
+          <div class="app-header__subtitle">Genius Idiomas</div>
+        </div>
+      </div>
+
+      <div class="app-header__actions">
+        <div class="range-picker">
+          <label for="rangeSelect">Rango</label>
+          <select id="rangeSelect">
+            <option value="7">Últimos 7 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+            <option value="365">Último año</option>
+          </select>
+        </div>
+
+        <button class="btn btn-secondary" id="refreshBtn" title="Forzar actualización">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Actualizar
+        </button>
+
+        <div class="user-chip" id="userChip">
+          <span class="user-chip__name" id="userName">—</span>
+          <button class="user-chip__logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="freshness" id="freshness">Cargando…</div>
+
+      <div class="partial-banner hidden" id="partialBanner" role="alert">
+        <strong>⚠ Datos parciales</strong>
+        <span id="partialBannerDetail"></span>
+      </div>
+
+      <!-- KPIs -->
+      <section class="kpi-grid" id="kpiGrid"></section>
+
+      <!-- Funnel -->
+      <section class="card">
+        <h2 class="card__title">Funnel de conversión</h2>
+        <div class="funnel" id="funnel"></div>
+      </section>
+
+      <!-- Charts -->
+      <section class="chart-grid">
+        <div class="card">
+          <h2 class="card__title">Ingresos por día</h2>
+          <canvas id="revenueChart" height="120"></canvas>
+        </div>
+        <div class="card">
+          <h2 class="card__title">Nuevos estudiantes</h2>
+          <canvas id="studentsChart" height="120"></canvas>
+        </div>
+      </section>
+
+      <!-- Distributions -->
+      <section class="chart-grid">
+        <div class="card">
+          <h2 class="card__title">Estudiantes por programa</h2>
+          <canvas id="programsChart" height="140"></canvas>
+        </div>
+        <div class="card">
+          <h2 class="card__title">Origen de oportunidades</h2>
+          <canvas id="originsChart" height="140"></canvas>
+        </div>
+      </section>
+
+      <!-- Tables -->
+      <section class="chart-grid">
+        <div class="card">
+          <h2 class="card__title">Últimos estudiantes</h2>
+          <div class="table-wrapper">
+            <table class="data-table" id="recentStudents">
+              <thead><tr><th>Nombre</th><th>Programa</th><th>Estado</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <h2 class="card__title">Pagos pendientes</h2>
+          <div class="table-wrapper">
+            <table class="data-table" id="pendingPayments">
+              <thead><tr><th>Estudiante</th><th>Concepto</th><th>Vencimiento</th><th>Valor</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <footer class="app-footer">
+        © <span id="year"></span> Genius Idiomas · <a href="/">Volver al sitio</a>
+      </footer>
+    </main>
+  </section>
+
+  <script src="/dashboard/dashboard.js"></script>
+</body>
+</html>

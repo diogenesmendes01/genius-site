@@ -1,48 +1,46 @@
-# Build stage
+# ─── Stage 1: Build ───────────────────────────────
+# Includes native build tools so better-sqlite3 compiles successfully.
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+RUN apk add --no-cache python3 make g++
 
-# Install dependencies
+COPY package*.json ./
 RUN npm ci
 
-# Copy source code
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Production stage
+# Drop dev deps so we can copy a lean node_modules into the runtime image.
+RUN npm prune --omit=dev
+
+# ─── Stage 2: Runtime ─────────────────────────────
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy built application from builder stage
+# Copy compiled app + pruned node_modules (native binaries already built).
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/package*.json ./
 
-# Create non-root user
+# Mount a persistent volume at /app/data in Coolify so SQLite survives deploys.
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 && \
+    mkdir -p /app/data && \
     chown -R nestjs:nodejs /app
 
 USER nestjs
 
-# Expose port
+ENV DATABASE_PATH=/app/data/genius.sqlite
+ENV PORT=3120
+ENV HOST=0.0.0.0
+
 EXPOSE 3120
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3120/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the application
 CMD ["node", "dist/main"]
