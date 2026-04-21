@@ -23,7 +23,7 @@ export class EnrollmentService {
    */
   async run(req: EnrollmentDto) {
     const ref = req.ref ?? `ENR-${randomUUID().slice(0, 8).toUpperCase()}`;
-    const existing = this.tracking.get(ref);
+    const existing = await this.tracking.get(ref);
     const steps: StepResult[] = [];
 
     // Reuse IDs from a previous partial run so retries don't duplicate records.
@@ -49,7 +49,7 @@ export class EnrollmentService {
         });
         contactId = contact?.Codigo_contacto ?? contact?.Codigo ?? contact?.Id ?? contact?.id;
         steps.push({ step: 1, name: 'contact', status: 'ok', id: contactId });
-        this.persist(ref, req, { contactId }, steps);
+        await this.persist(ref, req, { contactId }, steps);
         this.logger.log(`[enrollment:${ref}] contact ${contactId}`);
       }
 
@@ -71,7 +71,7 @@ export class EnrollmentService {
         });
         studentId = student?.Codigo_estudiante ?? student?.Codigo ?? student?.Id ?? student?.id;
         steps.push({ step: 2, name: 'student', status: 'ok', id: studentId });
-        this.persist(ref, req, { contactId, studentId }, steps);
+        await this.persist(ref, req, { contactId, studentId }, steps);
         this.logger.log(`[enrollment:${ref}] student ${studentId}`);
       }
 
@@ -87,7 +87,7 @@ export class EnrollmentService {
         });
         enrollmentId = inscripcion?.Codigo_inscripcion ?? inscripcion?.Codigo ?? inscripcion?.Id;
         steps.push({ step: 3, name: 'enrollment', status: 'ok', id: enrollmentId });
-        this.persist(ref, req, { contactId, studentId, enrollmentId }, steps);
+        await this.persist(ref, req, { contactId, studentId, enrollmentId }, steps);
         this.logger.log(`[enrollment:${ref}] inscripcion ${enrollmentId}`);
       }
 
@@ -104,7 +104,7 @@ export class EnrollmentService {
         });
         matriculaId = matricula?.Codigo_matricula ?? matricula?.Codigo ?? matricula?.Id;
         steps.push({ step: 4, name: 'matricula', status: 'ok', id: matriculaId });
-        this.persist(ref, req, { contactId, studentId, enrollmentId, matriculaId }, steps);
+        await this.persist(ref, req, { contactId, studentId, enrollmentId, matriculaId }, steps);
         this.logger.log(`[enrollment:${ref}] matricula ${matriculaId}`);
       }
 
@@ -125,7 +125,7 @@ export class EnrollmentService {
         this.logger.log(`[enrollment:${ref}] orden ${paymentOrderId}`);
       }
 
-      this.tracking.upsert({
+      await this.tracking.upsert({
         ref,
         status: 'filled',
         asesor: req.asesor ?? null,
@@ -139,19 +139,20 @@ export class EnrollmentService {
         completedSteps: steps,
       });
 
+      // Redacted response for the public form: only what the matrícula UI
+      // actually renders. The full step-by-step trace + every Q10 ID
+      // remains queryable through the admin tracking endpoint
+      // (GET /api/q10/tracking, JWT-guarded). Public response intentionally
+      // omits `ids`, `steps` and any internal Q10 identifier — review #7
+      // raised this as a privacy / surface-area concern.
       return {
         success: true,
         ref,
+        status: 'filled' as const,
         message: 'Enrollment completed successfully',
-        ids: {
-          contact: contactId,
-          student: studentId,
-          enrollment: enrollmentId,
-          matricula: matriculaId,
-          paymentOrder: paymentOrderId,
-        },
-        steps,
         paymentDetails: {
+          // The orderId stays visible because the form prints it back to the
+          // student as a payment reference number — they need it to pay.
           orderId: paymentOrderId,
           amount: req.payment?.Valor ?? 0,
           concept: req.payment?.Concepto_pago ?? 'Matrícula',
@@ -164,7 +165,7 @@ export class EnrollmentService {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`[enrollment:${ref}] failed at step ${failedStep}: ${message}`);
 
-      this.tracking.upsert({
+      await this.tracking.upsert({
         ref,
         status: 'error',
         asesor: req.asesor ?? null,
@@ -181,21 +182,24 @@ export class EnrollmentService {
       });
 
       if (err instanceof HttpException) throw err;
+      // Public-facing failure response, redacted for the same reason as
+      // the success path: no Q10 IDs, no step-by-step trace, no
+      // partial-progress list. The full diagnostic stays in the tracking
+      // record (admin-only).
       throw new HttpException(
         {
           success: false,
           ref,
-          error: message,
+          status: 'error' as const,
+          message: 'Hubo un problema procesando la matrícula. Por favor intenta nuevamente con la misma referencia.',
           failedStep,
-          completedSteps: steps,
-          partialIds: { contactId, studentId, enrollmentId, matriculaId, paymentOrderId },
         },
         502,
       );
     }
   }
 
-  private persist(
+  private async persist(
     ref: string,
     req: EnrollmentDto,
     ids: {
@@ -206,8 +210,8 @@ export class EnrollmentService {
       paymentOrderId?: string;
     },
     steps: StepResult[],
-  ) {
-    this.tracking.upsert({
+  ): Promise<void> {
+    await this.tracking.upsert({
       ref,
       status: 'opened',
       asesor: req.asesor ?? null,

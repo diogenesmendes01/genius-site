@@ -72,8 +72,8 @@ export class Q10PublicController {
   }
 
   @Post('tracking')
-  upsertTracking(@Body() body: PublicUpsertTrackingDto) {
-    const entry = this.tracking.upsert({
+  async upsertTracking(@Body() body: PublicUpsertTrackingDto) {
+    const entry = await this.tracking.upsert({
       ref: body.ref,
       status: body.status ?? 'opened',
       asesor: body.asesor,
@@ -94,8 +94,8 @@ export class Q10PublicController {
    * details, or the list of completed steps — those are admin-only.
    */
   @Get('tracking/:ref')
-  getTracking(@Param('ref') ref: string) {
-    const entry = this.tracking.get(ref);
+  async getTracking(@Param('ref') ref: string) {
+    const entry = await this.tracking.get(ref);
     if (!entry) {
       return {
         ref,
@@ -133,8 +133,8 @@ export class Q10AdminController {
 
   // ─────────── Tracking list (audit) ───────────
   @Get('tracking')
-  listTracking() {
-    const entries = this.tracking.list();
+  async listTracking() {
+    const entries = await this.tracking.list();
     return { count: entries.length, entries };
   }
 

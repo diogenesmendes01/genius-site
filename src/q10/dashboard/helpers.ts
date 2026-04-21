@@ -28,11 +28,16 @@ export function cleanStr(v: unknown): string {
   return s === 'null' ? '' : s;
 }
 
-/** Q10 serialises booleans as the literal string "true"/"false" sometimes. */
+/**
+ * Q10 serialises status as boolean true OR the literal strings "true"/
+ * "Activo"/"Active" (mixed casing). We match against an explicit set so
+ * `"inactive"`/`"inactivo"` don't sneak through a substring check (review
+ * #7 finding).
+ */
+const ACTIVO_VALUES = new Set(['true', 'activo', 'active', '1']);
 export function isActivo(status: unknown): boolean {
   if (status === true) return true;
-  const s = cleanStr(status).toLowerCase();
-  return s === 'true' || s.includes('activ');
+  return ACTIVO_VALUES.has(cleanStr(status).toLowerCase());
 }
 
 export function sum(list: Item[], field: string): number {

@@ -254,7 +254,7 @@ function renderKpis(k) {
   }
   cards.push({ label: 'Ingresos del período', value: currency(k.revenueInRange), hint: `${state.rangeDays} días`, variant: 'success' });
   cards.push({ label: 'Deuda pendiente', value: currency(k.outstandingDebt), hint: `${k.ordersPending} cuotas abiertas`, variant: k.outstandingDebt > 0 ? 'danger' : '' });
-  cards.push({ label: 'Alumnos con pago', value: k.paidStudents, hint: `de ${k.totalStudents} matrículas` });
+  cards.push({ label: 'Alumnos con pago', value: k.studentsWithPaymentThisPeriod, hint: `de ${k.totalStudents} matrículas` });
 
   el('kpiGrid').innerHTML = cards
     .map((c) => {

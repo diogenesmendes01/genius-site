@@ -125,10 +125,12 @@ export class DashboardService {
           ? 'Sin oportunidades en el CRM'
           : `Sólo ${oppsTotal} oportunidades para ${students.length} matrículas — CRM subutilizado`;
     }
-    const conversionRate =
-      !conversionRateDegraded && oppsTotal > 0
-        ? Math.round((oppsWon / oppsTotal) * 100)
-        : null;
+    // When oppsTotal is meaningful (not degraded), compute the actual rate.
+    // Previously this branch returned literal `0` when degraded, but the UI
+    // already hides the card in that case — keeping it `null` is unambiguous.
+    const conversionRate = conversionRateDegraded
+      ? null
+      : Math.round((oppsWon / oppsTotal) * 100);
 
     const revenueInRange = sum(pagos, 'Valor_pagado');
     const outstandingDebt = sum(pending, 'Valor_saldo');
@@ -181,7 +183,10 @@ export class DashboardService {
         revenueInRange,
         outstandingDebt,
         ordersPending: pending.length,
-        paidStudents: paidCurrentCount,
+        // Renamed from `paidStudents` for clarity (review #7): this counts
+        // active-period students with at least one payment in the range,
+        // not "students with their tuition fully paid".
+        studentsWithPaymentThisPeriod: paidCurrentCount,
       },
       funnel,
       charts: { revenueByDay, newStudentsByDay },

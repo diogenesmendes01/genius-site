@@ -89,5 +89,14 @@ describe('GET /api/dashboard/overview — partial state (#5 round 2)', () => {
 
     expect(resp.body.partial).toBe(false);
     expect(resp.body.errors).toEqual({});
+    // overduePending is degraded by design on this Q10 plan — /pagosPendientes
+    // does not expose Fecha_vencimiento. Keep this assertion so a future
+    // schema change that re-enables the field gets caught.
+    expect(resp.body.degraded.overduePending).toBeTruthy();
+    // Conversion rate degradation is data-driven (depends on opps vs students
+    // ratio). With the small mock dataset the CRM is "underused", so the
+    // backend marks conversionRate as degraded → null.
+    expect(resp.body.kpis.conversionRate).toBeNull();
+    expect(resp.body.degraded.conversionRate).toBeTruthy();
   });
 });
