@@ -1,88 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Q10ClientService } from './q10-client.service';
-
-type Item = Record<string, any>;
-
-function safeArray(v: unknown): Item[] {
-  if (Array.isArray(v)) return v as Item[];
-  if (v && typeof v === 'object') {
-    const maybeList = (v as any).items ?? (v as any).data ?? (v as any).results;
-    if (Array.isArray(maybeList)) return maybeList;
-  }
-  return [];
-}
-
-function parseDate(value: unknown): Date | null {
-  if (!value || typeof value !== 'string') return null;
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-/** Trim + treat literal "null" strings as empty (Q10 serialises nulls that way). */
-function cleanStr(v: unknown): string {
-  if (v == null) return '';
-  const s = String(v).trim();
-  return s === 'null' ? '' : s;
-}
-
-/** Q10 serialises booleans as the literal string "true"/"false" sometimes. */
-function isActivo(status: unknown): boolean {
-  if (status === true) return true;
-  const s = cleanStr(status).toLowerCase();
-  return s === 'true' || s.includes('activ');
-}
-
-function sum(list: Item[], field: string): number {
-  return list.reduce((acc, x) => acc + (Number(x[field]) || 0), 0);
-}
-
-function groupCount<T extends Item>(
-  list: T[],
-  getter: (item: T) => unknown,
-): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const item of list) {
-    const key = cleanStr(getter(item)) || 'Sin especificar';
-    out[key] = (out[key] ?? 0) + 1;
-  }
-  return out;
-}
-
-/** Pick periods considered active right now. */
-function currentlyActivePeriods(periodos: Item[]): Item[] {
-  const now = Date.now();
-  const active = periodos.filter((p) => isActivo(p.Estado));
-  const current = active.filter((p) => {
-    const start = parseDate(p.Fecha_inicio)?.getTime() ?? -Infinity;
-    const end = parseDate(p.Fecha_fin)?.getTime() ?? Infinity;
-    return now >= start && now <= end;
-  });
-  return current.length > 0 ? current : active;
-}
-
-function periodKey(p: Item): string {
-  return (
-    cleanStr(p.Consecutivo) ||
-    cleanStr(p.Consecutivo_periodo) ||
-    cleanStr(p.Codigo) ||
-    cleanStr(p.Id)
-  );
-}
-
-/** Assemble a student full name from Q10's split fields. */
-function studentFullName(s: Item): string {
-  // /pagosPendientes nests Estudiante with a pre-joined `Nombre_completo`.
-  const joined = cleanStr(s.Nombre_completo);
-  if (joined) return joined;
-  return [s.Primer_nombre, s.Segundo_nombre, s.Primer_apellido, s.Segundo_apellido]
-    .map(cleanStr)
-    .filter(Boolean)
-    .join(' ');
-}
-
-function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
+import {
+  cleanStr,
+  currentlyActivePeriods,
+  isoDate,
+  Item,
+  parseDate,
+  periodKey,
+  safeArray,
+  studentFullName,
+  sum,
+} from './dashboard/helpers';
 
 @Injectable()
 export class DashboardService {
@@ -97,8 +25,6 @@ export class DashboardService {
     params?: Record<string, unknown>,
   ): Promise<T[]> {
     try {
-      // Uses getAll so the dashboard sees the whole dataset, not just the
-      // ~50 records Q10 returns on a single unpaginated call.
       return safeArray(await this.q10.getAll(path, params)) as T[];
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -109,34 +35,10 @@ export class DashboardService {
   }
 
   /**
-   * Shape and field names are aligned with a live /diagnose run against
-   * Genius Idiomas' Q10 tenant (Costa Rica, ETDH, "pagos regulares" model).
-   *
-   * What this plan exposes:
-   *   - /estudiantes?Periodo={Consecutivo}           — Primer_nombre,
-   *     Primer_apellido, Nombre_programa, Nombre_sede, Condicion_matricula,
-   *     Fecha_matricula, Codigo_estudiante (12 digits).
-   *   - /pagos?Fecha_inicio&Fecha_fin                — Codigo_persona (maps
-   *     to Codigo_estudiante), Valor_pagado, Fecha_pago, Nombre_estudiante.
-   *   - /pagosPendientes?Consecutivo_periodo         — Valor_saldo,
-   *     Nombre_producto, Nombre_periodo, Estudiante (nested object with
-   *     Codigo_persona + Nombre_completo).
-   *   - /oportunidades?Fecha_inicio&Fecha_fin        — Consecutivo_oportunidad,
-   *     Nombre_oportunidad, Descripcion_como_se_entero (origin),
-   *     Descripcion_medio_contacto.
-   *   - /contactos, /periodos, /programas, /sedes,
-   *     /mediospublicitarios?Estado=true, /medioscontacto?Estado=true.
-   *
-   * What this plan DOES NOT expose (verified 2026-04-21):
-   *   - /ordenespago, /facturas                      — "no aplica al modelo"
-   *   - /estadocuentaestudiantes                     — "no aplica al modelo
-   *     financiero correspondiente" (Q10 support initially suggested it,
-   *     but the tenant's model forbids it — see diagnostic).
-   *   - /negocios                                    — returns 400 on every
-   *     param combination tried (noparam, Fecha_inicio/fin, Estado,
-   *     Consecutivo_flujo). Not called from here until Q10 clarifies.
-   *   - /matriculasProgramas                         — POST-only per the
-   *     doc. Funnel `enrollments` = active-period student count.
+   * Visión general — the main tab. Keeps the original field mapping aligned
+   * with the live Q10 tenant (Costa Rica, ETDH, "pagos regulares" model).
+   * Deeper drill-downs live on the sibling services: AcademicService,
+   * FinancialService, CommercialService.
    */
   async overview(rangeDays = 30) {
     const errors: Record<string, string> = {};
@@ -150,8 +52,6 @@ export class DashboardService {
       Fecha_fin: isoDate(rangeEnd),
     };
 
-    // Non-dependent sources in parallel. /negocios and /estadocuentaestudiantes
-    // are NOT here — this plan rejects both with 400. Re-add if Q10 enables them.
     const [periodos, contactos, opps, pagos] = await Promise.all([
       this.tryFetch<Item>('periods', '/periodos', errors),
       this.tryFetch<Item>('contacts', '/contactos', errors),
@@ -159,8 +59,6 @@ export class DashboardService {
       this.tryFetch<Item>('payments', '/pagos', errors, RANGE),
     ]);
 
-    // Students + pending payments — one call per active period (doc requires
-    // Periodo / Consecutivo_periodo).
     const active = currentlyActivePeriods(periodos);
     let students: Item[] = [];
     let pending: Item[] = [];
@@ -203,10 +101,6 @@ export class DashboardService {
       pending = pendingLists.flat();
     }
 
-    // ─── Students ───
-    // Q10 /estudiantes?Periodo=X already filters to the active cohort; every
-    // returned record is matriculated. Condicion_matricula tells whether it's
-    // a fresh enrollment ("Nuevo") vs a renewal ("Renovado").
     const newEnrollmentsThisPeriod = students.filter(
       (s) => cleanStr(s.Condicion_matricula).toLowerCase() === 'nuevo',
     ).length;
@@ -216,32 +110,31 @@ export class DashboardService {
       return d !== null && d.getTime() >= rangeStart.getTime();
     });
 
-    // ─── CRM ───
-    // This plan's /oportunidades records don't expose a top-level Estado —
-    // the state lives inside Negocio_favorito (nested object). Until we can
-    // reliably parse that, we report total opps and mark the conversion-rate
-    // KPI as degraded so the UI can hide it.
+    // Conversion rate, real this time — /oportunidades carries Negocio_favorito
+    // with Estado_negocio (see raw Q10 dump: "Presentación"/"Ganada"/etc).
     const oppsTotal = opps.length;
+    const oppsWon = opps.filter((o) => {
+      const e = cleanStr(o.Negocio_favorito?.Estado_negocio).toLowerCase();
+      return e.includes('ganad');
+    }).length;
     const conversionRateDegraded =
       oppsTotal === 0 || oppsTotal < Math.max(5, students.length * 0.1);
     if (conversionRateDegraded) {
       degraded.conversionRate =
         oppsTotal === 0
           ? 'Sin oportunidades en el CRM'
-          : `Sólo ${oppsTotal} oportunidades para ${students.length} matrículas — CRM subutilizado, la tasa no es confiable`;
+          : `Sólo ${oppsTotal} oportunidades para ${students.length} matrículas — CRM subutilizado`;
     }
+    const conversionRate =
+      !conversionRateDegraded && oppsTotal > 0
+        ? Math.round((oppsWon / oppsTotal) * 100)
+        : null;
 
-    // ─── Financial ───
     const revenueInRange = sum(pagos, 'Valor_pagado');
     const outstandingDebt = sum(pending, 'Valor_saldo');
-    // /pagosPendientes on this plan has no Fecha_vencimiento — overdue count
-    // isn't available. Expose that clearly instead of lying with 0.
     degraded.overduePending =
       '/pagosPendientes no expone Fecha_vencimiento en este plan';
 
-    // Students who have at least one payment in the range (intersection
-    // between /pagos Codigo_persona and /estudiantes Codigo_estudiante —
-    // both are the same 12-digit internal person code).
     const currentStudentIds = new Set(
       students.map((s) => cleanStr(s.Codigo_estudiante)).filter(Boolean),
     );
@@ -252,7 +145,6 @@ export class DashboardService {
       currentStudentIds.has(id),
     ).length;
 
-    // ─── Funnel ───
     const funnel = {
       opportunities: oppsTotal,
       enrollments: students.length,
@@ -272,15 +164,6 @@ export class DashboardService {
       rangeDays,
     );
 
-    // Display-friendly groupings. Use the `Nombre_*` fields so the UI
-    // shows "Curso de Português" instead of the "01" code.
-    const studentsByProgram = groupCount(students, (s) => s.Nombre_programa);
-    const studentsBySede = groupCount(students, (s) => s.Nombre_sede);
-    const opportunitiesByOrigin = groupCount(
-      opps,
-      (o) => o.Descripcion_como_se_entero,
-    );
-
     return {
       range: { days: rangeDays, generatedAt: new Date().toISOString() },
       partial: Object.keys(errors).length > 0,
@@ -293,7 +176,8 @@ export class DashboardService {
         newStudentsInRange: newStudentsInRange.length,
         totalContacts: contactos.length,
         oppsTotal,
-        conversionRate: conversionRateDegraded ? null : 0,
+        oppsWon,
+        conversionRate,
         revenueInRange,
         outstandingDebt,
         ordersPending: pending.length,
@@ -301,33 +185,28 @@ export class DashboardService {
       },
       funnel,
       charts: { revenueByDay, newStudentsByDay },
-      distributions: {
-        studentsByProgram,
-        studentsBySede,
-        opportunitiesByOrigin,
-      },
-      // Normalised shapes — frontend stays simple because we do the
-      // field mapping here once instead of scattering it through the UI.
       recent: {
-        students: students.slice(-10).reverse().map((s) => ({
-          Codigo: cleanStr(s.Codigo_estudiante),
-          Nombres: [s.Primer_nombre, s.Segundo_nombre].map(cleanStr).filter(Boolean).join(' '),
-          Apellidos: [s.Primer_apellido, s.Segundo_apellido].map(cleanStr).filter(Boolean).join(' '),
-          Codigo_programa: cleanStr(s.Nombre_programa) || cleanStr(s.Codigo_programa),
-          Codigo_sede: cleanStr(s.Nombre_sede) || cleanStr(s.Codigo_sede),
-          Estado: cleanStr(s.Condicion_matricula) || 'Matriculado',
-        })),
-        opportunities: opps.slice(-10).reverse().map((o) => ({
-          Codigo: cleanStr(o.Consecutivo_oportunidad),
-          Nombres: cleanStr(o.Nombre_oportunidad),
-          Apellidos: '',
-          Correo: cleanStr(o.Correo_electronico),
-          Telefono: cleanStr(o.Celular ?? o.Telefono),
-          Origen: cleanStr(o.Descripcion_como_se_entero),
-          Estado: cleanStr(o.Nombre_asesor) ? 'Con asesor' : 'Sin asignar',
-        })),
+        students: students
+          .slice(-10)
+          .reverse()
+          .map((s) => ({
+            Codigo: cleanStr(s.Codigo_estudiante),
+            Nombres: [s.Primer_nombre, s.Segundo_nombre]
+              .map(cleanStr)
+              .filter(Boolean)
+              .join(' '),
+            Apellidos: [s.Primer_apellido, s.Segundo_apellido]
+              .map(cleanStr)
+              .filter(Boolean)
+              .join(' '),
+            Codigo_programa:
+              cleanStr(s.Nombre_programa) || cleanStr(s.Codigo_programa),
+            Codigo_sede: cleanStr(s.Nombre_sede) || cleanStr(s.Codigo_sede),
+            Estado: cleanStr(s.Condicion_matricula) || 'Matriculado',
+          })),
         pendingPayments: pending.slice(0, 10).map((p) => {
-          const e = p.Estudiante && typeof p.Estudiante === 'object' ? p.Estudiante : {};
+          const e =
+            p.Estudiante && typeof p.Estudiante === 'object' ? p.Estudiante : {};
           return {
             Nombres: studentFullName(e) || '—',
             Apellidos: '',

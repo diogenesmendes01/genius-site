@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { AcademicService } from './dashboard/academic.service';
+import { CommercialService } from './dashboard/commercial.service';
+import { FinancialService } from './dashboard/financial.service';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { EnrollmentService } from './enrollment.service';
@@ -17,6 +20,9 @@ import { TrackingService } from './tracking.service';
     TrackingService,
     EnrollmentService,
     DashboardService,
+    AcademicService,
+    FinancialService,
+    CommercialService,
   ],
   exports: [Q10ClientService, TrackingService],
 })
