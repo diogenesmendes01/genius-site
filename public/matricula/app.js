@@ -4,6 +4,15 @@
 
 const API_BASE = '/api/q10';
 
+// HTML escape — prevents XSS from URL tracking params, form values, and
+// anything the backend echoes back (ref, orderId, concept). Anything that
+// ends up inside an innerHTML template literal MUST be run through this.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
 // ─── State ───
 let currentStep = 1;
 let catalogs = { programas: [], periodos: [], sedes: [] };
@@ -243,7 +252,7 @@ function buildSummary() {
 
   const table = document.getElementById('summaryTable');
   table.innerHTML = rows
-    .map(([label, value]) => `<tr><td>${label}</td><td>${value || '-'}</td></tr>`)
+    .map(([label, value]) => `<tr><td>${esc(label)}</td><td>${esc(value || '-')}</td></tr>`)
     .join('');
 }
 
@@ -340,6 +349,11 @@ function showPaymentStep(result) {
   const box = document.getElementById('paymentBox');
   const pd = result.paymentDetails || {};
 
+  const nombres = document.getElementById('nombres').value;
+  const apellidos = document.getElementById('apellidos').value;
+  const email = document.getElementById('email').value;
+  const amount = Number(pd.amount) || 0;
+
   box.innerHTML = `
     <div class="payment-box__icon">🎓</div>
     <div class="payment-box__title">¡Matrícula Exitosa!</div>
@@ -347,33 +361,33 @@ function showPaymentStep(result) {
       Tu inscripción ha sido procesada correctamente.
     </p>
 
-    ${pd.amount > 0 ? `
-      <div class="payment-box__amount">$${Number(pd.amount).toLocaleString('es')}</div>
-      <div class="payment-box__detail">${pd.concept || 'Matrícula'}</div>
+    ${amount > 0 ? `
+      <div class="payment-box__amount">$${esc(amount.toLocaleString('es'))}</div>
+      <div class="payment-box__detail">${esc(pd.concept || 'Matrícula')}</div>
     ` : ''}
 
     <div class="payment-info">
       <div class="payment-info__row">
         <span class="payment-info__label">Referencia</span>
-        <span class="payment-info__value">${result.ref || '-'}</span>
+        <span class="payment-info__value">${esc(result.ref || '-')}</span>
       </div>
       <div class="payment-info__row">
         <span class="payment-info__label">Orden de Pago</span>
-        <span class="payment-info__value">${pd.orderId || '-'}</span>
+        <span class="payment-info__value">${esc(pd.orderId || '-')}</span>
       </div>
       ${pd.dueDate ? `
         <div class="payment-info__row">
           <span class="payment-info__label">Fecha de Vencimiento</span>
-          <span class="payment-info__value">${pd.dueDate}</span>
+          <span class="payment-info__value">${esc(pd.dueDate)}</span>
         </div>
       ` : ''}
       <div class="payment-info__row">
         <span class="payment-info__label">Estudiante</span>
-        <span class="payment-info__value">${document.getElementById('nombres').value} ${document.getElementById('apellidos').value}</span>
+        <span class="payment-info__value">${esc(nombres)} ${esc(apellidos)}</span>
       </div>
       <div class="payment-info__row">
         <span class="payment-info__label">Correo</span>
-        <span class="payment-info__value">${document.getElementById('email').value}</span>
+        <span class="payment-info__value">${esc(email)}</span>
       </div>
     </div>
 

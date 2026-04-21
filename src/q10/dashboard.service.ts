@@ -35,10 +35,7 @@ function sum(list: Item[], field: string): number {
   return list.reduce((acc, x) => acc + (Number(x[field]) || 0), 0);
 }
 
-function groupCount<T extends Item>(
-  list: T[],
-  field: string,
-): Record<string, number> {
+function groupCount<T extends Item>(list: T[], field: string): Record<string, number> {
   const out: Record<string, number> = {};
   for (const item of list) {
     const key = String(item[field] ?? 'Sin especificar');
@@ -54,36 +51,46 @@ export class DashboardService {
   constructor(private readonly q10: Q10ClientService) {}
 
   /**
-   * Top-level overview — everything the default dashboard needs in one call.
-   * Fetches the underlying Q10 resources in parallel; the client's cache
-   * keeps repeat requests within `Q10_CACHE_TTL` cheap.
+   * Fetch a Q10 resource and, if it fails, record the error under `key` in
+   * `errors` so callers can distinguish a legitimately empty list from an
+   * upstream failure. This replaces the previous `.catch(() => [])` pattern,
+   * which made ERP outages look like healthy zero-KPI dashboards.
    */
-  async overview(rangeDays = 30) {
-    const [
-      estudiantes,
-      oportunidades,
-      negocios,
-      matriculas,
-      ordenesPago,
-      pagos,
-      pagosPendientes,
-    ] = await Promise.all([
-      this.q10.get('/estudiantes').catch(() => []),
-      this.q10.get('/oportunidades').catch(() => []),
-      this.q10.get('/negocios').catch(() => []),
-      this.q10.get('/matriculasProgramas').catch(() => []),
-      this.q10.get('/ordenespago').catch(() => []),
-      this.q10.get('/pagos').catch(() => []),
-      this.q10.get('/pagospendientes').catch(() => []),
-    ]);
+  private async tryFetch<T>(
+    key: string,
+    path: string,
+    errors: Record<string, string>,
+  ): Promise<T[]> {
+    try {
+      return safeArray(await this.q10.get(path)) as T[];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors[key] = message;
+      this.logger.warn(`[dashboard] ${path} failed: ${message}`);
+      return [];
+    }
+  }
 
-    const students = safeArray(estudiantes);
-    const opps = safeArray(oportunidades);
-    const deals = safeArray(negocios);
-    const enrolls = safeArray(matriculas);
-    const orders = safeArray(ordenesPago);
-    const payments = safeArray(pagos);
-    const pending = safeArray(pagosPendientes);
+  async overview(rangeDays = 30) {
+    const errors: Record<string, string> = {};
+
+    const [
+      students,
+      opps,
+      deals,
+      enrolls,
+      orders,
+      payments,
+      pending,
+    ] = await Promise.all([
+      this.tryFetch<Item>('students', '/estudiantes', errors),
+      this.tryFetch<Item>('opportunities', '/oportunidades', errors),
+      this.tryFetch<Item>('deals', '/negocios', errors),
+      this.tryFetch<Item>('enrollments', '/matriculasProgramas', errors),
+      this.tryFetch<Item>('orders', '/ordenespago', errors),
+      this.tryFetch<Item>('payments', '/pagos', errors),
+      this.tryFetch<Item>('pendingPayments', '/pagospendientes', errors),
+    ]);
 
     // ─── Students ───
     const activeStudents = students.filter((s) => isActive(s.Estado));
@@ -98,14 +105,12 @@ export class DashboardService {
     const oppsLost = opps.filter((o) =>
       String(o.Estado ?? '').toLowerCase().includes('perdi'),
     ).length;
-    const oppsOpen = opps.length - oppsWon - oppsLost;
+    const oppsOpen = Math.max(0, opps.length - oppsWon - oppsLost);
     const conversionRate =
       opps.length > 0 ? Math.round((oppsWon / opps.length) * 100) : 0;
 
     // ─── Financial ───
-    const paidInRange = payments.filter((p) =>
-      withinLastDays(p.Fecha_pago, rangeDays),
-    );
+    const paidInRange = payments.filter((p) => withinLastDays(p.Fecha_pago, rangeDays));
     const revenueInRange = sum(paidInRange, 'Valor');
     const outstandingDebt = sum(pending, 'Valor');
     const overduePending = pending.filter((p) => {
@@ -116,7 +121,7 @@ export class DashboardService {
       String(o.Estado ?? '').toLowerCase().includes('pend'),
     );
 
-    // ─── Funnel (lead → opportunity → enrolled → paid) ───
+    // ─── Funnel ───
     const funnel = {
       opportunities: opps.length,
       enrollments: enrolls.length,
@@ -125,7 +130,6 @@ export class DashboardService {
       ).length,
     };
 
-    // ─── Charts: revenue over the range, by day ───
     const revenueByDay = this.bucketByDay(paidInRange, 'Fecha_pago', 'Valor', rangeDays);
     const newStudentsByDay = this.bucketByDay(
       newStudentsInRange,
@@ -134,13 +138,14 @@ export class DashboardService {
       rangeDays,
     );
 
-    // ─── Distributions ───
     const studentsByProgram = groupCount(students, 'Codigo_programa');
     const studentsBySede = groupCount(students, 'Codigo_sede');
     const opportunitiesByOrigin = groupCount(opps, 'Origen');
 
     return {
       range: { days: rangeDays, generatedAt: new Date().toISOString() },
+      partial: Object.keys(errors).length > 0,
+      errors,
       kpis: {
         activeStudents: activeStudents.length,
         totalStudents: students.length,
@@ -156,10 +161,7 @@ export class DashboardService {
         activeDeals: deals.length,
       },
       funnel,
-      charts: {
-        revenueByDay,
-        newStudentsByDay,
-      },
+      charts: { revenueByDay, newStudentsByDay },
       distributions: {
         studentsByProgram,
         studentsBySede,

@@ -5,12 +5,12 @@ import { DashboardService } from './dashboard.service';
 import { EnrollmentService } from './enrollment.service';
 import { Q10ClientService } from './q10-client.service';
 import { Q10MockService } from './q10-mock.service';
-import { Q10Controller } from './q10.controller';
+import { Q10AdminController, Q10PublicController } from './q10.controller';
 import { TrackingService } from './tracking.service';
 
 @Module({
   imports: [AuthModule],
-  controllers: [DashboardController, Q10Controller],
+  controllers: [DashboardController, Q10PublicController, Q10AdminController],
   providers: [
     Q10ClientService,
     Q10MockService,

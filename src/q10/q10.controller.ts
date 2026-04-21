@@ -9,29 +9,29 @@ import {
   Query,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { EnrollmentDto } from './dto/enrollment.dto';
+import { UpsertTrackingDto } from './dto/tracking.dto';
+import { EnrollmentService } from './enrollment.service';
 import { Q10ClientService } from './q10-client.service';
-import { EnrollmentService, EnrollmentRequest } from './enrollment.service';
-import { TrackingService, TrackingStatus } from './tracking.service';
+import { TrackingService } from './tracking.service';
 
 /**
- * Exposes /api/q10/* — the frontend form and the dashboard hit these paths.
- *
- * - Named routes map to friendly JSON shapes (catalogs, contacts, students, …)
- * - /enrollment runs the 5-step workflow
- * - /tracking/* drives the matricula form progress indicator
- * - Everything else falls through to a generic Q10 proxy (last handler)
+ * Public routes the matrícula form needs: read-only catalog lookup,
+ * creating tracking entries, running enrollment. Everything else that
+ * touches the ERP lives on {@link Q10AdminController} behind the JWT guard.
  */
 @Controller('q10')
-export class Q10Controller {
+export class Q10PublicController {
   constructor(
     private readonly q10: Q10ClientService,
     private readonly enrollmentSvc: EnrollmentService,
     private readonly tracking: TrackingService,
   ) {}
 
-  // ─────────── Catalogs (aggregated) ───────────
   @Get('catalogs')
   async catalogs() {
     const [programas, periodos, sedes] = await Promise.all([
@@ -40,6 +40,57 @@ export class Q10Controller {
       this.q10.get('/sedes'),
     ]);
     return { programas, periodos, sedes };
+  }
+
+  @Post('enrollment')
+  enroll(@Body() body: EnrollmentDto) {
+    return this.enrollmentSvc.run(body);
+  }
+
+  @Post('tracking')
+  upsertTracking(@Body() body: UpsertTrackingDto) {
+    return this.tracking.upsert(body);
+  }
+
+  @Get('tracking/:ref')
+  getTracking(@Param('ref') ref: string) {
+    const entry = this.tracking.get(ref);
+    if (entry) return entry;
+    return {
+      ref,
+      status: 'pending' as const,
+      message: 'Link generated but form not yet opened',
+      createdAt: null,
+      updatedAt: null,
+    };
+  }
+
+  @Post('webhook/form-completed')
+  webhook(@Body() payload: unknown) {
+    console.log('[webhook] form-completed:', JSON.stringify(payload));
+    return { received: true, timestamp: new Date().toISOString() };
+  }
+}
+
+/**
+ * Admin-only Q10 routes (CRUD on contacts/students/opportunities/financial
+ * plus the generic catch-all proxy). All require a valid session cookie
+ * because a logged-out caller must not be able to read PII or mutate ERP
+ * records through our Api-Key.
+ */
+@Controller('q10')
+@UseGuards(JwtAuthGuard)
+export class Q10AdminController {
+  constructor(
+    private readonly q10: Q10ClientService,
+    private readonly tracking: TrackingService,
+  ) {}
+
+  // ─────────── Tracking list (audit) ───────────
+  @Get('tracking')
+  listTracking() {
+    const entries = this.tracking.list();
+    return { count: entries.length, entries };
   }
 
   // ─────────── Contacts ───────────
@@ -114,65 +165,27 @@ export class Q10Controller {
     return this.q10.get('/conceptosdepago');
   }
 
-  // ─────────── Enrollment ───────────
-  @Post('enrollment')
-  enroll(@Body() body: EnrollmentRequest) {
-    return this.enrollmentSvc.run(body);
-  }
-
-  // ─────────── Tracking (in-memory) ───────────
-  @Get('tracking')
-  listTracking() {
-    const entries = this.tracking.list();
-    return { count: entries.length, entries };
-  }
-
-  @Get('tracking/:ref')
-  getTracking(@Param('ref') ref: string) {
-    const entry = this.tracking.get(ref);
-    if (entry) return entry;
-    return {
-      ref,
-      status: 'pending' as TrackingStatus,
-      message: 'Link generated but form not yet opened',
-      createdAt: null,
-      updatedAt: null,
-    };
-  }
-
-  @Post('tracking')
-  upsertTracking(
-    @Body()
-    body: {
-      ref: string;
-      status?: TrackingStatus;
-      asesor?: string;
-      studentName?: string;
-      email?: string;
-    },
-  ) {
-    return this.tracking.upsert(body);
-  }
-
-  // ─────────── Webhook (no-op logger) ───────────
-  @Post('webhook/form-completed')
-  webhook(@Body() payload: unknown) {
-    console.log('[webhook] form-completed:', JSON.stringify(payload));
-    return { received: true, timestamp: new Date().toISOString() };
-  }
-
-  // ─────────── Generic Q10 proxy catch-all ───────────
-  // Must be the last handler — matches anything not routed above so the
-  // dashboard can reach arbitrary Q10 endpoints without us adding handlers.
-  @All('*')
+  /**
+   * Generic Q10 proxy catch-all (admin only). Must be the last handler so
+   * nothing above falls through. We derive the upstream path from
+   * `req.originalUrl` to keep subpaths and query strings intact — the old
+   * `req.params[0]` trick stopped working with path-to-regexp 8.
+   */
+  @All('*path')
   async proxy(
     @Req() req: Request,
     @Res() res: Response,
     @Query() query: Record<string, unknown>,
     @Body() body: unknown,
   ) {
-    const path = '/' + (req.params[0] ?? '');
-    const { status, data } = await this.q10.raw(req.method, path, query, body);
+    // originalUrl → `/api/q10/<upstream>[?...]`. Strip prefix and any query.
+    const upstream = req.originalUrl
+      .replace(/^\/api\/q10/, '')
+      .split('?')[0];
+    if (!upstream || upstream === '/') {
+      return res.status(400).json({ error: 'Missing Q10 path' });
+    }
+    const { status, data } = await this.q10.raw(req.method, upstream, query, body);
     res.status(status).json(data);
   }
 }
