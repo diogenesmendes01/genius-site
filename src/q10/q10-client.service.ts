@@ -5,6 +5,23 @@ import { Q10MockService } from './q10-mock.service';
 
 type CacheEntry = { value: unknown; expiresAt: number };
 
+/**
+ * Returns the array if `value` is one, or unwraps common Q10 wrapper shapes
+ * (`{ items }`, `{ data }`, `{ results }`) into their contained array.
+ * Returns `null` for anything that isn't recognisably a list — callers use
+ * that sentinel to decide whether to treat it as end-of-pages or a real
+ * upstream error.
+ */
+function unwrapList(value: unknown): unknown[] | null {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    const maybe =
+      (value as any).items ?? (value as any).data ?? (value as any).results;
+    if (Array.isArray(maybe)) return maybe;
+  }
+  return null;
+}
+
 @Injectable()
 export class Q10ClientService {
   private readonly logger = new Logger(Q10ClientService.name);
@@ -54,6 +71,82 @@ export class Q10ClientService {
     const data = await this.request<T>({ method: 'GET', url: path, params });
     this.cache.set(key, { value: data, expiresAt: Date.now() + this.cacheTtlMs });
     return data;
+  }
+
+  /**
+   * Page through a Q10 list endpoint until exhausted. Q10's list endpoints
+   * accept `Limit` and `Offset` query params; the sibling Q10 WhatsApp Chrome
+   * extension forces `Limit=1000&Offset=1` on every call as its workaround,
+   * which taught us two things: (1) the server enforces a small cap
+   * (~50 records per page) if Limit is omitted, and (2) Offset is 1-based,
+   * not 0-based. We page at 500 per request by default — 1000 works but
+   * burns more memory on large schools, and 500 keeps each response under a
+   * safe payload size.
+   *
+   * A `maxRecords` safety cap (default 50k) prevents a pathological endpoint
+   * from looping forever; when hit we log a warn and return what we have so
+   * the dashboard still renders. Mock mode returns the full dataset in one
+   * shot (there's no real pagination to exercise), so we delegate to the
+   * underlying mock `.get` once. The per-page cache is driven by the
+   * existing `.get` cacheKey, which includes the full params object — each
+   * (Limit, Offset) pair is cached independently, so subsequent `getAll`
+   * calls are served from memory.
+   */
+  async getAll<T = unknown>(
+    path: string,
+    params?: Record<string, unknown>,
+    opts?: { pageSize?: number; maxRecords?: number },
+  ): Promise<T[]> {
+    if (this.mock) {
+      const raw = await this.mockSvc.get<unknown>(path, params);
+      return Array.isArray(raw) ? (raw as T[]) : [];
+    }
+
+    const pageSize = opts?.pageSize ?? 500;
+    const maxRecords = opts?.maxRecords ?? 50_000;
+    const out: T[] = [];
+    // Q10 uses 1-based offsets — verified in the sibling WhatsApp plugin's
+    // background/service-worker.js (it forces `Offset=1` on every call).
+    let offset = 1;
+
+    while (out.length < maxRecords) {
+      const page = await this.get<unknown>(path, {
+        ...(params ?? {}),
+        Limit: pageSize,
+        Offset: offset,
+      });
+
+      // Normalise wrapped responses — some Q10 endpoints return
+      // `{ items: [...] }` / `{ data: [...] }` / `{ results: [...] }` on
+      // certain plans. We don't want to silently drop those as "non-array"
+      // because the dashboard would see zeros with partial:false — which
+      // was the exact pitfall this review caught.
+      const list = unwrapList(page);
+      if (list === null) {
+        // Truly unexpected shape (error envelope, non-list object). Throw so
+        // the dashboard's tryFetch records it under `errors[key]` and the
+        // operator sees the "Datos parciales" banner.
+        throw new Error(
+          `Q10 returned a non-list payload for ${path} at offset ${offset}`,
+        );
+      }
+
+      out.push(...(list as T[]));
+
+      // Partial page ⇒ we've reached the end. Full page ⇒ there may be more.
+      if (list.length < pageSize) break;
+
+      offset += pageSize;
+    }
+
+    if (out.length >= maxRecords) {
+      this.logger.warn(
+        `[Q10] getAll(${path}) hit maxRecords cap (${maxRecords}) — results truncated`,
+      );
+      return out.slice(0, maxRecords);
+    }
+
+    return out;
   }
 
   async post<T = unknown>(path: string, body?: unknown): Promise<T> {
