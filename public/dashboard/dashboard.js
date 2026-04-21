@@ -143,6 +143,7 @@ function setFreshness(msg) {
 
 // ─── Render ───
 function render(data) {
+  renderPartialBanner(data);
   renderKpis(data.kpis);
   renderFunnel(data.funnel);
   renderRevenueChart(data.charts.revenueByDay);
@@ -151,6 +152,18 @@ function render(data) {
   renderOriginsChart(data.distributions.opportunitiesByOrigin);
   renderRecentStudents(data.recent.students);
   renderPendingPayments(data.recent.pendingPayments);
+}
+
+function renderPartialBanner(data) {
+  const banner = el('partialBanner');
+  const detail = el('partialBannerDetail');
+  if (!data.partial || !data.errors || Object.keys(data.errors).length === 0) {
+    banner.classList.add('hidden');
+    return;
+  }
+  const sources = Object.keys(data.errors).map((k) => `<code>${escapeHtml(k)}</code>`).join(', ');
+  detail.innerHTML = ` — no pudimos cargar: ${sources}. Los KPIs que dependen de estas fuentes pueden estar incompletos.`;
+  banner.classList.remove('hidden');
 }
 
 function currency(n) {

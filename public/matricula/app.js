@@ -330,8 +330,9 @@ async function submitEnrollment() {
     showPaymentStep(result);
     showStep(5, 'forward');
 
-    // Update tracking
-    reportTrackingStatus('filled');
+    // EnrollmentService already marks the tracking entry as 'filled'
+    // server-side, so no tracking call from here — the public endpoint
+    // only accepts status=opened anyway.
 
   } catch (err) {
     clearInterval(stepInterval);

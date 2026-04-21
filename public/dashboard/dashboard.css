@@ -192,6 +192,25 @@ body {
 
 .freshness { font-size: 0.8rem; color: var(--gray-text); }
 
+.partial-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid #FCD34D;
+  background: #FFFBEB;
+  color: #92400E;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+.partial-banner strong { color: #78350F; }
+.partial-banner code {
+  background: rgba(146, 64, 14, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+
 /* ──────────────── Cards / KPIs ──────────────── */
 .card {
   background: var(--white);

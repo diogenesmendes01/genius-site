@@ -14,7 +14,7 @@ import {
 import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EnrollmentDto } from './dto/enrollment.dto';
-import { UpsertTrackingDto } from './dto/tracking.dto';
+import { PublicUpsertTrackingDto } from './dto/tracking.dto';
 import { EnrollmentService } from './enrollment.service';
 import { Q10ClientService } from './q10-client.service';
 import { TrackingService } from './tracking.service';
@@ -48,20 +48,41 @@ export class Q10PublicController {
   }
 
   @Post('tracking')
-  upsertTracking(@Body() body: UpsertTrackingDto) {
-    return this.tracking.upsert(body);
+  upsertTracking(@Body() body: PublicUpsertTrackingDto) {
+    const entry = this.tracking.upsert({
+      ref: body.ref,
+      status: body.status ?? 'opened',
+      asesor: body.asesor,
+      studentName: body.studentName,
+      email: body.email,
+    });
+    // Return only the non-sensitive fields — IDs and PII stay admin-only.
+    return {
+      ref: entry.ref,
+      status: entry.status,
+      updatedAt: entry.updatedAt,
+    };
   }
 
+  /**
+   * Redacted public read. Anyone with a `ref` can poll this from the
+   * matrícula form, so we never expose Q10 IDs, email, name, error
+   * details, or the list of completed steps — those are admin-only.
+   */
   @Get('tracking/:ref')
   getTracking(@Param('ref') ref: string) {
     const entry = this.tracking.get(ref);
-    if (entry) return entry;
+    if (!entry) {
+      return {
+        ref,
+        status: 'pending' as const,
+        updatedAt: null,
+      };
+    }
     return {
-      ref,
-      status: 'pending' as const,
-      message: 'Link generated but form not yet opened',
-      createdAt: null,
-      updatedAt: null,
+      ref: entry.ref,
+      status: entry.status,
+      updatedAt: entry.updatedAt,
     };
   }
 
