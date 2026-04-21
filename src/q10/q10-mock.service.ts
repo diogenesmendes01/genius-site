@@ -11,6 +11,8 @@ const DATASETS: Record<string, unknown[]> = {
   periodos: mock.periodos,
   sedes: mock.sedes,
   sedesjornadas: mock.sedes,
+  mediospublicitarios: mock.mediospublicitarios,
+  medioscontacto: mock.medioscontacto,
   contactos: mock.contactos,
   estudiantes: mock.estudiantes,
   usuarios: mock.estudiantes,

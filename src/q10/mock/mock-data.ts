@@ -125,6 +125,24 @@ export const sedes = [
   },
 ];
 
+// Marketing channels used to tag where an opportunity came from.
+export const mediospublicitarios = [
+  { Codigo: 'MP-001', Nombre: 'Facebook Ads', Estado: 'Activo' },
+  { Codigo: 'MP-002', Nombre: 'Google Ads', Estado: 'Activo' },
+  { Codigo: 'MP-003', Nombre: 'Referido', Estado: 'Activo' },
+  { Codigo: 'MP-004', Nombre: 'Volante', Estado: 'Activo' },
+  { Codigo: 'MP-005', Nombre: 'Página web', Estado: 'Activo' },
+];
+
+// How the prospect first reached out — surfaced on the opportunity form.
+export const medioscontacto = [
+  { Codigo: 'MC-001', Nombre: 'WhatsApp', Estado: 'Activo' },
+  { Codigo: 'MC-002', Nombre: 'Teléfono', Estado: 'Activo' },
+  { Codigo: 'MC-003', Nombre: 'Email', Estado: 'Activo' },
+  { Codigo: 'MC-004', Nombre: 'Visita sede', Estado: 'Activo' },
+  { Codigo: 'MC-005', Nombre: 'Formulario web', Estado: 'Activo' },
+];
+
 // ─── Contacts / Students ───
 
 export const contactos = [
