@@ -7,10 +7,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { REF_PATTERN } from './tracking.dto';
 
 export class PersonalInfoDto {
   @IsString() @IsNotEmpty() @MinLength(1)
@@ -64,7 +66,14 @@ export class PaymentInfoDto {
 }
 
 export class EnrollmentDto {
-  @IsOptional() @IsString()
+  // Same regex as PublicUpsertTrackingDto — keeps the idempotency key
+  // consistent across both public endpoints so `/enrollment` can't be used
+  // to bypass the format check that `/tracking` already enforces.
+  @IsOptional()
+  @IsString()
+  @Matches(REF_PATTERN, {
+    message: `ref must match ${REF_PATTERN}`,
+  })
   ref?: string;
 
   @IsOptional() @IsString()

@@ -69,6 +69,34 @@ describe('POST /api/q10/enrollment — DTO + idempotency (#2 / #3)', () => {
       .expect(400);
   });
 
+  // The idempotency key must match the same regex the tracking endpoint
+  // enforces, so clients can't use /enrollment to bypass it with empty or
+  // malformed refs.
+  it.each([
+    ['empty', ''],
+    ['too short', 'short'],
+    ['wrong prefix', 'XYZ-ABCDEFGH'],
+    ['lowercase', 'enr-abcdefgh'],
+    ['contains symbols', 'ENR-ABC!DEF$'],
+  ])('rejects ref with %s', async (_label, ref) => {
+    await request(app.getHttpServer())
+      .post('/api/q10/enrollment')
+      .send({ ref, personal: VALID_PERSONAL, program: VALID_PROGRAM })
+      .expect(400);
+  });
+
+  it('accepts a well-formed ref', async () => {
+    const resp = await request(app.getHttpServer())
+      .post('/api/q10/enrollment')
+      .send({
+        ref: 'ENR-GOODREF1',
+        personal: VALID_PERSONAL,
+        program: VALID_PROGRAM,
+      })
+      .expect(201);
+    expect(resp.body.ref).toBe('ENR-GOODREF1');
+  });
+
   it('replaying with same ref reuses IDs and skips upstream POSTs', async () => {
     const ref = `ENR-IDEMP${Date.now()}TEST`.replace(/-/g, '').replace(
       /^/,
