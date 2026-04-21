@@ -1,5 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Q10ClientService } from './q10-client.service';
+import {
+  Q10Contact,
+  Q10Opportunity,
+  Q10Payment,
+  Q10PendingPayment,
+  Q10Period,
+  Q10Student,
+} from './dashboard.types';
 
 type Item = Record<string, any>;
 
@@ -153,10 +161,10 @@ export class DashboardService {
     // Non-dependent sources in parallel. /negocios and /estadocuentaestudiantes
     // are NOT here — this plan rejects both with 400. Re-add if Q10 enables them.
     const [periodos, contactos, opps, pagos] = await Promise.all([
-      this.tryFetch<Item>('periods', '/periodos', errors),
-      this.tryFetch<Item>('contacts', '/contactos', errors),
-      this.tryFetch<Item>('opportunities', '/oportunidades', errors, ALL_TIME),
-      this.tryFetch<Item>('payments', '/pagos', errors, RANGE),
+      this.tryFetch<Q10Period>('periods', '/periodos', errors),
+      this.tryFetch<Q10Contact>('contacts', '/contactos', errors),
+      this.tryFetch<Q10Opportunity>('opportunities', '/oportunidades', errors, ALL_TIME),
+      this.tryFetch<Q10Payment>('payments', '/pagos', errors, RANGE),
     ]);
 
     // Students + pending payments — one call per active period (doc requires
@@ -177,14 +185,14 @@ export class DashboardService {
       const [studentLists, pendingLists] = await Promise.all([
         Promise.all(
           active.map((p) =>
-            this.tryFetch<Item>('students', '/estudiantes', errors, {
+            this.tryFetch<Q10Student>('students', '/estudiantes', errors, {
               Periodo: periodKey(p),
             }),
           ),
         ),
         Promise.all(
           active.map((p) =>
-            this.tryFetch<Item>('pendingPayments', '/pagosPendientes', errors, {
+            this.tryFetch<Q10PendingPayment>('pendingPayments', '/pagosPendientes', errors, {
               Consecutivo_periodo: periodKey(p),
             }),
           ),
@@ -293,11 +301,11 @@ export class DashboardService {
         newStudentsInRange: newStudentsInRange.length,
         totalContacts: contactos.length,
         oppsTotal,
-        conversionRate: conversionRateDegraded ? null : 0,
+        conversionRate: null,
         revenueInRange,
         outstandingDebt,
         ordersPending: pending.length,
-        paidStudents: paidCurrentCount,
+        studentsWithPaymentThisPeriod: paidCurrentCount,
       },
       funnel,
       charts: { revenueByDay, newStudentsByDay },

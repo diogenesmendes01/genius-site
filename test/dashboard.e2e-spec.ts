@@ -89,5 +89,9 @@ describe('GET /api/dashboard/overview — partial state (#5 round 2)', () => {
 
     expect(resp.body.partial).toBe(false);
     expect(resp.body.errors).toEqual({});
+    // /pagosPendientes neste plano não expõe Fecha_vencimiento — sempre degraded.
+    expect(resp.body.degraded.overduePending).toBeTruthy();
+    // Mock tem 4 opps para 5 estudantes (< limiar mínimo de 5) — taxa degraded.
+    expect(resp.body.degraded.conversionRate).toBeDefined();
   });
 });
