@@ -22,6 +22,16 @@ describe('normalizePhone', () => {
     expect(normalizePhone(undefined)).toBe('');
   });
 
+  it('coerces non-string input (numbers, objects) instead of throwing', () => {
+    // Q10 occasionally serializes phone fields as numbers — must not throw.
+    expect(normalizePhone(50255551234 as unknown)).toBe('50255551234');
+    // `0` gets stripped by the leading-zero rule (canonical empty), but the
+    // important part is the call doesn't throw "replace is not a function".
+    expect(() => normalizePhone(0 as unknown)).not.toThrow();
+    // Objects coerce via their default String() representation — digits only.
+    expect(normalizePhone({} as unknown)).toBe('');
+  });
+
   it('keeps leading zero on numbers longer than 11 digits (likely intl)', () => {
     // 12-digit string starting with 0 should not have the 0 stripped,
     // to avoid mangling something that isn't really local format.

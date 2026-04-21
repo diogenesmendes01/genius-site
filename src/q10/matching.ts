@@ -20,8 +20,11 @@ const COMBINING_DIACRITICS = /[̀-ͯ]/g;
  * `5555 1234`, or `045551234` depending on who typed it — this folds all
  * three into a comparable canonical form.
  */
-export function normalizePhone(raw: string | null | undefined): string {
-  let digits = (raw || '').replace(/\D/g, '');
+export function normalizePhone(raw: unknown): string {
+  // Coerce defensively — Q10 occasionally returns phone fields as numbers
+  // (e.g. when a record was imported from a spreadsheet), and calling
+  // `.replace` on a number would throw "replace is not a function".
+  let digits = String(raw ?? '').replace(/\D/g, '');
   // Remove leading 0 (local format) — only for short-ish numbers to avoid
   // stripping the first digit of a legitimate international number.
   if (digits.startsWith('0') && digits.length <= 11) digits = digits.slice(1);
@@ -40,8 +43,8 @@ export function phoneMatches(
   contactPhone: unknown,
   searchPhone: unknown,
 ): boolean {
-  const a = normalizePhone(contactPhone as string | null | undefined);
-  const b = normalizePhone(searchPhone as string | null | undefined);
+  const a = normalizePhone(contactPhone);
+  const b = normalizePhone(searchPhone);
   if (!a || !b) return false;
   // Exact match on canonical digits.
   if (a === b) return true;

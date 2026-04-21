@@ -34,13 +34,28 @@ export class Q10PublicController {
 
   @Get('catalogs')
   async catalogs() {
+    // `programas`/`periodos`/`sedes` are required by the matrícula form —
+    // if any of them fails the form can't render, so we let the error bubble.
+    // `mediospublicitarios` and `medioscontacto` are nice-to-have for the CRM
+    // opportunity flow; on plans that don't expose them we degrade to [] so
+    // the public endpoint stays up and the form keeps working.
+    const optional = async <T>(p: Promise<T>): Promise<T | []> => {
+      try {
+        return await p;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(`[catalogs] optional source failed: ${msg}`);
+        return [];
+      }
+    };
+
     const [programas, periodos, sedes, mediospublicitarios, medioscontacto] =
       await Promise.all([
         this.q10.get('/programas'),
         this.q10.get('/periodos'),
         this.q10.get('/sedes'),
-        this.q10.get('/mediospublicitarios', { Estado: true }),
-        this.q10.get('/medioscontacto', { Estado: true }),
+        optional(this.q10.get('/mediospublicitarios', { Estado: true })),
+        optional(this.q10.get('/medioscontacto', { Estado: true })),
       ]);
     return {
       programas,
