@@ -5,6 +5,23 @@ import { Q10MockService } from './q10-mock.service';
 
 type CacheEntry = { value: unknown; expiresAt: number };
 
+/**
+ * Returns the array if `value` is one, or unwraps common Q10 wrapper shapes
+ * (`{ items }`, `{ data }`, `{ results }`) into their contained array.
+ * Returns `null` for anything that isn't recognisably a list — callers use
+ * that sentinel to decide whether to treat it as end-of-pages or a real
+ * upstream error.
+ */
+function unwrapList(value: unknown): unknown[] | null {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    const maybe =
+      (value as any).items ?? (value as any).data ?? (value as any).results;
+    if (Array.isArray(maybe)) return maybe;
+  }
+  return null;
+}
+
 @Injectable()
 export class Q10ClientService {
   private readonly logger = new Logger(Q10ClientService.name);
@@ -99,15 +116,25 @@ export class Q10ClientService {
         Offset: offset,
       });
 
-      // Defensive: if the endpoint ever returns a non-array payload (wrapped
-      // object, error shape, etc.) treat it as end-of-pages instead of
-      // throwing. `getAll` is only meaningful for list endpoints.
-      if (!Array.isArray(page)) break;
+      // Normalise wrapped responses — some Q10 endpoints return
+      // `{ items: [...] }` / `{ data: [...] }` / `{ results: [...] }` on
+      // certain plans. We don't want to silently drop those as "non-array"
+      // because the dashboard would see zeros with partial:false — which
+      // was the exact pitfall this review caught.
+      const list = unwrapList(page);
+      if (list === null) {
+        // Truly unexpected shape (error envelope, non-list object). Throw so
+        // the dashboard's tryFetch records it under `errors[key]` and the
+        // operator sees the "Datos parciales" banner.
+        throw new Error(
+          `Q10 returned a non-list payload for ${path} at offset ${offset}`,
+        );
+      }
 
-      out.push(...(page as T[]));
+      out.push(...(list as T[]));
 
       // Partial page ⇒ we've reached the end. Full page ⇒ there may be more.
-      if (page.length < pageSize) break;
+      if (list.length < pageSize) break;
 
       offset += pageSize;
     }

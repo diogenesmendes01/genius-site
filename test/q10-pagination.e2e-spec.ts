@@ -113,15 +113,44 @@ describe('Q10ClientService.getAll — pagination', () => {
     expect(liveGetSpy).not.toHaveBeenCalled();
   });
 
-  it('treats a non-array payload as end-of-pages', async () => {
+  it('unwraps { items: [...] } wrapper payloads and keeps paginating', async () => {
+    const client = makeClient(false);
+    const wrapped = (arr: any[]) => ({ items: arr, total: 9999 });
+    const page = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ id: i }));
+
+    const getSpy = jest
+      .spyOn(client, 'get')
+      .mockResolvedValueOnce(wrapped(page(500)) as unknown as never)
+      .mockResolvedValueOnce(wrapped(page(300)) as unknown as never);
+
+    const out = await client.getAll<{ id: number }>('/estudiantes');
+
+    expect(out).toHaveLength(800);
+    expect(getSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('also unwraps { data: [...] } and { results: [...] }', async () => {
     const client = makeClient(false);
     const getSpy = jest
       .spyOn(client, 'get')
-      .mockResolvedValueOnce({ error: 'wrapped response' } as unknown as never);
-
-    const out = await client.getAll('/estudiantes');
-
-    expect(out).toEqual([]);
+      .mockResolvedValueOnce({ data: [{ id: 1 }, { id: 2 }] } as unknown as never);
+    const out = await client.getAll('/pagos');
+    expect(out).toEqual([{ id: 1 }, { id: 2 }]);
     expect(getSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws on truly unexpected payloads so the dashboard marks partial:true', async () => {
+    const client = makeClient(false);
+    jest
+      .spyOn(client, 'get')
+      .mockResolvedValueOnce({ error: 'bad auth' } as unknown as never);
+
+    // The old behaviour (return []) silently hid upstream problems. Now the
+    // caller sees the error and DashboardService.tryFetch routes it into the
+    // `errors` map, setting `partial: true`.
+    await expect(client.getAll('/estudiantes')).rejects.toThrow(
+      /non-list payload/,
+    );
   });
 });
