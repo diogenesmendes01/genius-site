@@ -49,9 +49,15 @@ describe('GET /api/dashboard/overview — partial state (#5 round 2)', () => {
 
     expect(resp.body.partial).toBe(true);
     expect(resp.body.errors).toMatchObject({
-      students: expect.any(String),
+      // DashboardService no longer calls /ordenespago, /pagos, /pagospendientes
+      // (they don't apply to this Q10 plan). The sources that DO run and fail
+      // when the client rejects everything are /periodos, /contactos,
+      // /oportunidades, /negocios, and /estadocuentaestudiantes.
+      periods: expect.any(String),
+      contacts: expect.any(String),
       opportunities: expect.any(String),
-      orders: expect.any(String),
+      deals: expect.any(String),
+      estadoCuenta: expect.any(String),
     });
     // KPIs still come back (zeros), so the frontend has something to render.
     expect(resp.body.kpis.activeStudents).toBe(0);
