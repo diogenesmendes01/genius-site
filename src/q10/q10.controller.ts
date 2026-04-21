@@ -34,12 +34,21 @@ export class Q10PublicController {
 
   @Get('catalogs')
   async catalogs() {
-    const [programas, periodos, sedes] = await Promise.all([
-      this.q10.get('/programas'),
-      this.q10.get('/periodos'),
-      this.q10.get('/sedes'),
-    ]);
-    return { programas, periodos, sedes };
+    const [programas, periodos, sedes, mediospublicitarios, medioscontacto] =
+      await Promise.all([
+        this.q10.get('/programas'),
+        this.q10.get('/periodos'),
+        this.q10.get('/sedes'),
+        this.q10.get('/mediospublicitarios', { Estado: true }),
+        this.q10.get('/medioscontacto', { Estado: true }),
+      ]);
+    return {
+      programas,
+      periodos,
+      sedes,
+      mediospublicitarios,
+      medioscontacto,
+    };
   }
 
   @Post('enrollment')
