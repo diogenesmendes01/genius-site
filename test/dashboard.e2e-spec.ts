@@ -49,18 +49,22 @@ describe('GET /api/dashboard/overview — partial state (#5 round 2)', () => {
 
     expect(resp.body.partial).toBe(true);
     expect(resp.body.errors).toMatchObject({
-      // DashboardService no longer calls /ordenespago, /pagos, /pagospendientes
-      // (they don't apply to this Q10 plan). The sources that DO run and fail
-      // when the client rejects everything are /periodos, /contactos,
-      // /oportunidades, /negocios, and /estadocuentaestudiantes.
+      // After the live-diagnostic fix, DashboardService only calls endpoints
+      // confirmed to work on the "pagos regulares" plan: /periodos,
+      // /contactos, /oportunidades, /pagos. /negocios and
+      // /estadocuentaestudiantes are dropped (400 in every param combo),
+      // and /estudiantes + /pagosPendientes only fire after /periodos
+      // returns at least one active period — so with /periodos rejecting
+      // here, they don't generate their own error entries.
       periods: expect.any(String),
       contacts: expect.any(String),
       opportunities: expect.any(String),
-      deals: expect.any(String),
-      estadoCuenta: expect.any(String),
+      payments: expect.any(String),
     });
     // KPIs still come back (zeros), so the frontend has something to render.
     expect(resp.body.kpis.activeStudents).toBe(0);
+    // When periods failed, students list is degraded — UI surfaces that.
+    expect(resp.body.degraded).toHaveProperty('students');
   });
 
   it('returns partial:false when all sources succeed', async () => {
