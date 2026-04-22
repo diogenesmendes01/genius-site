@@ -74,7 +74,7 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-CLEAN',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 5,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
     ];
@@ -101,7 +101,7 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-ABS',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 35,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
     ];
@@ -115,7 +115,7 @@ describe('AcademicService — riskFlags', () => {
     );
   });
 
-  it('flags a student with promedio below threshold ("nota 0.40")', async () => {
+  it('flags a student with promedio below threshold ("nota 4.0/10")', async () => {
     const students = [
       {
         Codigo_estudiante: 'S-LOW',
@@ -130,7 +130,7 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-LOW',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 5,
-        Promedio_evaluacion: 0.4,
+        Promedio_evaluacion: 4.0,
         Porcentaje_evaluado: 80,
       },
     ];
@@ -140,7 +140,7 @@ describe('AcademicService — riskFlags', () => {
 
     expect(result.riskFlags).toHaveLength(1);
     expect(result.riskFlags[0].flags).toEqual(
-      expect.arrayContaining([expect.stringContaining('nota 0.40')]),
+      expect.arrayContaining([expect.stringContaining('nota 4.0/10')]),
     );
   });
 
@@ -189,7 +189,7 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-STALL',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 5,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
     ];
@@ -219,7 +219,7 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-UNK',
         Nombre_curso: 'Curso raro sin patrón',
         Porcentaje_inasistencia: 5,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
     ];
@@ -264,7 +264,7 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-ONE-HIGH',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 40,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
       {
@@ -272,14 +272,14 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-THREE',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 25,
-        Promedio_evaluacion: 0.3,
+        Promedio_evaluacion: 3.0,
         Porcentaje_evaluado: 80,
       },
       {
         Codigo_estudiante: 'S-ONE-LOW',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 22,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
     ];
@@ -326,21 +326,21 @@ describe('AcademicService — riskFlags', () => {
         Codigo_estudiante: 'S-FLAGGED-1',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 50,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
       {
         Codigo_estudiante: 'S-FLAGGED-2',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 5,
-        Promedio_evaluacion: 0.35,
+        Promedio_evaluacion: 3.5,
         Porcentaje_evaluado: 80,
       },
       {
         Codigo_estudiante: 'S-CLEAN-2',
         Nombre_curso: '01 R - Recife',
         Porcentaje_inasistencia: 5,
-        Promedio_evaluacion: 0.85,
+        Promedio_evaluacion: 8.5,
         Porcentaje_evaluado: 80,
       },
     ];
