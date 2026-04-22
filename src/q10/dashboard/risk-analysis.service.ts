@@ -14,7 +14,7 @@ import {
  * single place and can be referenced from tests / docs if needed.
  */
 export const ABSENCE_THRESHOLD = 20;   // % inasistencia above which we flag
-export const GRADE_THRESHOLD = 0.6;    // Promedio_evaluacion below which we flag
+export const GRADE_THRESHOLD = 6.0;    // Promedio_evaluacion below which we flag (0-10 scale — confirmed via Q10 probe)
 export const STALL_MULTIPLIER = 1.5;   // behind expected progression × this = stalled
 
 /**
@@ -70,7 +70,7 @@ export class RiskAnalysisService {
             : 0;
         const flags: string[] = [];
         if (inasistencia > ABSENCE_THRESHOLD) flags.push(`${Math.round(inasistencia)}% faltas`);
-        if (promedio > 0 && promedio < GRADE_THRESHOLD) flags.push(`nota ${promedio.toFixed(2)}`);
+        if (promedio > 0 && promedio < GRADE_THRESHOLD) flags.push(`nota ${promedio.toFixed(1)}/10`);
         if (modality !== 'Desconocida' && months >= STALL_MULTIPLIER * 3 && behindLevels > 0) {
           flags.push(`${behindLevels} nivel(es) atrás del esperado`);
         }
