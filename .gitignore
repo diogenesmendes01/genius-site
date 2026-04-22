@@ -39,3 +39,4 @@ build/
 
 # Runtime data (SQLite, uploads)
 data/
+probe-output/
