@@ -5,6 +5,7 @@ import { AcademicService } from './dashboard/academic.service';
 import { CommercialService } from './dashboard/commercial.service';
 import { CurrencyService } from './dashboard/currency.service';
 import { FinancialService } from './dashboard/financial.service';
+import { TurmasService } from './dashboard/turmas.service';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { EnrollmentService } from './enrollment.service';
@@ -27,6 +28,7 @@ import { TrackingService } from './tracking.service';
     FinancialService,
     CommercialService,
     CurrencyService,
+    TurmasService,
   ],
   exports: [Q10ClientService, TrackingService],
 })

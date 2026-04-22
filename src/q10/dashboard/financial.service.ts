@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Q10ClientService } from '../q10-client.service';
 import {
+  classifyModality,
   cleanStr,
   currentlyActivePeriods,
   groupSum,
   isoDate,
   Item,
+  Modality,
   monthKey,
   parseDate,
   periodKey,
@@ -45,14 +47,34 @@ export class FinancialService {
    * "no aplica al modelo financiero correspondiente". Reconciliation is
    * done by intersecting /pagos.Codigo_persona with /estudiantes
    * .Codigo_estudiante (both are the same 12-digit internal person code).
+   *
+   * `from`/`to` are optional ISO dates — when provided, they override the
+   * `monthsBack` preset. The dashboard's date picker (Hoy / Últimos 7 /
+   * Este mes / fecha seleccionada) sends them straight through.
    */
-  async financial(monthsBack = 12) {
+  async financial(monthsBack = 12, from?: string, to?: string) {
     const errors: Record<string, string> = {};
     const degraded: Record<string, string> = {};
 
-    const now = new Date();
-    const rangeStart = new Date(now);
-    rangeStart.setMonth(rangeStart.getMonth() - monthsBack);
+    const now = to ? (parseDate(to) ?? new Date()) : new Date();
+    const parsedFrom = from ? parseDate(from) : null;
+    const rangeStart = parsedFrom ?? (() => {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - monthsBack);
+      return d;
+    })();
+
+    // `windowMonths` drives how many MRR buckets we emit. When the caller
+    // passes an explicit `from`, we recompute from the actual span; otherwise
+    // we keep `monthsBack` verbatim so the bucket count matches the request
+    // exactly (the e2e test asserts `months=6` → 6 buckets).
+    const windowMonths = parsedFrom
+      ? Math.max(
+          1,
+          ((now.getFullYear() - rangeStart.getFullYear()) * 12 +
+            (now.getMonth() - rangeStart.getMonth())) + 1,
+        )
+      : monthsBack;
 
     const [periodos, pagos] = await Promise.all([
       this.tryFetch<Item>('periods', '/periodos', errors),
@@ -97,7 +119,7 @@ export class FinancialService {
 
     // ─── MRR monthly trend ───
     const revenueByMonth: Record<string, number> = {};
-    for (let i = monthsBack - 1; i >= 0; i--) {
+    for (let i = windowMonths - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setMonth(d.getMonth() - i);
       revenueByMonth[monthKey(d)] = 0;
@@ -174,6 +196,24 @@ export class FinancialService {
       'Valor_pagado',
     );
 
+    // ─── Revenue segmented by modality (Regular / Semi Intensivo) ───
+    // /pagos doesn't carry Nombre_curso, but it does carry Nombre_producto
+    // which is shaped like "Mensualidad 14 R - Recife". classifyModality()
+    // handles both shapes (product name or course name) since the pattern
+    // is identical. Payments whose product doesn't match land in
+    // "Desconocida" — useful to spot concepts like "Matrícula" that are
+    // modality-agnostic.
+    const revenueByModality: Record<Modality, number> = {
+      Regular: 0,
+      'Semi Intensivo': 0,
+      Desconocida: 0,
+    };
+    for (const p of pagos) {
+      const label = cleanStr(p.Nombre_producto) || cleanStr(p.Nombre_programa);
+      const m = classifyModality(label);
+      revenueByModality[m] += Number(p.Valor_pagado) || 0;
+    }
+
     const recentPayments = pagos
       .slice()
       .sort((a, b) => {
@@ -197,6 +237,9 @@ export class FinancialService {
       degraded,
       summary: {
         monthsBack,
+        windowMonths,
+        from: isoDate(rangeStart),
+        to: isoDate(now),
         totalRevenue,
         outstandingDebt,
         payingStudents: payingTotals.length,
@@ -206,10 +249,14 @@ export class FinancialService {
         avgTicket: Math.round(avgTicket * 100) / 100,
         ltvApprox: Math.round(ltvApprox * 100) / 100,
         maxPaid,
+        revenueRegular: revenueByModality.Regular,
+        revenueIntensivo: revenueByModality['Semi Intensivo'],
+        revenueUnclassified: revenueByModality.Desconocida,
       },
       charts: {
         revenueByMonth: revenueSeries,
         revenueByConcept,
+        revenueByModality,
       },
       tables: {
         topDebtors,

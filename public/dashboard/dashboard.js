@@ -13,21 +13,29 @@ const CURRENCY_LOCALE = {
   BRL: { locale: 'pt-BR', fractionDigits: 2 },
 };
 
+// Date picker state — `preset` controls which KPIs we send from/to for.
+// Only Overview and Financial are date-sensitive; Academic + Turmas +
+// Commercial are period-based on the server and ignore from/to.
+const DATE_PICKER_APPLIES_TO = new Set(['overview', 'financial']);
 const state = {
   user: null,
-  rangeDays: 30,
   charts: {},
   timer: null,
   activeTab: 'overview',
   // Cache per tab so switching back and forth doesn't re-hit /api. Invalidated
   // by refreshBtn or the 60s auto-timer.
-  loaded: { overview: false, academic: false, financial: false, commercial: false },
+  loaded: { overview: false, academic: false, turmas: false, financial: false, commercial: false },
   // Multi-currency state — `displayCurrency` is the user's view choice
   // (persisted in localStorage). `rates` is the USD-base table from
   // /api/dashboard/currency-rates, lazy-loaded on first auth'd render.
   displayCurrency: localStorage.getItem('genius:currency') || 'USD',
   rates: { USD: 1 },  // identity until /currency-rates resolves
   ratesFetchedAt: null,
+  // Date picker — persisted in localStorage so the operator's last choice
+  // survives reloads. `custom` adds from/to inputs.
+  datePreset: localStorage.getItem('genius:datePreset') || 'month',
+  customFrom: localStorage.getItem('genius:customFrom') || '',
+  customTo: localStorage.getItem('genius:customTo') || '',
 };
 
 // ─── Elements ───
@@ -44,12 +52,6 @@ function bindEvents() {
   el('loginForm').addEventListener('submit', onLogin);
   el('logoutBtn').addEventListener('click', onLogout);
   el('refreshBtn').addEventListener('click', () => refreshActiveTab(true));
-  el('rangeSelect').addEventListener('change', (e) => {
-    state.rangeDays = Number(e.target.value);
-    // Range only affects Overview; other tabs ignore it.
-    state.loaded.overview = false;
-    if (state.activeTab === 'overview') loadOverview(false);
-  });
 
   // Currency selector — persisted, re-renders the active tab with the new
   // labels/conversions. No backend refetch needed; we just relabel.
@@ -65,10 +67,114 @@ function bindEvents() {
     });
   }
 
+  // Date picker — presets (Hoy / Últimos 7 / Este mes / etc.) + custom range.
+  // Only invalidates the date-sensitive tabs (overview/financial); the others
+  // run off period data and ignore from/to.
+  const preset = el('datePreset');
+  const customWrap = el('customRangeWrap');
+  const customFrom = el('customFrom');
+  const customTo = el('customTo');
+  if (preset) {
+    preset.value = state.datePreset;
+    syncCustomRangeVisibility();
+    if (state.customFrom) customFrom.value = state.customFrom;
+    if (state.customTo) customTo.value = state.customTo;
+    preset.addEventListener('change', (e) => {
+      state.datePreset = e.target.value;
+      localStorage.setItem('genius:datePreset', state.datePreset);
+      syncCustomRangeVisibility();
+      onDateRangeChanged();
+    });
+    customFrom.addEventListener('change', (e) => {
+      state.customFrom = e.target.value;
+      localStorage.setItem('genius:customFrom', state.customFrom);
+      if (state.datePreset === 'custom') onDateRangeChanged();
+    });
+    customTo.addEventListener('change', (e) => {
+      state.customTo = e.target.value;
+      localStorage.setItem('genius:customTo', state.customTo);
+      if (state.datePreset === 'custom') onDateRangeChanged();
+    });
+  }
+
+  // Mobile drawer — below 720px the header actions collapse behind a hamburger.
+  const menuBtn = el('menuBtn');
+  const actions = el('headerActions');
+  if (menuBtn && actions) {
+    menuBtn.addEventListener('click', () => {
+      const open = actions.classList.toggle('open');
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    // Close the drawer when tapping outside it (convenience on mobile).
+    document.addEventListener('click', (e) => {
+      if (!actions.classList.contains('open')) return;
+      if (actions.contains(e.target) || menuBtn.contains(e.target)) return;
+      actions.classList.remove('open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
   // Tab navigation
   document.querySelectorAll('.tab').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+}
+
+function syncCustomRangeVisibility() {
+  const wrap = el('customRangeWrap');
+  if (!wrap) return;
+  wrap.classList.toggle('hidden', state.datePreset !== 'custom');
+}
+
+function onDateRangeChanged() {
+  // Invalidate the cache of every date-sensitive tab so a re-open re-fetches.
+  for (const tab of DATE_PICKER_APPLIES_TO) state.loaded[tab] = false;
+  if (DATE_PICKER_APPLIES_TO.has(state.activeTab)) refreshActiveTab(false);
+}
+
+// Compute {from, to} in YYYY-MM-DD for the current preset.
+// Returns {} for "all" — no params → backend uses its own default window.
+function computeDateRange() {
+  const today = new Date();
+  const iso = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const daysAgo = (n) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - n);
+    return d;
+  };
+  switch (state.datePreset) {
+    case 'today':  return { from: iso(today), to: iso(today) };
+    case 'last7':  return { from: iso(daysAgo(6)), to: iso(today) };
+    case 'month': {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      return { from: iso(first), to: iso(today) };
+    }
+    case 'last30': return { from: iso(daysAgo(29)), to: iso(today) };
+    case 'last90': return { from: iso(daysAgo(89)), to: iso(today) };
+    case 'year':   return { from: iso(daysAgo(364)), to: iso(today) };
+    case 'custom': {
+      if (state.customFrom && state.customTo) {
+        return { from: state.customFrom, to: state.customTo };
+      }
+      return {};
+    }
+    default: return {};
+  }
+}
+
+// Approx days span of the current range — used for KPI hint text.
+function currentRangeDays() {
+  const r = computeDateRange();
+  if (!r.from || !r.to) return 30;
+  const d1 = new Date(r.from).getTime();
+  const d2 = new Date(r.to).getTime();
+  if (isNaN(d1) || isNaN(d2)) return 30;
+  return Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
 }
 
 // ─── Exchange rates ───
@@ -97,8 +203,6 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach((p) => {
     p.classList.toggle('hidden', p.id !== `tab-${name}`);
   });
-  // Range picker is only meaningful on the Overview tab.
-  el('rangeSelect').style.display = name === 'overview' ? '' : 'none';
   // Load lazily the first time the tab is opened.
   if (!state.loaded[name]) loadTab(name, false);
 }
@@ -110,6 +214,7 @@ function refreshActiveTab(force) {
 function loadTab(name, force) {
   if (name === 'overview') return loadOverview(force);
   if (name === 'academic') return loadAcademic(force);
+  if (name === 'turmas') return loadTurmas(force);
   if (name === 'financial') return loadFinancial(force);
   if (name === 'commercial') return loadCommercial(force);
 }
@@ -215,7 +320,7 @@ async function fetchTab(path, force) {
     setFreshness(`Actualizado a las ${new Date().toLocaleTimeString('es')}`);
     return data;
   } catch (err) {
-    setFreshness(`⚠ ${err.message || 'Error inesperado'}`);
+    setFreshness(`Error: ${err.message || 'Error inesperado'}`);
     return null;
   }
 }
@@ -227,8 +332,15 @@ async function loadOverview(force) {
     if (force) {
       await fetch(`${API}/dashboard/refresh`, { method: 'POST', credentials: 'include' });
     }
+    const r = computeDateRange();
+    const params = new URLSearchParams();
+    params.set('range', String(currentRangeDays()));
+    if (r.from && r.to) {
+      params.set('from', r.from);
+      params.set('to', r.to);
+    }
     const resp = await fetch(
-      `${API}/dashboard/overview?range=${state.rangeDays}`,
+      `${API}/dashboard/overview?${params.toString()}`,
       { credentials: 'include' },
     );
     if (resp.status === 401) {
@@ -242,7 +354,7 @@ async function loadOverview(force) {
     state.loaded.overview = true;
     setFreshness(`Actualizado a las ${new Date().toLocaleTimeString('es')}`);
   } catch (err) {
-    setFreshness(`⚠ ${err.message || 'Error inesperado'}`);
+    setFreshness(`Error: ${err.message || 'Error inesperado'}`);
   }
 }
 
@@ -333,7 +445,7 @@ function renderKpis(k) {
   // (backend uses null to signal "this KPI isn't reliable on this plan").
   const cards = [];
   cards.push({ label: 'Estudiantes activos', value: k.activeStudents, hint: `${k.totalStudents} matriculados`, accent: true });
-  cards.push({ label: 'Nuevos en el rango', value: k.newStudentsInRange, hint: `${state.rangeDays} días` });
+  cards.push({ label: 'Nuevos en el rango', value: k.newStudentsInRange, hint: `${currentRangeDays()} días` });
   cards.push({ label: 'Nuevos este período', value: k.newEnrollmentsThisPeriod, hint: 'vs. renovados' });
   cards.push({ label: 'Contactos en CRM', value: k.totalContacts, hint: 'leads registrados' });
   cards.push({ label: 'Oportunidades', value: k.oppsTotal, hint: 'total en el CRM' });
@@ -345,7 +457,7 @@ function renderKpis(k) {
       variant: k.conversionRate >= 30 ? 'success' : '',
     });
   }
-  cards.push({ label: 'Ingresos del período', value: currency(k.revenueInRange), hint: `${state.rangeDays} días`, variant: 'success' });
+  cards.push({ label: 'Ingresos del período', value: currency(k.revenueInRange), hint: `${currentRangeDays()} días`, variant: 'success' });
   cards.push({ label: 'Deuda pendiente', value: currency(k.outstandingDebt), hint: `${k.ordersPending} cuotas abiertas`, variant: k.outstandingDebt > 0 ? 'danger' : '' });
   cards.push({ label: 'Alumnos con pago', value: k.studentsWithPaymentThisPeriod, hint: `de ${k.totalStudents} matrículas` });
 
@@ -599,13 +711,56 @@ async function loadAcademic(force) {
     { label: 'Nuevos', value: r.newcomers, sub: 'entraron ahora' },
   ].map(funnelStage).join('');
 
-  // Charts
-  renderDistributionChart('jornadaChart', data.distributions.byJornada, '#DCAF63');
-  renderDistributionChart('nivelChart', data.distributions.byNivel, '#000E38');
-  renderDonut('genderChart', data.distributions.byGender);
-  renderDistributionChart('ageChart', data.distributions.byAge, '#1a2456');
+  // Helper: reorder a distribution object to respect a predefined key order
+  // (keys outside the order list are appended in their original order).
+  const orderedCefr = (raw, order) => {
+    const out = {};
+    for (const lv of order) if (raw[lv] != null) out[lv] = raw[lv];
+    for (const k of Object.keys(raw)) if (!(k in out)) out[k] = raw[k];
+    return out;
+  };
 
-  // Teachers table
+  const dist = data.distributions || {};
+  const prog = data.progression || {};
+  const levelsOrder = prog.levelsOrder || [];
+
+  // Distribution charts
+  renderDonut('modalityChart', dist.byModality || {});
+  renderDistributionChart('cityChart', dist.byCity || {}, '#DCAF63');
+  renderDistributionChart(
+    'cefrRegularChart',
+    orderedCefr(prog.distributionRegular || {}, levelsOrder),
+    '#DCAF63',
+  );
+  renderDistributionChart(
+    'cefrIntensivoChart',
+    orderedCefr(prog.distributionIntensivo || {}, levelsOrder),
+    '#000E38',
+  );
+  renderDistributionChart('jornadaChart', dist.byJornada || {}, '#DCAF63');
+  renderDonut('genderChart', dist.byGender || {});
+  renderDistributionChart('ageChart', dist.byAge || {}, '#1a2456');
+
+  // Risk flags table
+  const riskBody = document.querySelector('#riskTable tbody');
+  const riskFlags = data.riskFlags || [];
+  if (!riskFlags.length) {
+    riskBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-text)">Sin alumnos en riesgo</td></tr>';
+  } else {
+    riskBody.innerHTML = riskFlags.map((rf) => `
+      <tr>
+        <td>${escapeHtml(rf.nombre || '—')}</td>
+        <td>${escapeHtml(rf.nivel || '—')}</td>
+        <td>${escapeHtml(rf.modality || '—')}</td>
+        <td>${escapeHtml(rf.curso || '—')}</td>
+        <td>${escapeHtml(String(rf.mesesMatriculado ?? '—'))}</td>
+        <td>${escapeHtml(rf.inasistencia != null ? `${rf.inasistencia}%` : '—')}</td>
+        <td>${escapeHtml(rf.promedio != null ? String(rf.promedio) : '—')}</td>
+        <td>${escapeHtml(Array.isArray(rf.flags) ? rf.flags.join(', ') : '—')}</td>
+      </tr>`).join('');
+  }
+
+  // Teachers table (unchanged — 4 cols)
   const tbody = document.querySelector('#teachersTable tbody');
   if (!data.teachers.length) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-text)">Sin docentes</td></tr>';
@@ -624,7 +779,14 @@ async function loadAcademic(force) {
 
 // ═════════════════ FINANCIAL TAB ═════════════════
 async function loadFinancial(force) {
-  const data = await fetchTab(`${API}/dashboard/financial?months=12`, force);
+  const r = computeDateRange();
+  const params = new URLSearchParams();
+  params.set('months', '12');
+  if (r.from && r.to) {
+    params.set('from', r.from);
+    params.set('to', r.to);
+  }
+  const data = await fetchTab(`${API}/dashboard/financial?${params.toString()}`, force);
   if (!data) return;
   state.loaded.financial = true;
 
@@ -640,6 +802,7 @@ async function loadFinancial(force) {
 
   renderMonthlyLine('mrrChart', data.charts.revenueByMonth, '#DCAF63', true);
   renderDistributionChart('revenueByProgramChart', data.charts.revenueByConcept, '#DCAF63');
+  renderDistributionChart('revenueByModalityChart', data.charts.revenueByModality, '#1a2456');
 
   // Top debtors table
   const debt = document.querySelector('#debtorsTable tbody');
@@ -672,6 +835,121 @@ async function loadFinancial(force) {
   }
 
   applyPartialBanner(data);
+}
+
+// ═════════════════ TURMAS TAB ═════════════════
+async function loadTurmas(force) {
+  const data = await fetchTab(`${API}/dashboard/turmas`, force);
+  if (!data) return;
+
+  const s = data.summary || {};
+  const dist = data.distributions || {};
+  const alerts = data.alerts || {};
+  const notes = data.notes || {};
+
+  // Occupation variant: green ≥80, warning ≥50, danger below.
+  const ocupVariant =
+    s.ocupacionMedia == null ? ''
+      : s.ocupacionMedia >= 80 ? 'success'
+      : s.ocupacionMedia >= 50 ? 'warning'
+      : 'danger';
+
+  el('turmasKpis').innerHTML = [
+    { label: 'Cursos activos', value: s.totalCursos ?? '—', hint: 'en el período', accent: true },
+    { label: 'Ocupación media', value: s.ocupacionMedia != null ? `${s.ocupacionMedia}%` : '—', hint: 'matrículas / cupos', variant: ocupVariant },
+    { label: 'Estudiantes matriculados', value: s.totalMatriculados ?? '—', hint: `de ${s.totalCupo ?? 0} cupos` },
+    { label: 'Llenos (≥90%)', value: s.overbookedCount ?? 0, hint: 'cerca del tope', variant: (s.overbookedCount || 0) > 0 ? 'danger' : '' },
+    { label: 'Bajo 5 alumnos', value: s.underbookedCount ?? 0, hint: 'cursos en riesgo', variant: (s.underbookedCount || 0) > 0 ? 'warning' : '' },
+    { label: 'Sin estudiantes', value: s.emptyCount ?? 0, hint: 'cursos vacíos', variant: (s.emptyCount || 0) > 0 ? 'danger' : '' },
+    { label: 'Docentes activos', value: s.docentesActivos ?? '—', hint: 'con carga' },
+  ].map(kpiCard).join('');
+
+  // Distribution charts
+  renderDonut('turmasModalityChart', dist.byModality || {});
+  renderDistributionChart('turmasCityChart', dist.byCity || {}, '#DCAF63');
+
+  // Alert blocks
+  const renderAlertList = (id, items) => {
+    const target = el(id);
+    if (!target) return;
+    if (!items || !items.length) {
+      target.innerHTML = '<div class="alert-item alert-item--empty">Ninguno</div>';
+      return;
+    }
+    target.innerHTML = items.map((it) => {
+      const mat = it.matriculados ?? 0;
+      const cup = it.cupo ?? 0;
+      const oc = it.ocupacion ?? null;
+      return `<div class="alert-item"><strong>${escapeHtml(it.Nombre || '—')}</strong><span>${escapeHtml(String(mat))}/${escapeHtml(String(cup))} · ${oc != null ? escapeHtml(String(oc)) : '—'}%</span></div>`;
+    }).join('');
+  };
+  renderAlertList('overbookedList', alerts.overbooked);
+  renderAlertList('underbookedList', alerts.underbooked);
+  renderAlertList('emptyList', alerts.empty);
+
+  // Courses table
+  const coursesBody = document.querySelector('#coursesTable tbody');
+  const courses = data.courses || [];
+  if (!courses.length) {
+    coursesBody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-text)">Sin cursos</td></tr>';
+  } else {
+    coursesBody.innerHTML = courses.map((c) => {
+      const pct = c.ocupacion;
+      let occupancyCell;
+      if (pct == null) {
+        occupancyCell = '—';
+      } else {
+        const band = pct >= 90 ? 'danger'
+          : pct >= 50 ? 'success'
+          : pct > 0 ? 'warning'
+          : 'muted';
+        occupancyCell = `<div class="occupancy">
+          <div class="occupancy__bar"><div class="occupancy__fill occupancy__fill--${band}" style="width:${pct}%"></div></div>
+          <span>${pct}%</span>
+        </div>`;
+      }
+      return `<tr>
+        <td>${escapeHtml(c.Nombre || '—')}</td>
+        <td>${escapeHtml(c.Nivel || '—')}</td>
+        <td>${escapeHtml(c.modality || '—')}</td>
+        <td>${escapeHtml(c.Sede || '—')}</td>
+        <td>${escapeHtml(c.Docente || '—')}</td>
+        <td>${escapeHtml(String(c.matriculados ?? 0))}</td>
+        <td>${escapeHtml(String(c.cupo ?? 0))}</td>
+        <td>${occupancyCell}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Teachers table
+  const teachersBody = document.querySelector('#turmasTeachersTable tbody');
+  const teachers = data.teachers || [];
+  if (!teachers.length) {
+    teachersBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-text)">Sin docentes</td></tr>';
+  } else {
+    teachersBody.innerHTML = teachers.map((t) => `
+      <tr>
+        <td>${escapeHtml(t.nombre || '—')}</td>
+        <td>${escapeHtml(String(t.cursos ?? 0))}</td>
+        <td>${escapeHtml(String(t.estudiantes ?? 0))}</td>
+        <td>${escapeHtml(String(t.cupoTotal ?? 0))}</td>
+      </tr>`).join('');
+  }
+
+  // Notes — render non-empty string values as bullet paragraphs.
+  const notesTarget = el('turmasNotes');
+  if (notesTarget) {
+    const values = Object.values(notes).filter((v) => typeof v === 'string' && v.trim() !== '');
+    if (!values.length) {
+      notesTarget.innerHTML = '';
+    } else {
+      notesTarget.innerHTML = values.map((v) => `
+        <p><svg class="icon icon--xs"><use href="#icon-alert"/></svg> ${escapeHtml(v)}</p>`).join('');
+    }
+  }
+
+  applyPartialBanner(data);
+  state.loaded.turmas = true;
 }
 
 // ═════════════════ COMMERCIAL TAB ═════════════════

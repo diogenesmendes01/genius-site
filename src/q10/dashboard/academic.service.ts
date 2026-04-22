@@ -3,13 +3,20 @@ import { Q10ClientService } from '../q10-client.service';
 import {
   ageBucket,
   ageFromBirthdate,
+  cefrIndex,
+  CEFR_LEVELS,
+  classifyModality,
   cleanStr,
   currentlyActivePeriods,
+  expectedLevelAdvance,
   groupCount,
   Item,
+  Modality,
+  monthsBetween,
   periodKey,
   previousPeriod,
   safeArray,
+  studentFullName,
 } from './helpers';
 
 @Injectable()
@@ -111,11 +118,56 @@ export class AcademicService {
       churnRate: prevIds.size > 0 ? Math.round((churned.length / prevIds.size) * 100) : null,
     };
 
+    // ─── Pull /evaluaciones for faltas + promedio by student ───
+    // This endpoint consolidates what /inasistencias should have returned
+    // (empty on this tenant) — Cantidad_inasistencia is available here per
+    // student-asignatura pairing. Best fallback for attendance signal.
+    const evaluations = await this.tryFetch<Item>(
+      'evaluations',
+      '/evaluaciones',
+      errors,
+      { Programa: '01' },
+    );
+    const evalByStudent = new Map<string, Item[]>();
+    for (const e of evaluations) {
+      const id = cleanStr(e.Codigo_estudiante);
+      if (!id) continue;
+      if (!evalByStudent.has(id)) evalByStudent.set(id, []);
+      evalByStudent.get(id)!.push(e);
+    }
+
+    // ─── Join students with their course/modality via /evaluaciones ───
+    // Each student can have multiple asignatura rows (they matriculate in
+    // several parallel modules). We pick the most recent / primary one by
+    // assuming the row with the highest Consecutivo_curso is their active
+    // class, then classify modality from its Nombre_curso.
+    const enriched = currentStudents.map((s) => {
+      const id = cleanStr(s.Codigo_estudiante);
+      const evals = evalByStudent.get(id) ?? [];
+      // Primary curso: the one with the highest Porcentaje_evaluado so far
+      // (= their active/current module).
+      const primary = evals.slice().sort(
+        (a, b) => (Number(b.Porcentaje_evaluado) || 0) - (Number(a.Porcentaje_evaluado) || 0),
+      )[0];
+      const modality: Modality = primary
+        ? classifyModality(primary.Nombre_curso)
+        : 'Desconocida';
+      const inasistencia = primary ? Number(primary.Porcentaje_inasistencia) || 0 : 0;
+      const promedio = primary ? Number(primary.Promedio_evaluacion) || 0 : 0;
+      const cursoNombre = primary ? cleanStr(primary.Nombre_curso) : '';
+      return { student: s, modality, inasistencia, promedio, cursoNombre, primary };
+    });
+
     // ─── Distributions ───
     const byJornada = groupCount(currentStudents, (s) => s.Nombre_jornada);
     const byNivel = groupCount(currentStudents, (s) => s.Nombre_nivel);
     const bySedeJornada = groupCount(currentStudents, (s) => s.Nombre_sedejornada);
-    const byProgram = groupCount(currentStudents, (s) => s.Nombre_programa);
+    const byModality = groupCount(enriched, (e) => e.modality);
+    // City-class derived from "NN R - Cidade" pattern in Nombre_curso.
+    const byCity = groupCount(enriched, (e) => {
+      const m = e.cursoNombre.match(/-\s*(.+)$/);
+      return m ? m[1].trim() : 'Sin clase asignada';
+    });
     const byCondicion = groupCount(currentStudents, (s) =>
       cleanStr(s.Condicion_matricula) || 'Sin dato',
     );
@@ -137,6 +189,45 @@ export class AcademicService {
     }
     const avgAge = ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : null;
 
+    // ─── Risk flags — high-inasistencia, low-grade, level-stalled ───
+    // Threshold choices are conservative defaults; operators can refine once
+    // they eyeball real data.
+    const ABSENCE_THRESHOLD = 20;    // % inasistencia above which we flag
+    const GRADE_THRESHOLD = 0.6;     // Promedio_evaluacion below which we flag
+    const STALL_MULTIPLIER = 1.5;    // behind expected progression × this = stalled
+
+    const riskFlags = enriched
+      .map(({ student, modality, inasistencia, promedio, cursoNombre }) => {
+        const months = monthsBetween(student.Fecha_matricula) ?? 0;
+        const expectedIdx = modality === 'Desconocida'
+          ? null
+          : expectedLevelAdvance(modality, months);
+        const currentIdx = cefrIndex(student.Nombre_nivel);
+        const behindLevels = expectedIdx !== null && currentIdx !== null
+          ? Math.max(0, expectedIdx - currentIdx)
+          : 0;
+        const flags: string[] = [];
+        if (inasistencia > ABSENCE_THRESHOLD) flags.push(`${Math.round(inasistencia)}% faltas`);
+        if (promedio > 0 && promedio < GRADE_THRESHOLD) flags.push(`nota ${promedio.toFixed(2)}`);
+        if (modality !== 'Desconocida' && months >= STALL_MULTIPLIER * 3 && behindLevels > 0) {
+          flags.push(`${behindLevels} nivel(es) atrás del esperado`);
+        }
+        if (flags.length === 0) return null;
+        return {
+          Codigo: cleanStr(student.Codigo_estudiante),
+          nombre: studentFullName(student) || '—',
+          nivel: cleanStr(student.Nombre_nivel),
+          modality,
+          curso: cursoNombre || '—',
+          mesesMatriculado: months,
+          inasistencia: Math.round(inasistencia),
+          promedio,
+          flags,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .sort((a, b) => b.flags.length - a.flags.length || b.inasistencia - a.inasistencia);
+
     return {
       generatedAt: new Date().toISOString(),
       partial: Object.keys(errors).length > 0,
@@ -147,17 +238,35 @@ export class AcademicService {
         totalTeachers: docentes.length,
         avgAge,
         currentPeriod: retention.currentPeriod,
+        atRiskCount: riskFlags.length,
+        regularCount: byModality['Regular'] ?? 0,
+        intensivoCount: byModality['Semi Intensivo'] ?? 0,
+        unclassifiedCount: byModality['Desconocida'] ?? 0,
       },
       retention,
       distributions: {
         byJornada,
         byNivel,
         bySedeJornada,
-        byProgram,
+        byModality,
+        byCity,
         byCondicion,
         byGender: gender,
         byAge: ageDistribution,
       },
+      // CEFR progression stats — only among classified students.
+      progression: {
+        levelsOrder: [...CEFR_LEVELS],
+        distributionRegular: groupCount(
+          enriched.filter((e) => e.modality === 'Regular'),
+          (e) => cleanStr(e.student.Nombre_nivel) || 'Sin nivel',
+        ),
+        distributionIntensivo: groupCount(
+          enriched.filter((e) => e.modality === 'Semi Intensivo'),
+          (e) => cleanStr(e.student.Nombre_nivel) || 'Sin nivel',
+        ),
+      },
+      riskFlags: riskFlags.slice(0, 30),
       teachers: docentes.slice(0, 20).map((d) => ({
         Codigo: cleanStr(d.Codigo),
         Nombres: [d.Primer_nombre, d.Segundo_nombre].map(cleanStr).filter(Boolean).join(' '),

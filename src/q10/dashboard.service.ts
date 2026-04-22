@@ -40,13 +40,24 @@ export class DashboardService {
    * Deeper drill-downs live on the sibling services: AcademicService,
    * FinancialService, CommercialService.
    */
-  async overview(rangeDays = 30) {
+  async overview(rangeDays = 30, fromIso?: string, toIso?: string) {
     const errors: Record<string, string> = {};
     const degraded: Record<string, string> = {};
     const ALL_TIME = { Fecha_inicio: '1900-01-01', Fecha_fin: '2099-12-31' };
 
-    const rangeEnd = new Date();
-    const rangeStart = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000);
+    // When the dashboard sends explicit `from`/`to` (date picker presets
+    // like "Hoy" or "Este mes"), honour them — otherwise fall back to the
+    // legacy `rangeDays` behaviour. We recompute `rangeDays` from the
+    // actual window so downstream bucketing still lines up.
+    const parsedFrom = fromIso ? parseDate(fromIso) : null;
+    const parsedTo = toIso ? parseDate(toIso) : null;
+    const rangeEnd = parsedTo ?? new Date();
+    const rangeStart = parsedFrom ??
+      new Date(rangeEnd.getTime() - rangeDays * 24 * 60 * 60 * 1000);
+    const effectiveDays = Math.max(
+      1,
+      Math.ceil((rangeEnd.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000)) + 1,
+    );
     const RANGE = {
       Fecha_inicio: isoDate(rangeStart),
       Fecha_fin: isoDate(rangeEnd),
@@ -157,17 +168,24 @@ export class DashboardService {
       newStudentsInRange,
       'Fecha_matricula',
       null,
-      rangeDays,
+      rangeEnd,
+      effectiveDays,
     );
     const revenueByDay = this.bucketByDay(
       pagos,
       'Fecha_pago',
       'Valor_pagado',
-      rangeDays,
+      rangeEnd,
+      effectiveDays,
     );
 
     return {
-      range: { days: rangeDays, generatedAt: new Date().toISOString() },
+      range: {
+        days: effectiveDays,
+        from: isoDate(rangeStart),
+        to: isoDate(rangeEnd),
+        generatedAt: new Date().toISOString(),
+      },
       partial: Object.keys(errors).length > 0,
       errors,
       degraded,
@@ -228,11 +246,13 @@ export class DashboardService {
     list: Item[],
     dateField: string,
     valueField: string | null,
+    rangeEnd: Date,
     days: number,
   ): Array<{ date: string; value: number }> {
     const buckets = new Map<string, number>();
+    const endTime = rangeEnd.getTime();
     for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const d = new Date(endTime - i * 24 * 60 * 60 * 1000);
       buckets.set(d.toISOString().slice(0, 10), 0);
     }
     for (const item of list) {

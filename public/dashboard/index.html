@@ -2,9 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dashboard — Genius Idiomas</title>
   <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000E38">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +17,58 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
+
+  <!-- Inline SVG sprite — single source of truth for all icons across the
+       dashboard. Referenced via <svg><use href="#icon-foo"/></svg>. Replaces
+       the previous emoji set (tabs, banner, etc.) for a cleaner, more
+       professional look that also renders consistently on Windows/Android. -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <defs>
+      <symbol id="icon-overview" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/>
+        <rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>
+      </symbol>
+      <symbol id="icon-academic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </symbol>
+      <symbol id="icon-financial" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </symbol>
+      <symbol id="icon-commercial" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+      </symbol>
+      <symbol id="icon-turmas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </symbol>
+      <symbol id="icon-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </symbol>
+      <symbol id="icon-logout" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </symbol>
+    </defs>
+  </svg>
 
   <!-- Login view -->
   <section id="loginView" class="login-view">
@@ -54,8 +107,13 @@
         </div>
       </div>
 
-      <div class="app-header__actions">
-        <div class="range-picker">
+      <!-- Mobile trigger — expands the actions drawer below 720px. -->
+      <button class="app-header__menu" id="menuBtn" type="button" aria-label="Mostrar acciones" aria-expanded="false" aria-controls="headerActions">
+        <svg class="icon"><use href="#icon-menu"/></svg>
+      </button>
+
+      <div class="app-header__actions" id="headerActions">
+        <div class="picker">
           <label for="currencySelect">Moneda</label>
           <select id="currencySelect" title="Moneda de visualización">
             <option value="USD" selected>$ USD</option>
@@ -64,41 +122,78 @@
           </select>
         </div>
 
-        <div class="range-picker">
-          <label for="rangeSelect">Rango</label>
-          <select id="rangeSelect">
-            <option value="7">Últimos 7 días</option>
-            <option value="30" selected>Últimos 30 días</option>
-            <option value="90">Últimos 90 días</option>
-            <option value="365">Último año</option>
+        <!-- New date picker: presets + optional custom range. Applies to the
+             Overview + Financial tabs; Academic/Commercial are period-based
+             and ignore it (see dashboard.js#datePickerAppliesTo). -->
+        <div class="picker picker--date">
+          <label for="datePreset">
+            <svg class="icon icon--xs" aria-hidden="true"><use href="#icon-calendar"/></svg>
+            Período
+          </label>
+          <select id="datePreset">
+            <option value="today">Hoy</option>
+            <option value="last7">Últimos 7 días</option>
+            <option value="month" selected>Este mes</option>
+            <option value="last30">Últimos 30 días</option>
+            <option value="last90">Últimos 90 días</option>
+            <option value="year">Último año</option>
+            <option value="custom">Fecha seleccionada…</option>
           </select>
         </div>
 
+        <div class="picker picker--custom-range hidden" id="customRangeWrap">
+          <input type="date" id="customFrom" aria-label="Desde">
+          <span class="picker__dash">—</span>
+          <input type="date" id="customTo" aria-label="Hasta">
+        </div>
+
         <button class="btn btn-secondary" id="refreshBtn" title="Forzar actualización">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          Actualizar
+          <svg class="icon" aria-hidden="true"><use href="#icon-refresh"/></svg>
+          <span class="btn__label">Actualizar</span>
         </button>
 
         <div class="user-chip" id="userChip">
           <span class="user-chip__name" id="userName">—</span>
-          <button class="user-chip__logout" id="logoutBtn" title="Cerrar sesión">Salir</button>
+          <button class="user-chip__logout" id="logoutBtn" title="Cerrar sesión" aria-label="Salir">
+            <svg class="icon icon--xs" aria-hidden="true"><use href="#icon-logout"/></svg>
+            <span class="btn__label">Salir</span>
+          </button>
         </div>
       </div>
     </header>
 
     <nav class="tabs" id="tabs" role="tablist">
-      <button class="tab active" data-tab="overview" role="tab" aria-selected="true">📊 Visión general</button>
-      <button class="tab" data-tab="academic" role="tab">🎓 Académico</button>
-      <button class="tab" data-tab="financial" role="tab">💰 Financiero</button>
-      <button class="tab" data-tab="commercial" role="tab">🎯 Comercial / CRM</button>
+      <button class="tab active" data-tab="overview" role="tab" aria-selected="true">
+        <svg class="icon" aria-hidden="true"><use href="#icon-overview"/></svg>
+        <span>Visión general</span>
+      </button>
+      <button class="tab" data-tab="academic" role="tab">
+        <svg class="icon" aria-hidden="true"><use href="#icon-academic"/></svg>
+        <span>Académico</span>
+      </button>
+      <button class="tab" data-tab="turmas" role="tab">
+        <svg class="icon" aria-hidden="true"><use href="#icon-turmas"/></svg>
+        <span>Turmas</span>
+      </button>
+      <button class="tab" data-tab="financial" role="tab">
+        <svg class="icon" aria-hidden="true"><use href="#icon-financial"/></svg>
+        <span>Financiero</span>
+      </button>
+      <button class="tab" data-tab="commercial" role="tab">
+        <svg class="icon" aria-hidden="true"><use href="#icon-commercial"/></svg>
+        <span>Comercial / CRM</span>
+      </button>
     </nav>
 
     <main class="app-main">
       <div class="freshness" id="freshness">Cargando…</div>
 
       <div class="partial-banner hidden" id="partialBanner" role="alert">
-        <strong>⚠ Datos parciales</strong>
-        <span id="partialBannerDetail"></span>
+        <span class="partial-banner__icon"><svg class="icon" aria-hidden="true"><use href="#icon-alert"/></svg></span>
+        <div class="partial-banner__body">
+          <strong>Datos parciales</strong>
+          <span id="partialBannerDetail"></span>
+        </div>
       </div>
 
       <!-- ───────────── TAB: Overview ───────────── -->
@@ -154,16 +249,31 @@
 
         <section class="chart-grid">
           <div class="card">
-            <h2 class="card__title">Por jornada</h2>
-            <canvas id="jornadaChart" height="140"></canvas>
+            <h2 class="card__title">Por modalidad</h2>
+            <canvas id="modalityChart" height="140"></canvas>
           </div>
           <div class="card">
-            <h2 class="card__title">Por nivel CEFR</h2>
-            <canvas id="nivelChart" height="140"></canvas>
+            <h2 class="card__title">Por ciudad / clase</h2>
+            <canvas id="cityChart" height="140"></canvas>
           </div>
         </section>
 
         <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Nivel CEFR — Regular</h2>
+            <canvas id="cefrRegularChart" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Nivel CEFR — Semi Intensivo</h2>
+            <canvas id="cefrIntensivoChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Por jornada</h2>
+            <canvas id="jornadaChart" height="140"></canvas>
+          </div>
           <div class="card">
             <h2 class="card__title">Por género</h2>
             <canvas id="genderChart" height="140"></canvas>
@@ -171,6 +281,19 @@
           <div class="card">
             <h2 class="card__title">Por rango de edad</h2>
             <canvas id="ageChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Alumnos en riesgo</h2>
+          <div class="table-wrapper">
+            <table class="data-table" id="riskTable">
+              <thead><tr>
+                <th>Nombre</th><th>Nivel</th><th>Modalidad</th><th>Curso</th>
+                <th>Meses</th><th>% Faltas</th><th>Nota</th><th>Alertas</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </section>
 
@@ -185,20 +308,88 @@
         </section>
       </div>
 
+      <!-- ───────────── TAB: Turmas ───────────── -->
+      <div class="tab-panel hidden" id="tab-turmas" role="tabpanel">
+        <section class="kpi-grid" id="turmasKpis"></section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Por modalidad</h2>
+            <canvas id="turmasModalityChart" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Por ciudad</h2>
+            <canvas id="turmasCityChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Alertas de ocupación</h2>
+          <div class="alert-grid">
+            <div class="alert-block alert-block--danger">
+              <div class="alert-block__title">Lleno / cuasi lleno (≥90%)</div>
+              <div id="overbookedList" class="alert-list"></div>
+            </div>
+            <div class="alert-block alert-block--warning">
+              <div class="alert-block__title">Pocos estudiantes (&lt;5)</div>
+              <div id="underbookedList" class="alert-list"></div>
+            </div>
+            <div class="alert-block alert-block--muted">
+              <div class="alert-block__title">Sin estudiantes</div>
+              <div id="emptyList" class="alert-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Todos los cursos</h2>
+          <div class="table-wrapper">
+            <table class="data-table" id="coursesTable">
+              <thead><tr>
+                <th>Curso</th><th>Nivel</th><th>Modalidad</th><th>Sede</th>
+                <th>Docente</th><th>Matrículas</th><th>Cupo</th><th>Ocupación</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Docentes por carga</h2>
+          <div class="table-wrapper">
+            <table class="data-table" id="turmasTeachersTable">
+              <thead><tr>
+                <th>Nombre</th><th>Cursos</th><th>Estudiantes</th><th>Cupos totales</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card card--notes" id="turmasNotes"></section>
+      </div>
+
       <!-- ───────────── TAB: Financial ───────────── -->
       <div class="tab-panel hidden" id="tab-financial" role="tabpanel">
         <section class="kpi-grid" id="financialKpis"></section>
 
         <section class="card">
-          <h2 class="card__title">Ingresos mensuales (últimos 12 meses)</h2>
+          <h2 class="card__title">Ingresos por mes</h2>
           <canvas id="mrrChart" height="100"></canvas>
         </section>
 
         <section class="chart-grid">
           <div class="card">
+            <h2 class="card__title">Ingresos por modalidad</h2>
+            <canvas id="revenueByModalityChart" height="140"></canvas>
+          </div>
+          <div class="card">
             <h2 class="card__title">Ingresos por programa</h2>
             <canvas id="revenueByProgramChart" height="140"></canvas>
           </div>
+        </section>
+
+        <section class="chart-grid">
           <div class="card">
             <h2 class="card__title">Últimos pagos</h2>
             <div class="table-wrapper">
@@ -208,15 +399,14 @@
               </table>
             </div>
           </div>
-        </section>
-
-        <section class="card">
-          <h2 class="card__title">Top deudores (mayor saldo)</h2>
-          <div class="table-wrapper">
-            <table class="data-table" id="debtorsTable">
-              <thead><tr><th>Estudiante</th><th>Concepto</th><th>Período</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
-              <tbody></tbody>
-            </table>
+          <div class="card">
+            <h2 class="card__title">Top deudores</h2>
+            <div class="table-wrapper">
+              <table class="data-table" id="debtorsTable">
+                <thead><tr><th>Estudiante</th><th>Concepto</th><th>Período</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
         </section>
       </div>
