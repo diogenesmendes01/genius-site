@@ -273,3 +273,86 @@ describe('isActivo', () => {
     expect(isActivo('')).toBe(false);
   });
 });
+
+describe('classifyModality — real product names observed in probe', () => {
+  it('"Mensualidad 14 R - Recife" → Regular (product name carries the marker)', () => {
+    expect(classifyModality('Mensualidad 14 R - Recife')).toBe('Regular');
+  });
+
+  it('"10 S - Salvador" → Semi Intensivo', () => {
+    expect(classifyModality('10 S - Salvador')).toBe('Semi Intensivo');
+  });
+
+  it('"14 R - Recife" → Regular', () => {
+    expect(classifyModality('14 R - Recife')).toBe('Regular');
+  });
+
+  it('"11 - A1" → Desconocida (no modality marker before the dash)', () => {
+    expect(classifyModality('11 - A1')).toBe('Desconocida');
+  });
+
+  it('"Matrícula" → Desconocida', () => {
+    expect(classifyModality('Matrícula')).toBe('Desconocida');
+  });
+
+  it('"Material didáctico" → Desconocida', () => {
+    expect(classifyModality('Material didáctico')).toBe('Desconocida');
+  });
+
+  it('empty string → Desconocida', () => {
+    expect(classifyModality('')).toBe('Desconocida');
+  });
+
+  it('undefined → Desconocida', () => {
+    expect(classifyModality(undefined)).toBe('Desconocida');
+  });
+});
+
+describe('isActivo — real boolean-typed Estado from /periodos', () => {
+  it('isActivo(true) → true (probe confirmed /periodos returns boolean, not string)', () => {
+    expect(isActivo(true)).toBe(true);
+  });
+
+  it('isActivo(false) → false', () => {
+    expect(isActivo(false)).toBe(false);
+  });
+
+  it('isActivo("Activo") → true (legacy string form, other endpoints)', () => {
+    expect(isActivo('Activo')).toBe(true);
+  });
+
+  it('isActivo("Inactivo") → false', () => {
+    expect(isActivo('Inactivo')).toBe(false);
+  });
+
+  it('isActivo("activo") → true (case-insensitive)', () => {
+    expect(isActivo('activo')).toBe(true);
+  });
+
+  it('isActivo(null) → false', () => {
+    expect(isActivo(null)).toBe(false);
+  });
+
+  it('isActivo(undefined) → false', () => {
+    expect(isActivo(undefined)).toBe(false);
+  });
+
+  it('isActivo(1) → true (numeric 1 normalises to "1" which is an accepted truthy token)', () => {
+    expect(isActivo(1)).toBe(true);
+  });
+});
+
+describe('cefrIndex — full A1..C2 range (portable beyond current tenant)', () => {
+  it('maps A1..C2 to 0..5 inclusive', () => {
+    expect(cefrIndex('A1')).toBe(0);
+    expect(cefrIndex('A2')).toBe(1);
+    expect(cefrIndex('B1')).toBe(2);
+    expect(cefrIndex('B2')).toBe(3);
+    expect(cefrIndex('C1')).toBe(4);
+    expect(cefrIndex('C2')).toBe(5);
+  });
+
+  it('C2 → 5 (kept even though this tenant has no C2 — helper must stay portable)', () => {
+    expect(cefrIndex('C2')).toBe(5);
+  });
+});

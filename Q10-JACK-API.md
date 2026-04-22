@@ -70,7 +70,7 @@
 > - Glossário rápido de **padrões textuais** nos nomes (ex.: classificação de modalidade por regex)
 > - **Lacunas de dados** que o operador ainda precisa preencher no Q10
 >
-> Última atualização: 2026-04-22 — após probe ao vivo (scripts/q10-probe.js).
+> Última atualização: 2026-04-22 — após probe fase 2 ao vivo (scripts/q10-probe-phase2.js).
 
 ### Status dos endpoints neste plano (probe 2026-04-22)
 
@@ -96,6 +96,10 @@ Legenda:
 | `/usuarios` | ✅ 200 | 5 records (novo) |
 | `/programas` | ✅ 200 | 1 record (`Curso de Português`, `Codigo: "01"`) |
 | `/sedes` | ✅ 200 | 1 record (`Principal`) |
+| `/niveles?Estado=true` | ✅ 200 | 5 records. **Catálogo CEFR oficial do tenant** (destravado na fase 2) |
+| `/inscripciones?Consecutivo_periodo=<id>` | ✅ 200 | 5 records. **Matrículas com Fecha_inscripcion** (destravado na fase 2) |
+| `/oportunidades?Fecha_inicio&Fecha_fin` | ✅ 200 | Funciona com date range (confirma que o 404 sem filtro era filtro obrigatório em disfarce — fase 2) |
+| `/egresos?Codigo_persona=<id>` | ✅ 200 | Endpoint OK, mas 0 records (sem dados neste tenant — fase 2) |
 | `/contactos` | 📭 200 | Retorna array vazio |
 | `/aulas` | 📭 200 | Retorna array vazio |
 | `/codeudores` | 📭 200 | Retorna array vazio |
@@ -127,9 +131,25 @@ Legenda:
 | `/egresos` | ⛔ 400 | _"Los siguientes campos son obligatorios: 'Codigo_persona' o 'Consecutivo_tercero'"_ |
 | `/inscripciones` | ⛔ 400 | _"No se ha ingresado ningún filtro"_ |
 | `/negocios` | ⛔ 400 | _"Es necesario ingresar al menos un parámetro de consulta para procesar la solicitud."_ |
+| `/negocios` (fase 2) | ⛔ 400 | Rejeita 400 mesmo passando `Codigo_persona`, `Estado=Ganada` ou outros filtros. Endpoint existe mas nenhum filtro conhecido destrava. **Dead-end neste plano.** |
 | `/niveles` | ⛔ 400 | _"El campo 'Estado' es obligatorio"_ ← ✨ pode funcionar com `?Estado=true/false`! |
 
 Nota: Q10 trata "parâmetro obrigatório ausente" como 404 para alguns endpoints (coluna `⛔ 404*`) — só dá pra diferenciar de um 404 real re-probado com o filtro canônico. Ver "Taxonomia de erros" abaixo.
+
+### Detail endpoints (probe fase 2)
+
+Para a maioria dos recursos, `/resource/{id}` retorna o **mesmo shape** que o list — não ganha nada em bater no detail, pode confiar no cache da list:
+
+| Endpoint | Diff vs list |
+|---|---|
+| `/cursos/{id}` | idêntico |
+| `/docentes/{id}` | idêntico |
+| `/periodos/{id}` | idêntico |
+| `/programas/{id}` | idêntico |
+| `/sedes/{id}` | idêntico |
+| `/asignaturas/{id}` | idêntico |
+| `/estudiantes/{id}?Periodo=<id>` | ⚠ **shape diferente** — ver seção dedicada abaixo |
+| `/administrativos/{id}` | ⛔ 404 com `Codigo` do list — espera `Numero_identificacion` (hipótese) |
 
 ### Taxonomia de erros do Q10
 
@@ -248,6 +268,98 @@ A doc menciona `Valor` genérico; o tenant retorna nomes diferenciados:
 ### Shapes dos endpoints descobertos (probe 2026-04-22)
 
 Endpoints que o probe destravou e que ainda não tínhamos shape documentada.
+
+**`/niveles?Estado=true`** — catálogo CEFR **oficial** deste tenant
+```json
+{
+  "Codigo_nivel": "01",
+  "Nombre_nivel": "A1",
+  "Ordenamiento": 1,
+  "Estado": true
+}
+```
+- 5 níveis cadastrados: **A1, A2, B1, B2, C1**. **⚠ C2 NÃO EXISTE neste tenant.**
+- Nosso `helpers.ts#CEFR_LEVELS` tem `['A1','A2','B1','B2','C1','C2']` — o último bucket nunca vai ter match. Inofensivo para agregações, mas é desinformação. Dava pra carregar dinâmico deste endpoint se o operador migrar para outro tenant no futuro.
+- `Estado=false` retorna **404 amigável** (`"No se encontraron niveles con el estado indicado"`), não array vazio. Antipattern Q10 — vale o treat-404-as-empty para esse caminho.
+
+**`/inscripciones?Consecutivo_periodo=<id>`** — matrículas do período
+```json
+{
+  "Consecutivo_inscripcion": 2200,
+  "Codigo_estudiante": "110762...",
+  "Nombre_completo": "...",
+  "Codigo_tipo_identificacion": "CR01",
+  "Numero_identificacion": "118040501",
+  "Codigo_programa": "01",
+  "Nombre_programa": "Curso de Português",
+  "Consecutivo_sede_jornada": 2,
+  "Nombre_sede_jornada": "Principal - Noche",
+  "Codigo_sede": "001",
+  "Nombre_sede": "Principal",
+  "Codigo_jornada": "002",
+  "Nombre_jornada": "Noche",
+  "per_nombre": "2026",
+  "Fecha_inscripcion": "2026-04-21T00:00:00"
+}
+```
+- Traz **estudante + programa + sede + jornada + período** em uma linha só — único endpoint que tem esse join completo.
+- `Fecha_inscripcion` é a fonte **oficial e datada** da matrícula. Hoje usamos `/estudiantes.Fecha_matricula` (que vem sem tz) — substituir por este seria mais confiável.
+- Só aceita `Consecutivo_periodo` como filtro. `?Codigo_persona=X` retorna 400 `"No se ha ingresado ningún filtro"` — Q10 não reconhece `Codigo_persona` aqui.
+- `per_nombre` é o nome do período (inconsistente com `Nombre_periodo` usado em outros endpoints).
+
+**`/estudiantes/{id}?Periodo=<periodoId>`** — detail (shape MUITO diferente do list)
+```json
+{
+  "Codigo_estudiante": "113932370852",
+  "Primer_nombre": "...",
+  "Segundo_nombre": null,
+  "Primer_apellido": "...",
+  "Segundo_apellido": "...",
+  "Codigo_tipo_identificacion": "CR01",
+  "Numero_identificacion": "108590571",
+  "Genero": "F",
+  "Email": "...",
+  "Telefono": null,
+  "Celular": "...",
+  "Fecha_nacimiento": "...",
+  "Familiares_relacionados": []
+}
+```
+- **Detail tem 16 campos; list tem 34.** Detail retorna só o PII do aluno, sem contexto de programa/nível/período.
+- Novo campo **`Familiares_relacionados` (array)** — não aparece no list. Provavelmente traz responsáveis/tutores cadastrados. Feature potencial: card de "Contatos de emergência" no UI do aluno.
+- Para KPIs de dashboard continue usando a list (`/estudiantes?Periodo=X`) porque tem Nombre_programa, Nombre_nivel, Fecha_matricula, Condicion_matricula etc. que o detail omite.
+
+**`/oportunidades?Fecha_inicio=&Fecha_fin=`** — funnel completo (confirmado fase 2)
+```json
+{
+  "Fecha_registro": "2026-04-21T09:23:38.163",
+  "Consecutivo_oportunidad": 5,
+  "Nombre_oportunidad": "...",
+  "Numero_identificacion_oportunidad": "...",
+  "Correo_electronico": "...",
+  "Celular": "...",
+  "Codigo_municipio": "10071",
+  "Nombre_municipio": "Puntarenas (601)",
+  "Codigo_barrio": "1007007",
+  "Nombre_barrio": "Chomes (03)",
+  "Numero_identificacion_asesor": "00000",
+  "Nombre_asesor": "...",
+  "Consecutivo_como_se_entero": 1,
+  "Descripcion_como_se_entero": "Facebook",
+  "Consecutivo_medio_contacto": 1,
+  "Descripcion_medio_contacto": "Whatsapp",
+  "Campos_personalizados": [],
+  "Negocio_favorito": { /* ... */ }
+}
+```
+- **Requer** `Fecha_inicio` + `Fecha_fin` (sem eles → 404 em disfarce).
+- Campos ricos pro CRM:
+  - `Descripcion_como_se_entero` — origem do lead (Facebook, etc.)
+  - `Descripcion_medio_contacto` — canal (WhatsApp, etc.)
+  - `Nombre_asesor` / `Numero_identificacion_asesor` — vendedor
+  - `Nombre_municipio` / `Nombre_barrio` — localização granular
+  - `Negocio_favorito` (object aninhado) — carrega `Estado_negocio` usado no funnel
+  - `Campos_personalizados` (array) — customizações do operador, não padronizado entre tenants
 
 **`/asignaturas`** — catálogo CEFR + outros cursos
 
@@ -407,23 +519,34 @@ Não renderizar coluna `Telefono` no UI. Tanto `/docentes` quanto `/administrati
 **`/docentes.Estudiantes_relacionados` — array existente, não consumido**
 Campo presente mas nunca tocamos. Poderia substituir o cruzamento manual que fazemos em `TurmasService.teachersByLoad`.
 
+**List-vs-detail — idêntico pra quase tudo (probe fase 2)**
+Dos 8 detail endpoints probedos, 6 retornam exatamente o mesmo shape da list (`/cursos/{id}`, `/docentes/{id}`, `/periodos/{id}`, `/programas/{id}`, `/sedes/{id}`, `/asignaturas/{id}`). **Única exceção** é `/estudiantes/{id}` — shape completamente diferente (só PII + `Familiares_relacionados`). Implicação: não vale a pena expor detail endpoints genéricos no `Q10ClientService` — usa o cache da list.
+
+**Q10 retorna 404 amigável em vez de array vazio**
+`/niveles?Estado=false` → `{"code":"404","message":"No se encontraron niveles con el estado indicado"}`. Idem `/pagos?Codigo_persona=X` sem dados → 404 `"No hay registros, verifique los filtros"`. **Não é "endpoint não existe"** — é resposta pra "consulta retornou vazio". O `tryFetch` do nosso backend registra isso como erro quando deveria ser partial. Avaliar se a mensagem contém substring `No se encontraron` / `No hay registros` pra degradar como `degraded[key] = 'sem dados'` em vez de `errors[key]`.
+
 ### Buracos conhecidos (gap entre Q10 e o negócio)
 
 - **Aulas particulares não estão cadastradas** em `/cursos`. Receita e matrículas dessa modalidade não contabilizam. Quando cadastrarem, usar `Nombre` tipo `"P - {Aluno} - {Cidade}"` e estender o regex de modalidade.
 - **Cancelamentos não são registrados**. Churn é inferido por **ausência entre períodos** (set-based diff entre `/estudiantes?Periodo=P_atual` e `P_anterior`). Ver `AcademicService.retention`.
 
-### Endpoints pra reprobar com filtros (fase 2)
+### Resultado da fase 2 (2026-04-22)
 
-Endpoints que retornaram 400 com mensagem específica — daria pra destravar com o parâmetro certo:
+**Destravados** (viram oportunidades de feature no dashboard):
+- `/niveles?Estado=true` — usar como source of truth do catálogo CEFR (substitui o hardcode em helpers.ts#CEFR_LEVELS)
+- `/inscripciones?Consecutivo_periodo=<id>` — fonte oficial de `Fecha_inscripcion`. Substituir `/estudiantes.Fecha_matricula` no retention analysis.
+- `/oportunidades?Fecha_inicio&Fecha_fin` — já usamos, mas vale revisar se estamos extraindo `Descripcion_como_se_entero`, `Descripcion_medio_contacto`, `Nombre_asesor`, `Nombre_municipio` no commercial tab.
+- `/estudiantes/{id}.Familiares_relacionados` — card de "Contatos de emergência" no detalhe do aluno.
 
-| Endpoint | Filtro sugerido | Por quê |
-|---|---|---|
-| `/niveles?Estado=true` | `Estado=true` | Q10 disse "El campo 'Estado' es obligatorio". Se funcionar, dá o catálogo de níveis do ERP |
-| `/egresos?Codigo_persona=<id>` | ID de pessoa | Listar ex-alunos (catch para churn) |
-| `/inscripciones?Codigo_persona=<id>` | qualquer filtro | Registros de pré-matrícula |
-| `/negocios?Codigo_persona=<id>` ou `?Estado=Ganada` | qualquer filtro | Pode ser a fonte primária do funil de vendas, com enum de estado confiável |
+**Confirmados como becos sem saída:**
+- `/negocios` — rejeita 400 com qualquer filtro testado. Dead-end.
+- `/inasistencias` — 404 mesmo com `Consecutivo_periodo` válido. Continua via fallback `/evaluaciones.Porcentaje_inasistencia`.
+- `/administrativos/{id}` com `Codigo` do list → 404. Hipótese (não testada): espera `Numero_identificacion`.
 
-E os detail endpoints (`/{resource}/{id}`) nunca foram probedados — nosso `Q10ClientService.get` só faz list.
+**Pendentes para fase 3 (se quisermos investigar):**
+- `/pagos?Codigo_persona=X` com estudante que TEM pagos (seed da fase 2 não tinha) — pra testar se `Codigo_programa` deixa de ser null.
+- `/administrativos/identificacion/{numero}` ou similar.
+- `/inscripciones` com filtros alternativos (Q10 spec não foi consistente).
 
 ### Lista de atualizações pedidas ao Q10
 
