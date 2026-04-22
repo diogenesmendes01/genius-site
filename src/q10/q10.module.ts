@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { AcademicService } from './dashboard/academic.service';
 import { CommercialService } from './dashboard/commercial.service';
+import { CurrencyService } from './dashboard/currency.service';
 import { FinancialService } from './dashboard/financial.service';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
@@ -25,6 +26,7 @@ import { TrackingService } from './tracking.service';
     AcademicService,
     FinancialService,
     CommercialService,
+    CurrencyService,
   ],
   exports: [Q10ClientService, TrackingService],
 })
