@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -23,6 +24,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -31,7 +33,7 @@ export class AuthController {
     res.cookie(COOKIE_NAME, result.token, {
       httpOnly: true,
       secure: this.config.get('NODE_ENV') === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
       maxAge: this.auth.cookieMaxAgeMs(),
       path: '/',
     });

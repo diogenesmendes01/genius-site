@@ -1,37 +1,27 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Q10ClientService } from '../q10-client.service';
+import { DashboardBaseService } from './dashboard-base.service';
 import {
   ageBucket,
   ageFromBirthdate,
+  CEFR_LEVELS,
+  classifyModality,
   cleanStr,
   currentlyActivePeriods,
   groupCount,
   Item,
+  Modality,
   periodKey,
   previousPeriod,
-  safeArray,
 } from './helpers';
+import { RiskAnalysisService } from './risk-analysis.service';
 
 @Injectable()
-export class AcademicService {
-  private readonly logger = new Logger(AcademicService.name);
+export class AcademicService extends DashboardBaseService {
+  protected readonly logPrefix = 'academic';
 
-  constructor(private readonly q10: Q10ClientService) {}
-
-  private async tryFetch<T>(
-    key: string,
-    path: string,
-    errors: Record<string, string>,
-    params?: Record<string, unknown>,
-  ): Promise<T[]> {
-    try {
-      return safeArray(await this.q10.getAll(path, params)) as T[];
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      errors[key] = message;
-      this.logger.warn(`[academic] ${path} failed: ${message}`);
-      return [];
-    }
+  constructor(q10: Q10ClientService, private readonly risk: RiskAnalysisService) {
+    super(q10);
   }
 
   /**
@@ -111,11 +101,58 @@ export class AcademicService {
       churnRate: prevIds.size > 0 ? Math.round((churned.length / prevIds.size) * 100) : null,
     };
 
+    // ─── Pull /evaluaciones for faltas + promedio by student ───
+    // This endpoint consolidates what /inasistencias should have returned
+    // (empty on this tenant) — Cantidad_inasistencia is available here per
+    // student-asignatura pairing. Best fallback for attendance signal.
+    // Cap at 20k: /evaluaciones produces one row per student-asignatura pair and grows fastest.
+    const evaluations = await this.tryFetch<Item>(
+      'evaluations',
+      '/evaluaciones',
+      errors,
+      { Programa: '01' },
+      { maxRecords: 20_000, degraded },
+    );
+    const evalByStudent = new Map<string, Item[]>();
+    for (const e of evaluations) {
+      const id = cleanStr(e.Codigo_estudiante);
+      if (!id) continue;
+      if (!evalByStudent.has(id)) evalByStudent.set(id, []);
+      evalByStudent.get(id)!.push(e);
+    }
+
+    // ─── Join students with their course/modality via /evaluaciones ───
+    // Each student can have multiple asignatura rows (they matriculate in
+    // several parallel modules). We pick the most recent / primary one by
+    // assuming the row with the highest Consecutivo_curso is their active
+    // class, then classify modality from its Nombre_curso.
+    const enriched = currentStudents.map((s) => {
+      const id = cleanStr(s.Codigo_estudiante);
+      const evals = evalByStudent.get(id) ?? [];
+      // Primary curso: the one with the highest Porcentaje_evaluado so far
+      // (= their active/current module).
+      const primary = evals.slice().sort(
+        (a, b) => (Number(b.Porcentaje_evaluado) || 0) - (Number(a.Porcentaje_evaluado) || 0),
+      )[0];
+      const modality: Modality = primary
+        ? classifyModality(primary.Nombre_curso)
+        : 'Desconocida';
+      const inasistencia = primary ? Number(primary.Porcentaje_inasistencia) || 0 : 0;
+      const promedio = primary ? Number(primary.Promedio_evaluacion) || 0 : 0;
+      const cursoNombre = primary ? cleanStr(primary.Nombre_curso) : '';
+      return { student: s, modality, inasistencia, promedio, cursoNombre, primary };
+    });
+
     // ─── Distributions ───
     const byJornada = groupCount(currentStudents, (s) => s.Nombre_jornada);
     const byNivel = groupCount(currentStudents, (s) => s.Nombre_nivel);
     const bySedeJornada = groupCount(currentStudents, (s) => s.Nombre_sedejornada);
-    const byProgram = groupCount(currentStudents, (s) => s.Nombre_programa);
+    const byModality = groupCount(enriched, (e) => e.modality);
+    // City-class derived from "NN R - Cidade" pattern in Nombre_curso.
+    const byCity = groupCount(enriched, (e) => {
+      const m = e.cursoNombre.match(/-\s*(.+)$/);
+      return m ? m[1].trim() : 'Sin clase asignada';
+    });
     const byCondicion = groupCount(currentStudents, (s) =>
       cleanStr(s.Condicion_matricula) || 'Sin dato',
     );
@@ -137,6 +174,9 @@ export class AcademicService {
     }
     const avgAge = ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : null;
 
+    // ─── Risk flags — delegated to RiskAnalysisService ───
+    const riskFlags = this.risk.computeRiskFlags(enriched).slice(0, 30);
+
     return {
       generatedAt: new Date().toISOString(),
       partial: Object.keys(errors).length > 0,
@@ -147,17 +187,35 @@ export class AcademicService {
         totalTeachers: docentes.length,
         avgAge,
         currentPeriod: retention.currentPeriod,
+        atRiskCount: riskFlags.length,
+        regularCount: byModality['Regular'] ?? 0,
+        intensivoCount: byModality['Semi Intensivo'] ?? 0,
+        unclassifiedCount: byModality['Desconocida'] ?? 0,
       },
       retention,
       distributions: {
         byJornada,
         byNivel,
         bySedeJornada,
-        byProgram,
+        byModality,
+        byCity,
         byCondicion,
         byGender: gender,
         byAge: ageDistribution,
       },
+      // CEFR progression stats — only among classified students.
+      progression: {
+        levelsOrder: [...CEFR_LEVELS],
+        distributionRegular: groupCount(
+          enriched.filter((e) => e.modality === 'Regular'),
+          (e) => cleanStr(e.student.Nombre_nivel) || 'Sin nivel',
+        ),
+        distributionIntensivo: groupCount(
+          enriched.filter((e) => e.modality === 'Semi Intensivo'),
+          (e) => cleanStr(e.student.Nombre_nivel) || 'Sin nivel',
+        ),
+      },
+      riskFlags,
       teachers: docentes.slice(0, 20).map((d) => ({
         Codigo: cleanStr(d.Codigo),
         Nombres: [d.Primer_nombre, d.Segundo_nombre].map(cleanStr).filter(Boolean).join(' '),

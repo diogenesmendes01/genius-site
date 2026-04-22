@@ -146,3 +146,61 @@ export function ageBucket(age: number): string {
   if (age < 65) return '50-64';
   return '65+';
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// Genius-specific business rules
+// ═══════════════════════════════════════════════════════════════════
+
+/** CEFR progression — order matters for "expected level after N months". */
+export const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+export type CefrLevel = (typeof CEFR_LEVELS)[number];
+
+/** Months each modality takes to advance one CEFR level at Genius.
+ *  Confirmed by the operator: Regular = 3 months/level, Intensivo = 1.5. */
+export const MONTHS_PER_LEVEL = { Regular: 3, 'Semi Intensivo': 1.5 } as const;
+
+export type Modality = 'Regular' | 'Semi Intensivo' | 'Desconocida';
+
+/**
+ * Classify a course's modality from its `Nombre_curso`. Pattern observed in
+ * the live Q10 tenant: "NN R - City" (Regular) and "NN S - City"
+ * (Semi Intensivo) — confirmed across 10 sample courses. "Desconocida"
+ * covers anything that doesn't match, so the UI can bucket those into
+ * "Sin clasificar" without crashing.
+ */
+export function classifyModality(nombreCurso: unknown): Modality {
+  const s = cleanStr(nombreCurso);
+  if (/\s(R|Regular)\s*-/i.test(s)) return 'Regular';
+  if (/\s(S|Semi\s*Intensivo|Intensivo)\s*-/i.test(s)) return 'Semi Intensivo';
+  return 'Desconocida';
+}
+
+/**
+ * Index of a CEFR level (A1=0 … C2=5). Returns null if the string isn't a
+ * recognised CEFR code; callers skip those from progression math.
+ */
+export function cefrIndex(nivel: unknown): number | null {
+  const s = cleanStr(nivel).toUpperCase();
+  const i = (CEFR_LEVELS as readonly string[]).indexOf(s);
+  return i === -1 ? null : i;
+}
+
+/**
+ * How many CEFR levels a student should have advanced after `months` at the
+ * given modality, rounded down. A student Regular at month 7 should be in
+ * level index 2 (A1 → A2 → B1 → started B1).
+ */
+export function expectedLevelAdvance(modality: Modality, months: number): number {
+  const m = MONTHS_PER_LEVEL[modality as keyof typeof MONTHS_PER_LEVEL];
+  if (!m || months <= 0) return 0;
+  return Math.floor(months / m);
+}
+
+/** Months between two dates (ISO strings or Date), rounded to one decimal. */
+export function monthsBetween(from: unknown, to: unknown = new Date()): number | null {
+  const a = parseDate(from);
+  const b = to instanceof Date ? to : parseDate(to);
+  if (!a || !b) return null;
+  const ms = b.getTime() - a.getTime();
+  return Math.round((ms / (1000 * 60 * 60 * 24 * 30.44)) * 10) / 10;
+}
