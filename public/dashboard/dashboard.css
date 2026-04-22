@@ -301,6 +301,14 @@ body {
   border-radius: 4px;
   font-size: 0.78rem;
 }
+.partial-banner--info {
+  border-color: #BAE6FD;
+  background: #F0F9FF;
+  color: #075985;
+  margin-top: 0.5rem;
+}
+.partial-banner--info .partial-banner__icon { color: #0369A1; }
+.partial-banner--info strong { color: #0C4A6E; }
 
 /* ──────────────── Cards / KPIs ──────────────── */
 .card {

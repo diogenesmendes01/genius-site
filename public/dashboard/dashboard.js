@@ -434,6 +434,21 @@ function renderPartialBanner(data) {
   banner.classList.remove('hidden');
 }
 
+function renderScopeBanner(data) {
+  const banner = el('scopeBanner');
+  if (!banner) return;
+  const title = el('scopeBannerTitle');
+  const detail = el('scopeBannerDetail');
+  const notice = data && data.scopeNotice;
+  if (!notice || !notice.message) {
+    banner.classList.add('hidden');
+    return;
+  }
+  title.textContent = notice.title || 'Aviso';
+  detail.textContent = ` — ${notice.message}`;
+  banner.classList.remove('hidden');
+}
+
 /**
  * Format a USD-base amount in the user's chosen display currency.
  *
@@ -799,11 +814,29 @@ async function loadFinancial(force) {
   state.loaded.financial = true;
 
   const s = data.summary || {};
+  // LTV hint exposes the modality breakdown so the operator sees the two
+  // contractual horizons feeding the headline average.
+  const ltvHint = [
+    s.ltvRegular != null ? `Reg: ${currency(s.ltvRegular)}` : null,
+    s.ltvIntensivo != null ? `Int: ${currency(s.ltvIntensivo)}` : null,
+  ].filter(Boolean).join(' · ') || `máx. ${currency(s.maxPaid)}`;
+  // Deuda hint clarifies how many distinct debtors are behind the total
+  // and how much "ghost debt" (unpaid enrollment proposals) we excluded.
+  const debtHint = (() => {
+    const parts = [];
+    if (s.debtorsTotal != null) parts.push(`${s.debtorsTotal} deudores`);
+    if (s.activeWithDebt != null) parts.push(`${s.activeWithDebt} activos`);
+    const primary = parts.join(' · ');
+    if (s.ghostDebt > 0) {
+      return `${primary} · excl. ${currency(s.ghostDebt)} propuestas`;
+    }
+    return primary || 'sin deudores';
+  })();
   el('financialKpis').innerHTML = [
     { label: 'Ingresos (12m)', value: currency(s.totalRevenue), hint: `${s.payingStudents} alumnos pagantes`, accent: true, variant: 'success' },
     { label: 'Ticket promedio', value: currency(s.avgTicket), hint: 'por pagante (12m)' },
-    { label: 'LTV aproximado', value: currency(s.ltvApprox), hint: `máx. ${currency(s.maxPaid)}` },
-    { label: 'Deuda pendiente', value: currency(s.outstandingDebt), hint: `${s.activeWithDebt || 0} alumnos activos con saldo`, variant: s.outstandingDebt > 0 ? 'danger' : '' },
+    { label: 'LTV estimado', value: currency(s.ltvEstimated), hint: ltvHint },
+    { label: 'Deuda pendiente', value: currency(s.outstandingDebt), hint: debtHint, variant: s.outstandingDebt > 0 ? 'danger' : '' },
     { label: 'Inadimplencia', value: s.inadimplenciaRate != null ? `${s.inadimplenciaRate}%` : '—', hint: 'de alumnos activos' },
     { label: 'Avance del período', value: s.projectionRate != null ? `${s.projectionRate}%` : '—', hint: 'pagado / proyectado' },
   ].map(kpiCard).join('');
@@ -1035,5 +1068,6 @@ function funnelStage(s) {
 function applyPartialBanner(data) {
   // Each tab can toggle the banner; when the active tab has errors, show them.
   renderPartialBanner(data);
+  renderScopeBanner(data);
   renderRateInfo();
 }
