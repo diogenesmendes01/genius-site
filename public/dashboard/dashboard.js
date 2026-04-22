@@ -3,6 +3,16 @@
 const API = '/api';
 const AUTO_REFRESH_MS = 60_000;
 
+// Currencies the dashboard knows how to display. Q10 stores all values in
+// USD on this tenant (verified live), so we treat USD as the base and
+// convert at display time only — see CurrencyService backend.
+const SUPPORTED_CURRENCIES = ['USD', 'CRC', 'BRL'];
+const CURRENCY_LOCALE = {
+  USD: { locale: 'en-US', fractionDigits: 2 },
+  CRC: { locale: 'es-CR', fractionDigits: 0 },  // colones rarely use decimals
+  BRL: { locale: 'pt-BR', fractionDigits: 2 },
+};
+
 const state = {
   user: null,
   rangeDays: 30,
@@ -12,6 +22,12 @@ const state = {
   // Cache per tab so switching back and forth doesn't re-hit /api. Invalidated
   // by refreshBtn or the 60s auto-timer.
   loaded: { overview: false, academic: false, financial: false, commercial: false },
+  // Multi-currency state — `displayCurrency` is the user's view choice
+  // (persisted in localStorage). `rates` is the USD-base table from
+  // /api/dashboard/currency-rates, lazy-loaded on first auth'd render.
+  displayCurrency: localStorage.getItem('genius:currency') || 'USD',
+  rates: { USD: 1 },  // identity until /currency-rates resolves
+  ratesFetchedAt: null,
 };
 
 // ─── Elements ───
@@ -35,10 +51,40 @@ function bindEvents() {
     if (state.activeTab === 'overview') loadOverview(false);
   });
 
+  // Currency selector — persisted, re-renders the active tab with the new
+  // labels/conversions. No backend refetch needed; we just relabel.
+  const sel = el('currencySelect');
+  if (sel) {
+    sel.value = state.displayCurrency;
+    sel.addEventListener('change', (e) => {
+      const next = e.target.value;
+      if (!SUPPORTED_CURRENCIES.includes(next)) return;
+      state.displayCurrency = next;
+      localStorage.setItem('genius:currency', next);
+      refreshActiveTab(false);
+    });
+  }
+
   // Tab navigation
   document.querySelectorAll('.tab').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+}
+
+// ─── Exchange rates ───
+async function loadRates() {
+  try {
+    const r = await fetch(`${API}/dashboard/currency-rates`, { credentials: 'include' });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.rates && typeof d.rates === 'object') {
+      state.rates = d.rates;
+      state.ratesFetchedAt = d.fetchedAt;
+    }
+  } catch {
+    // Stay on identity rates — currency() falls back to a 1:1 conversion
+    // if the requested currency isn't in the rates map.
+  }
 }
 
 function switchTab(name) {
@@ -136,6 +182,9 @@ function showApp() {
   el('loginView').classList.add('hidden');
   el('appView').classList.remove('hidden');
   el('userName').textContent = state.user?.name || state.user?.email || '—';
+  // Fire rates in parallel — first paint can use identity rates if it loses
+  // the race; the next tick re-renders with the real numbers.
+  loadRates().then(() => refreshActiveTab(false));
   loadOverview(false);
   startAutoRefresh();
 }
@@ -208,10 +257,43 @@ function render(data) {
   renderFunnel(data.funnel, data.degraded);
   renderRevenueChart(data.charts.revenueByDay);
   renderStudentsChart(data.charts.newStudentsByDay);
-  renderProgramsChart(data.distributions.studentsByProgram);
-  renderOriginsChart(data.distributions.opportunitiesByOrigin);
+  // Distribution charts moved to the Académico tab — overview no longer
+  // returns `data.distributions`. Calling renderProgramsChart/Origins here
+  // would crash with "Cannot read properties of undefined".
   renderRecentStudents(data.recent.students);
   renderPendingPayments(data.recent.pendingPayments);
+  renderRateInfo();
+}
+
+function renderRateInfo() {
+  // Footer hint: "Cotación: 1 USD = R$ 5,40 · open.er-api.com" so the
+  // operator knows the conversion isn't magic — they can verify it.
+  const code = state.displayCurrency;
+  const target = el('rateInfo');
+  if (!target) return;
+  if (code === 'USD') {
+    target.textContent = '';
+    return;
+  }
+  const rate = state.rates[code];
+  if (!rate) {
+    target.textContent = '';
+    return;
+  }
+  const cfg = CURRENCY_LOCALE[code] ?? CURRENCY_LOCALE.USD;
+  const rateText = new Intl.NumberFormat(cfg.locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(rate);
+  const symbol = { USD: '$', CRC: '₡', BRL: 'R$' }[code] ?? code;
+  let when = '';
+  if (state.ratesFetchedAt && state.ratesFetchedAt !== 'fallback') {
+    const d = new Date(state.ratesFetchedAt);
+    if (!isNaN(d.getTime())) when = ` · ${d.toLocaleDateString('es')}`;
+  } else if (state.ratesFetchedAt === 'fallback') {
+    when = ' · taxa de fallback';
+  }
+  target.textContent = `Cotación: 1 USD = ${symbol} ${rateText}${when}`;
 }
 
 function renderPartialBanner(data) {
@@ -226,13 +308,24 @@ function renderPartialBanner(data) {
   banner.classList.remove('hidden');
 }
 
-function currency(n) {
-  // GTQ symbol happens to be "Q" — matches the Spanish-speaking institution context.
-  return new Intl.NumberFormat('es-GT', {
+/**
+ * Format a USD-base amount in the user's chosen display currency.
+ *
+ * Q10 stores all monetary values in USD on this tenant (verified via live
+ * probe of /pagos and /pagosPendientes). We multiply by the current rate
+ * from /api/dashboard/currency-rates and let Intl.NumberFormat handle the
+ * symbol + locale-aware grouping.
+ */
+function currency(usdAmount) {
+  const code = state.displayCurrency;
+  const rate = state.rates[code] ?? 1;  // 1:1 fallback if rate missing
+  const value = (Number(usdAmount) || 0) * rate;
+  const cfg = CURRENCY_LOCALE[code] ?? CURRENCY_LOCALE.USD;
+  return new Intl.NumberFormat(cfg.locale, {
     style: 'currency',
-    currency: 'GTQ',
-    maximumFractionDigits: 0,
-  }).format(Number(n) || 0);
+    currency: code,
+    maximumFractionDigits: cfg.fractionDigits,
+  }).format(value);
 }
 
 function renderKpis(k) {
@@ -359,46 +452,6 @@ function renderStudentsChart(series) {
       responsive: true,
       plugins: { legend: { display: false } },
       scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-    },
-  });
-}
-
-function renderProgramsChart(dist) {
-  destroyChart('programs');
-  const ctx = el('programsChart').getContext('2d');
-  const labels = Object.keys(dist);
-  const values = Object.values(dist);
-  state.charts.programs = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: ['#000E38', '#DCAF63', '#1a2456', '#EBC584', '#606060', '#FFF8EF'],
-      }],
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
-  });
-}
-
-function renderOriginsChart(dist) {
-  destroyChart('origins');
-  const ctx = el('originsChart').getContext('2d');
-  state.charts.origins = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(dist),
-      datasets: [{
-        data: Object.values(dist),
-        backgroundColor: '#DCAF63',
-        borderRadius: 6,
-      }],
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
     },
   });
 }
@@ -696,4 +749,5 @@ function funnelStage(s) {
 function applyPartialBanner(data) {
   // Each tab can toggle the banner; when the active tab has errors, show them.
   renderPartialBanner(data);
+  renderRateInfo();
 }
