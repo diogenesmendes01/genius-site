@@ -77,6 +77,13 @@
       </div>
     </header>
 
+    <nav class="tabs" id="tabs" role="tablist">
+      <button class="tab active" data-tab="overview" role="tab" aria-selected="true">📊 Visión general</button>
+      <button class="tab" data-tab="academic" role="tab">🎓 Académico</button>
+      <button class="tab" data-tab="financial" role="tab">💰 Financiero</button>
+      <button class="tab" data-tab="commercial" role="tab">🎯 Comercial / CRM</button>
+    </nav>
+
     <main class="app-main">
       <div class="freshness" id="freshness">Cargando…</div>
 
@@ -85,60 +92,177 @@
         <span id="partialBannerDetail"></span>
       </div>
 
-      <!-- KPIs -->
-      <section class="kpi-grid" id="kpiGrid"></section>
+      <!-- ───────────── TAB: Overview ───────────── -->
+      <div class="tab-panel" id="tab-overview" role="tabpanel">
+        <section class="kpi-grid" id="kpiGrid"></section>
 
-      <!-- Funnel -->
-      <section class="card">
-        <h2 class="card__title">Funnel de conversión</h2>
-        <div class="funnel" id="funnel"></div>
-      </section>
+        <section class="card">
+          <h2 class="card__title">Funnel de conversión</h2>
+          <div class="funnel" id="funnel"></div>
+        </section>
 
-      <!-- Charts -->
-      <section class="chart-grid">
-        <div class="card">
-          <h2 class="card__title">Ingresos por día</h2>
-          <canvas id="revenueChart" height="120"></canvas>
-        </div>
-        <div class="card">
-          <h2 class="card__title">Nuevos estudiantes</h2>
-          <canvas id="studentsChart" height="120"></canvas>
-        </div>
-      </section>
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Ingresos por día</h2>
+            <canvas id="revenueChart" height="120"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Nuevos estudiantes</h2>
+            <canvas id="studentsChart" height="120"></canvas>
+          </div>
+        </section>
 
-      <!-- Distributions -->
-      <section class="chart-grid">
-        <div class="card">
-          <h2 class="card__title">Estudiantes por programa</h2>
-          <canvas id="programsChart" height="140"></canvas>
-        </div>
-        <div class="card">
-          <h2 class="card__title">Origen de oportunidades</h2>
-          <canvas id="originsChart" height="140"></canvas>
-        </div>
-      </section>
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Últimos estudiantes</h2>
+            <div class="table-wrapper">
+              <table class="data-table" id="recentStudents">
+                <thead><tr><th>Nombre</th><th>Programa</th><th>Estado</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Pagos pendientes</h2>
+            <div class="table-wrapper">
+              <table class="data-table" id="pendingPayments">
+                <thead><tr><th>Estudiante</th><th>Concepto</th><th>Período</th><th>Valor</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
 
-      <!-- Tables -->
-      <section class="chart-grid">
-        <div class="card">
-          <h2 class="card__title">Últimos estudiantes</h2>
+      <!-- ───────────── TAB: Academic ───────────── -->
+      <div class="tab-panel hidden" id="tab-academic" role="tabpanel">
+        <section class="kpi-grid" id="academicKpis"></section>
+
+        <section class="card">
+          <h2 class="card__title">Retención del período</h2>
+          <div class="funnel" id="retention"></div>
+        </section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Por jornada</h2>
+            <canvas id="jornadaChart" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Por nivel CEFR</h2>
+            <canvas id="nivelChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Por género</h2>
+            <canvas id="genderChart" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Por rango de edad</h2>
+            <canvas id="ageChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Docentes</h2>
           <div class="table-wrapper">
-            <table class="data-table" id="recentStudents">
-              <thead><tr><th>Nombre</th><th>Programa</th><th>Estado</th></tr></thead>
+            <table class="data-table" id="teachersTable">
+              <thead><tr><th>Nombre</th><th>Email</th><th>Celular</th><th>Género</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
-        </div>
-        <div class="card">
-          <h2 class="card__title">Pagos pendientes</h2>
+        </section>
+      </div>
+
+      <!-- ───────────── TAB: Financial ───────────── -->
+      <div class="tab-panel hidden" id="tab-financial" role="tabpanel">
+        <section class="kpi-grid" id="financialKpis"></section>
+
+        <section class="card">
+          <h2 class="card__title">Ingresos mensuales (últimos 12 meses)</h2>
+          <canvas id="mrrChart" height="100"></canvas>
+        </section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Ingresos por programa</h2>
+            <canvas id="revenueByProgramChart" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Últimos pagos</h2>
+            <div class="table-wrapper">
+              <table class="data-table" id="recentPaymentsTable">
+                <thead><tr><th>Fecha</th><th>Estudiante</th><th>Recibo</th><th>Valor</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Top deudores (mayor saldo)</h2>
           <div class="table-wrapper">
-            <table class="data-table" id="pendingPayments">
-              <thead><tr><th>Estudiante</th><th>Concepto</th><th>Vencimiento</th><th>Valor</th></tr></thead>
+            <table class="data-table" id="debtorsTable">
+              <thead><tr><th>Estudiante</th><th>Concepto</th><th>Período</th><th>Total</th><th>Pagado</th><th>Saldo</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
+
+      <!-- ───────────── TAB: Commercial ───────────── -->
+      <div class="tab-panel hidden" id="tab-commercial" role="tabpanel">
+        <section class="kpi-grid" id="commercialKpis"></section>
+
+        <section class="card">
+          <h2 class="card__title">Nuevos leads por mes (últimos 12 meses)</h2>
+          <canvas id="leadsChart" height="100"></canvas>
+        </section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Estado del funnel</h2>
+            <canvas id="stateChart" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Origen de los leads</h2>
+            <canvas id="originChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Carga de trabajo por asesor</h2>
+            <div class="table-wrapper">
+              <table class="data-table" id="advisorsTable">
+                <thead><tr><th>Asesor</th><th>Oportunidades</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Top municipios</h2>
+            <div class="table-wrapper">
+              <table class="data-table" id="municipiosTable">
+                <thead><tr><th>Municipio</th><th>Leads</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Oportunidades recientes</h2>
+          <div class="table-wrapper">
+            <table class="data-table" id="oppsTable">
+              <thead><tr><th>Fecha</th><th>Nombre</th><th>Origen</th><th>Canal</th><th>Estado</th><th>Asesor</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
 
       <footer class="app-footer">
         © <span id="year"></span> Genius Idiomas · <a href="/">Volver al sitio</a>

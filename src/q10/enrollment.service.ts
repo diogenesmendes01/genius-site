@@ -10,6 +10,20 @@ type StepResult = { step: number; name: string; status: 'ok' | 'reused'; id?: st
 export class EnrollmentService {
   private readonly logger = new Logger(EnrollmentService.name);
 
+  /**
+   * Per-`ref` in-flight promise map. Two concurrent POST /api/q10/enrollment
+   * requests with the same `ref` would otherwise both see `tracking.get(ref)`
+   * return null, race past the idempotency check and POST /contactos twice
+   * to Q10 — a real TOCTOU pointed out in review #7.
+   *
+   * Limitation: this only protects within one Node process. On a
+   * multi-instance deploy we would need either a SQLite `BEGIN IMMEDIATE`
+   * transaction around the claim or a Redis/Postgres advisory lock. The
+   * current Coolify deploy is single-container, so this is enough today,
+   * and the limitation is documented inline so we don't forget when scaling.
+   */
+  private readonly inFlight = new Map<string, Promise<unknown>>();
+
   constructor(
     private readonly q10: Q10ClientService,
     private readonly tracking: TrackingService,
@@ -23,15 +37,48 @@ export class EnrollmentService {
    */
   async run(req: EnrollmentDto) {
     const ref = req.ref ?? `ENR-${randomUUID().slice(0, 8).toUpperCase()}`;
-    const existing = this.tracking.get(ref);
+
+    // Serialize concurrent same-ref requests. The first caller starts the
+    // workflow; subsequent callers await the same promise and receive the
+    // same response (they won't trigger a second set of Q10 POSTs).
+    const existing = this.inFlight.get(ref);
+    if (existing) return existing as ReturnType<typeof this.runInternal>;
+
+    const p = this.runInternal(ref, req).finally(() => this.inFlight.delete(ref));
+    this.inFlight.set(ref, p);
+    return p;
+  }
+
+  private async runInternal(ref: string, req: EnrollmentDto) {
+    // Fast path: if a previous completed run already has an orderId,
+    // return it without touching Q10 again. The public response shape
+    // stays stable so retries from the form look identical to the first
+    // submission.
+    const prior = await this.tracking.get(ref);
+    if (prior?.status === 'filled' && prior.paymentOrderId) {
+      this.logger.log(`[enrollment:${ref}] returning cached result (status=filled)`);
+      return {
+        success: true as const,
+        ref,
+        status: 'filled' as const,
+        message: 'Enrollment already completed',
+        paymentDetails: {
+          orderId: prior.paymentOrderId,
+          amount: req.payment?.Valor ?? 0,
+          concept: req.payment?.Concepto_pago ?? 'Matrícula',
+          dueDate: req.payment?.Fecha_vencimiento ?? '',
+        },
+      };
+    }
+
     const steps: StepResult[] = [];
 
     // Reuse IDs from a previous partial run so retries don't duplicate records.
-    let contactId = existing?.contactId;
-    let studentId = existing?.studentId;
-    let enrollmentId = existing?.enrollmentId;
-    let matriculaId = existing?.matriculaId;
-    let paymentOrderId = existing?.paymentOrderId;
+    let contactId = prior?.contactId;
+    let studentId = prior?.studentId;
+    let enrollmentId = prior?.enrollmentId;
+    let matriculaId = prior?.matriculaId;
+    let paymentOrderId = prior?.paymentOrderId;
 
     try {
       // ── Step 1: Contact ──
@@ -49,7 +96,7 @@ export class EnrollmentService {
         });
         contactId = contact?.Codigo_contacto ?? contact?.Codigo ?? contact?.Id ?? contact?.id;
         steps.push({ step: 1, name: 'contact', status: 'ok', id: contactId });
-        this.persist(ref, req, { contactId }, steps);
+        await this.persist(ref, req, { contactId }, steps);
         this.logger.log(`[enrollment:${ref}] contact ${contactId}`);
       }
 
@@ -71,7 +118,7 @@ export class EnrollmentService {
         });
         studentId = student?.Codigo_estudiante ?? student?.Codigo ?? student?.Id ?? student?.id;
         steps.push({ step: 2, name: 'student', status: 'ok', id: studentId });
-        this.persist(ref, req, { contactId, studentId }, steps);
+        await this.persist(ref, req, { contactId, studentId }, steps);
         this.logger.log(`[enrollment:${ref}] student ${studentId}`);
       }
 
@@ -87,7 +134,7 @@ export class EnrollmentService {
         });
         enrollmentId = inscripcion?.Codigo_inscripcion ?? inscripcion?.Codigo ?? inscripcion?.Id;
         steps.push({ step: 3, name: 'enrollment', status: 'ok', id: enrollmentId });
-        this.persist(ref, req, { contactId, studentId, enrollmentId }, steps);
+        await this.persist(ref, req, { contactId, studentId, enrollmentId }, steps);
         this.logger.log(`[enrollment:${ref}] inscripcion ${enrollmentId}`);
       }
 
@@ -104,7 +151,7 @@ export class EnrollmentService {
         });
         matriculaId = matricula?.Codigo_matricula ?? matricula?.Codigo ?? matricula?.Id;
         steps.push({ step: 4, name: 'matricula', status: 'ok', id: matriculaId });
-        this.persist(ref, req, { contactId, studentId, enrollmentId, matriculaId }, steps);
+        await this.persist(ref, req, { contactId, studentId, enrollmentId, matriculaId }, steps);
         this.logger.log(`[enrollment:${ref}] matricula ${matriculaId}`);
       }
 
@@ -125,7 +172,7 @@ export class EnrollmentService {
         this.logger.log(`[enrollment:${ref}] orden ${paymentOrderId}`);
       }
 
-      this.tracking.upsert({
+      await this.tracking.upsert({
         ref,
         status: 'filled',
         asesor: req.asesor ?? null,
@@ -139,19 +186,20 @@ export class EnrollmentService {
         completedSteps: steps,
       });
 
+      // Redacted response for the public form: only what the matrícula UI
+      // actually renders. The full step-by-step trace + every Q10 ID
+      // remains queryable through the admin tracking endpoint
+      // (GET /api/q10/tracking, JWT-guarded). Public response intentionally
+      // omits `ids`, `steps` and any internal Q10 identifier — review #7
+      // raised this as a privacy / surface-area concern.
       return {
         success: true,
         ref,
+        status: 'filled' as const,
         message: 'Enrollment completed successfully',
-        ids: {
-          contact: contactId,
-          student: studentId,
-          enrollment: enrollmentId,
-          matricula: matriculaId,
-          paymentOrder: paymentOrderId,
-        },
-        steps,
         paymentDetails: {
+          // The orderId stays visible because the form prints it back to the
+          // student as a payment reference number — they need it to pay.
           orderId: paymentOrderId,
           amount: req.payment?.Valor ?? 0,
           concept: req.payment?.Concepto_pago ?? 'Matrícula',
@@ -164,7 +212,7 @@ export class EnrollmentService {
       const message = err instanceof Error ? err.message : 'Unknown error';
       this.logger.error(`[enrollment:${ref}] failed at step ${failedStep}: ${message}`);
 
-      this.tracking.upsert({
+      await this.tracking.upsert({
         ref,
         status: 'error',
         asesor: req.asesor ?? null,
@@ -181,21 +229,24 @@ export class EnrollmentService {
       });
 
       if (err instanceof HttpException) throw err;
+      // Public-facing failure response, redacted for the same reason as
+      // the success path: no Q10 IDs, no step-by-step trace, no
+      // partial-progress list. The full diagnostic stays in the tracking
+      // record (admin-only).
       throw new HttpException(
         {
           success: false,
           ref,
-          error: message,
+          status: 'error' as const,
+          message: 'Hubo un problema procesando la matrícula. Por favor intenta nuevamente con la misma referencia.',
           failedStep,
-          completedSteps: steps,
-          partialIds: { contactId, studentId, enrollmentId, matriculaId, paymentOrderId },
         },
         502,
       );
     }
   }
 
-  private persist(
+  private async persist(
     ref: string,
     req: EnrollmentDto,
     ids: {
@@ -206,8 +257,8 @@ export class EnrollmentService {
       paymentOrderId?: string;
     },
     steps: StepResult[],
-  ) {
-    this.tracking.upsert({
+  ): Promise<void> {
+    await this.tracking.upsert({
       ref,
       status: 'opened',
       asesor: req.asesor ?? null,
