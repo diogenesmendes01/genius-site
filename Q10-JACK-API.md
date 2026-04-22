@@ -70,7 +70,7 @@
 > - Glossário rápido de **padrões textuais** nos nomes (ex.: classificação de modalidade por regex)
 > - **Lacunas de dados** que o operador ainda precisa preencher no Q10
 >
-> Última atualização: 2026-04-22 — após probe fase 2 ao vivo (scripts/q10-probe-phase2.js).
+> Última atualização: 2026-04-22 — após probe fase 3 ao vivo (scripts/q10-probe-phase3.js).
 
 ### Status dos endpoints neste plano (probe 2026-04-22)
 
@@ -149,18 +149,24 @@ Para a maioria dos recursos, `/resource/{id}` retorna o **mesmo shape** que o li
 | `/sedes/{id}` | idêntico |
 | `/asignaturas/{id}` | idêntico |
 | `/estudiantes/{id}?Periodo=<id>` | ⚠ **shape diferente** — ver seção dedicada abaixo |
-| `/administrativos/{id}` | ⛔ 404 com `Codigo` do list — espera `Numero_identificacion` (hipótese) |
+| `/administrativos/{id}` | ⛔ **dead-end** — fase 3 testou `{Codigo}`, `{Numero_identificacion}` e `/identificacion/{num}`, todos 404 |
 
 ### Taxonomia de erros do Q10
 
-Duas famílias distintas de resposta de erro, descobertas no probe:
+**Quatro** famílias distintas de resposta de erro, mapeadas nos probes:
 
 | Shape | statusCode | Significado |
 |---|---:|---|
 | `{"statusCode":404,"message":"Resource not found"}` | 404 | Endpoint não rotado no plano **OU** parâmetro obrigatório ausente (Q10 não diferencia — ambos caem em 404) |
-| `{"code":"400","message":"<mensagem em espanhol>"}` | 400 | Endpoint existe, retorna motivo exato: modelo financeiro/acadêmico incompatível, campo obrigatório faltando, ou filtro ausente |
+| `{"code":"404","message":"<mensagem em espanhol>"}` | 404 | Endpoint existe e consulta é válida, mas **não há dados** para os filtros passados. Exemplos: `"No se encontraron niveles con el estado indicado"`, `"No hay registros, verifique los filtros de la consulta"` |
+| `{"code":"400","message":"<mensagem em espanhol>"}` | 400 | Endpoint existe, retorna motivo exato: modelo financeiro/acadêmico incompatível, campo obrigatório faltando, filtro ausente, ou regra de negócio (ex: "La fecha fin debe ser mayor o igual que la fecha inicio") |
+| `{"code":"4001","message":"Hay errores de validación en los datos.","validationErrors":{<field>:[...]}}`  | 400 | **Validação estruturada por campo** — descoberto na fase 3. Cada `validationErrors[field]` é um array de mensagens técnicas. Exemplos: `"The value 'invalid' is not valid for Nullable`1."` |
 
-**Implicação prática**: só pela mensagem dá pra saber o que acontece. Nosso `tryFetch` registra em `errors[key]` o texto do `message` — se o operador vê "Resource not found" o culpado mais comum é **filtro faltando**, não endpoint inexistente.
+**Implicações práticas**:
+
+1. **`code:"404"` é ≠ `statusCode:404`**. O primeiro é "consulta vazia, sem erro"; o segundo pode ser endpoint ausente OU filtro faltando. O `tryFetch` deveria distinguir: `code:"404"` → `degraded[key]` (informativo), `statusCode:"404"` → `errors[key]` (suspeito).
+2. **`code:"4001"` dá margem pra UX melhor** — podemos extrair `validationErrors` e listar os campos problemáticos em um banner detalhado, em vez de só mostrar "Resource not found" genérico.
+3. **Enum/filter inválido nem sempre é erro** — ver gotcha "filtros desconhecidos silenciosamente ignorados" abaixo. Em alguns endpoints (ex: `/cursos?Estado=Activo`) Q10 retorna 200 com array vazio em vez de 400.
 
 ### Vocabulário de `Estado` — **inconsistente entre endpoints**
 
@@ -183,13 +189,14 @@ const OPEN_COURSE_STATES = new Set(['abierto', 'abierta', 'activo', 'active', 't
 
 A implementação desse fix está em `src/q10/dashboard/turmas.service.ts`.
 
-### Paginação real
+### Paginação real (atualizado na fase 3)
 
 A doc hinta `Limit`/`Offset` mas deixa detalhes por conta. O que observamos em produção:
 
-- **Offsets são 1-based** (não 0-based). Começar com `Offset=1`, incrementar em `+pageSize` a cada chamada.
-- **Fim do paginado**: quando a página retorna menos registros do que `pageSize`. Não existe `total` no header.
-- **pageSize recomendado**: 500 (testado para todos os endpoints sem throttling).
+- **Offsets são indulgentes — NÃO estritamente 1-based.** Fase 3 confirmou que `Offset=0` e `Offset=1` retornam o mesmo primeiro page. Ou seja, Q10 trata qualquer valor ≤ 1 como "começo". O WhatsApp plugin da mesma organização forçava `Offset=1`, mas não é um requisito do servidor. Ficar com `1` por consistência.
+- **Limit não é cappado** no lado do Q10. Fase 3 testou `Limit=1000` e retornou todos os 17 cursos sem reclamar. Nosso default de 500 é conservador.
+- **Fim do paginado**: quando a página retorna menos registros do que `pageSize` **OU** retorna array vazio (ex: `Offset=999999` retorna `200 []`). Não existe `total` no header.
+- **Offset além do fim**: Q10 retorna `200` + array vazio (não erro), então o loop-break-on-empty no nosso `getAll` está correto.
 - **Envelopes**: a maior parte retorna o array cru (`[ {...}, {...} ]`), mas alguns planos/endpoints embrulham em `{ items: [...] }`, `{ data: [...] }` ou `{ results: [...] }`. Trate ambos os formatos ou você vai silenciosamente reportar `0 registros` quando na verdade veio tudo embrulhado.
 
 Ver a implementação canônica em `src/q10/q10-client.service.ts#getAll` (com cap de `maxRecords` para evitar loop infinito em endpoints patológicos).
@@ -492,8 +499,8 @@ Usado para calcular se o aluno está **atrasado em relação ao esperado** — c
 
 ### Gotchas de campo descobertas no probe
 
-**`/pagos.Codigo_programa` e `.Nombre_programa` — 100% null na amostra**
-Dos 5 `/pagos` do primeiro probe, **todos** têm `Codigo_programa: null` + `Nombre_programa: null`. Implicação: nosso `revenueByConcept` no `FinancialService` agrupa tudo como `"Sin programa"`. Investigar se Q10 popula esses campos para outros tipos de pago (ex: filtrando por `Codigo_persona` específico). Se confirmar que nunca vem, **preferir agrupar por `Nombre_producto`** (que está populado: ex. "Mensualidad 14 R - Recife").
+**`/pagos.Codigo_programa` e `.Nombre_programa` — 100% null, CONFIRMADO (fase 3)** 🔴
+Fase 1 viu 100% null em 5 records. Fase 3 retestou com `Codigo_persona` de alguém que tem 2 pagos reais — **continuou 100% null**. Isso **não é ruído de amostra**, é comportamento do plano financeiro. Consequência: o `revenueByConcept` no `FinancialService` agrupa 100% da receita no bucket `"Sin programa"` — o chart "Ingresos por programa" está inútil há muito tempo. Fix rastreado em **issue #14**: agrupar por `Nombre_producto` (que está populado: ex. "Mensualidad 14 R - Recife"). Nome do chart também deveria virar "Ingresos por concepto".
 
 **`/pagos.Fecha_pago` com precisão de milissegundo variável**
 Amostras reais: `"2026-01-22T19:40:55.803"` vs `"2026-04-20T17:37:02.2"` (1 digito de ms). Sempre `.slice(0, 10)` antes de comparar/filtrar.
@@ -525,6 +532,35 @@ Dos 8 detail endpoints probedos, 6 retornam exatamente o mesmo shape da list (`/
 **Q10 retorna 404 amigável em vez de array vazio**
 `/niveles?Estado=false` → `{"code":"404","message":"No se encontraron niveles con el estado indicado"}`. Idem `/pagos?Codigo_persona=X` sem dados → 404 `"No hay registros, verifique los filtros"`. **Não é "endpoint não existe"** — é resposta pra "consulta retornou vazio". O `tryFetch` do nosso backend registra isso como erro quando deveria ser partial. Avaliar se a mensagem contém substring `No se encontraron` / `No hay registros` pra degradar como `degraded[key] = 'sem dados'` em vez de `errors[key]`.
 
+**`/cursos.Cupo_maximo` pode ser null (~12% dos registros, descoberto fase 3)** ⚠
+Com `Limit=1000` apareceram cursos sem `Cupo_maximo` definido (2 de 17 no tenant atual). Nosso `TurmasService` trata cupo ausente como 0, o que inflaciona `totalCupo` com esses cursos mas zera o denominador de ocupação. O cálculo individual (`cupo > 0 ? matriculados/cupo*100 : null`) está correto, mas a `ocupacionMedia` agregada considera esses cursos no denominador errado. Fix sugerido: filtrar cursos sem cupo da média ou relatá-los separadamente no UI.
+
+**C2 existe em `/cursos.Nombre_asignatura` mas NÃO em `/niveles?Estado=true`** ⚠
+Fase 3 com `Limit=1000` em `/cursos` revelou `Nombre_asignatura: C2` (Codigo `06`). Mas `/niveles?Estado=true` só retorna A1..C1. Possibilidades:
+1. C2 está registrado em `/niveles` mas `Estado=false`, e o tenant usa C2 como asignatura sem ter como nível ativo
+2. Paginação do probe de `/niveles` não pegou tudo (só viu 5 records com `Limit=5`)
+3. Inconsistência real entre `/niveles` (catálogo) e `/asignaturas` (catálogo equivalente) neste tenant
+Retestar `/niveles?Estado=true&Limit=100` pra confirmar.
+
+**Filtros desconhecidos são silenciosamente ignorados em alguns endpoints** 🔴
+Fase 3 passou `/evaluaciones?Programa=01&Codigo_estudiante=<id>` — Q10 retornou 8 records com `Codigo_estudiante` **diferentes** do filtro. Nem rejeitou, nem respeitou — **descartou o filtro silenciosamente**. Contraste com `/oportunidades` que respeita `Estado=Ganada`, `Descripcion_como_se_entero`, `Numero_identificacion_asesor` corretamente. **Comportamento inconsistente por endpoint** — perigoso porque pode mascarar bugs (backend pede filtro, Q10 ignora, e dashboard mostra dados de todos os alunos em vez do filtrado). Quando implementando queries com filtros novos em algum endpoint, validar que o resultado realmente respeita o filtro.
+
+**Enum errado em `/cursos.Estado` retorna array vazio (não 400)**
+`/cursos?Estado=Activo` (valor válido em `/estudiantes` e `/periodos`, errado em `/cursos`) → `200 []`. Idem `/cursos?Estado=Abierta` (feminino). Q10 **não valida enum** nesse endpoint — aceita qualquer string e retorna vazio se não bater com nenhum valor real. Reforça o ponto anterior: **não é "erro" nem "endpoint vazio"**, é valor de filtro inválido que devolve um falso positivo.
+
+**Nova família de erro: validação estruturada por campo (`code: "4001"`)**
+Fase 3 descobriu que tipos inválidos (ex: `Estado=invalid` em `/niveles`, `Fecha_inicio=not-a-date` em `/pagos`) retornam:
+```json
+{
+  "code": "4001",
+  "message": "Hay errores de validación en los datos.",
+  "validationErrors": {
+    "Estado": ["The value 'invalid' is not valid for Nullable`1."]
+  }
+}
+```
+Parseável campo-por-campo. Nosso `tryFetch` poderia extrair `validationErrors` e mostrar no banner "Datos parciales" quais campos foram rejeitados (ver **Taxonomia de erros** acima).
+
 ### Buracos conhecidos (gap entre Q10 e o negócio)
 
 - **Aulas particulares não estão cadastradas** em `/cursos`. Receita e matrículas dessa modalidade não contabilizam. Quando cadastrarem, usar `Nombre` tipo `"P - {Aluno} - {Cidade}"` e estender o regex de modalidade.
@@ -543,10 +579,35 @@ Dos 8 detail endpoints probedos, 6 retornam exatamente o mesmo shape da list (`/
 - `/inasistencias` — 404 mesmo com `Consecutivo_periodo` válido. Continua via fallback `/evaluaciones.Porcentaje_inasistencia`.
 - `/administrativos/{id}` com `Codigo` do list → 404. Hipótese (não testada): espera `Numero_identificacion`.
 
-**Pendentes para fase 3 (se quisermos investigar):**
-- `/pagos?Codigo_persona=X` com estudante que TEM pagos (seed da fase 2 não tinha) — pra testar se `Codigo_programa` deixa de ser null.
-- `/administrativos/identificacion/{numero}` ou similar.
-- `/inscripciones` com filtros alternativos (Q10 spec não foi consistente).
+### Resultado da fase 3 (2026-04-22)
+
+Probe dirigido por hipóteses das fases anteriores. Resumo:
+
+**Hipóteses fechadas:**
+- 🔴 **`/pagos.Codigo_programa` é 100% null INCLUSIVE com pagador real** → bug no backend (issue #14): mudar `revenueByConcept` para agrupar por `Nombre_producto`
+- ⛔ **`/administrativos/{id}` é dead-end definitivo** — testei `{Codigo}`, `{Numero_identificacion}`, `/identificacion/{num}`, todos 404. Desistir.
+- ✅ **Filter chaining funciona** em `/cursos?Estado=Abierto&Consecutivo_periodo=X` e `/evaluaciones?Programa=01&Consecutivo_periodo=X`.
+- ⚠ **`/evaluaciones?Codigo_estudiante=X` ignora silenciosamente o filtro** — retorna 8 alunos diferentes. Comportamento inconsistente por endpoint.
+
+**Descobertas novas:**
+- 🌟 **Nova família de erro Q10**: `code:"4001"` com `validationErrors` estruturado por campo (ver Taxonomia de erros)
+- 🌟 **Paginação indulgente**: `Offset=0` == `Offset=1` (não é estritamente 1-based), `Limit=1000` aceito sem cap
+- ⚠ **`/cursos.Cupo_maximo` null em ~12% dos registros** (só vimos com `Limit=1000`, amostras pequenas não pegavam)
+- ⚠ **C2 existe em `/cursos.Nombre_asignatura` mas não em `/niveles?Estado=true`** (sample de 5) — investigar com `Limit=100` em `/niveles`
+- ✅ **`/oportunidades` respeita filtros ricos**: `Estado`, `Descripcion_como_se_entero`, `Numero_identificacion_asesor` — todos funcionam.
+- ⚠ **Enum inválido em `/cursos.Estado` retorna `200 []`** (não 400) — falso positivo de "sem dados". Mesmo comportamento do filtro ignorado.
+
+**Bugs abertos para o backend:**
+- **#14** — `revenueByConcept` agrupa por `Nombre_programa` null (fix: `Nombre_producto`)
+- **#12** — `GRADE_THRESHOLD` assume escala 0-1, realidade é 0-10
+- `tryFetch` poderia distinguir `code:"404"` (degraded) de `statusCode:404` (erro)
+- `tryFetch` poderia parsear `validationErrors` para banner detalhado
+- `TurmasService.ocupacionMedia` deveria excluir cursos com `Cupo_maximo: null`
+
+**Pendente para fase 4 (se necessário):**
+- `/niveles?Estado=true&Limit=100` — confirmar C2 é inativo ou ausente
+- Testar mais endpoints com `validationErrors` pra ver quais retornam esse shape
+- Testar endpoints `/familiares` (vazio hoje) e `/aulas` (vazio) pra ver se virão com dados no futuro
 
 ### Lista de atualizações pedidas ao Q10
 
