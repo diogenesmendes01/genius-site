@@ -824,8 +824,12 @@ async function loadFinancial(force) {
   // and how much "ghost debt" (unpaid enrollment proposals) we excluded.
   const debtHint = (() => {
     const parts = [];
-    if (s.debtorsTotal != null) parts.push(`${s.debtorsTotal} deudores`);
-    if (s.activeWithDebt != null) parts.push(`${s.activeWithDebt} activos`);
+    if (s.debtorsTotal != null) {
+      parts.push(`${s.debtorsTotal} ${s.debtorsTotal === 1 ? 'deudor' : 'deudores'}`);
+    }
+    if (s.activeWithDebt != null) {
+      parts.push(`${s.activeWithDebt} ${s.activeWithDebt === 1 ? 'activo' : 'activos'}`);
+    }
     const primary = parts.join(' · ');
     if (s.ghostDebt > 0) {
       return `${primary} · excl. ${currency(s.ghostDebt)} propuestas`;

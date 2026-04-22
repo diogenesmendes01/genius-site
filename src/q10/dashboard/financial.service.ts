@@ -187,10 +187,40 @@ export class FinancialService extends DashboardBaseService {
       'Semi Intensivo':
         avgMatricula + avgMensualidad * (MONTHS_PER_LEVEL['Semi Intensivo'] * CEFR_LEVELS_TO_COMPLETE),
     };
-    // Headline LTV = average of the two modalities' LTVs so the KPI is a
-    // single number the operator can track. The breakdown is also
-    // exposed in `ltvByModality` for the detail panel.
-    const ltvEstimated = (ltvByModality.Regular + ltvByModality['Semi Intensivo']) / 2;
+    // Headline LTV — weighted by the number of distinct paying persons per
+    // modality (not a flat 50/50 average) so an imbalanced student mix
+    // doesn't skew the KPI. Payer modality comes from the payment's
+    // Nombre_producto: a person is Regular if the majority of their paid
+    // volume falls in Regular-tagged products, Semi Intensivo otherwise.
+    // Desconocida-only payers fall back to the flat average so they still
+    // contribute — with "Nivel Regular" and other mis-tagged names the
+    // classifier already folds them into one of the real modalities.
+    const modalityByPerson: Record<string, { reg: number; int: number }> = {};
+    for (const p of pagos) {
+      const v = Number(p.Valor_pagado) || 0;
+      if (v <= 0) continue;
+      const k = cleanStr(p.Codigo_persona);
+      if (!k) continue;
+      const label = cleanStr(p.Nombre_producto) || cleanStr(p.Nombre_programa);
+      const m = classifyModality(label);
+      if (m === 'Desconocida') continue;
+      if (!modalityByPerson[k]) modalityByPerson[k] = { reg: 0, int: 0 };
+      if (m === 'Regular') modalityByPerson[k].reg += v;
+      else modalityByPerson[k].int += v;
+    }
+    let regCount = 0;
+    let intCount = 0;
+    for (const { reg, int } of Object.values(modalityByPerson)) {
+      if (reg > int) regCount += 1;
+      else if (int > 0) intCount += 1;
+    }
+    const totalWeight = regCount + intCount;
+    const ltvEstimated =
+      totalWeight > 0
+        ? (ltvByModality.Regular * regCount +
+            ltvByModality['Semi Intensivo'] * intCount) /
+          totalWeight
+        : (ltvByModality.Regular + ltvByModality['Semi Intensivo']) / 2;
 
     // ─── Debt reconciliation (filter ghost proposals) ───
     // /pagosPendientes includes rows for enrollment proposals that were
