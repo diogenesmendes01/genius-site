@@ -120,6 +120,31 @@ describe('POST /api/q10/enrollment — DTO + idempotency (#2 / #3)', () => {
     expect(entry.status).toBe('filled');
   });
 
+  // Per review #7: five concurrent POSTs with the same `ref` must NOT
+  // create five Q10 contacts. The per-ref mutex in EnrollmentService
+  // serialises them; only the first one actually hits Q10, the rest
+  // await and return the identical response.
+  it('serialises concurrent same-ref requests (no TOCTOU duplicate)', async () => {
+    const ref = 'ENR-CONCURR01';
+    const body = { ref, personal: VALID_PERSONAL, program: VALID_PROGRAM };
+
+    const responses = await Promise.all(
+      Array.from({ length: 5 }).map(() =>
+        request(app.getHttpServer())
+          .post('/api/q10/enrollment')
+          .send(body)
+          .expect(201),
+      ),
+    );
+
+    const orderIds = responses.map((r) => r.body.paymentDetails.orderId);
+    // All five callers must see exactly the same orderId — proves we
+    // created exactly one orden de pago in Q10, not five.
+    const unique = new Set(orderIds);
+    expect(unique.size).toBe(1);
+    expect(orderIds[0]).toBeTruthy();
+  });
+
   it('replaying with same ref does not duplicate (idempotent) — first run + replay return identical paymentDetails.orderId', async () => {
     const ref = `ENR-IDEMP${Date.now()}TEST`.replace(/-/g, '').replace(
       /^/,

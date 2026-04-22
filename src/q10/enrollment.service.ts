@@ -10,6 +10,20 @@ type StepResult = { step: number; name: string; status: 'ok' | 'reused'; id?: st
 export class EnrollmentService {
   private readonly logger = new Logger(EnrollmentService.name);
 
+  /**
+   * Per-`ref` in-flight promise map. Two concurrent POST /api/q10/enrollment
+   * requests with the same `ref` would otherwise both see `tracking.get(ref)`
+   * return null, race past the idempotency check and POST /contactos twice
+   * to Q10 — a real TOCTOU pointed out in review #7.
+   *
+   * Limitation: this only protects within one Node process. On a
+   * multi-instance deploy we would need either a SQLite `BEGIN IMMEDIATE`
+   * transaction around the claim or a Redis/Postgres advisory lock. The
+   * current Coolify deploy is single-container, so this is enough today,
+   * and the limitation is documented inline so we don't forget when scaling.
+   */
+  private readonly inFlight = new Map<string, Promise<unknown>>();
+
   constructor(
     private readonly q10: Q10ClientService,
     private readonly tracking: TrackingService,
@@ -23,15 +37,48 @@ export class EnrollmentService {
    */
   async run(req: EnrollmentDto) {
     const ref = req.ref ?? `ENR-${randomUUID().slice(0, 8).toUpperCase()}`;
-    const existing = await this.tracking.get(ref);
+
+    // Serialize concurrent same-ref requests. The first caller starts the
+    // workflow; subsequent callers await the same promise and receive the
+    // same response (they won't trigger a second set of Q10 POSTs).
+    const existing = this.inFlight.get(ref);
+    if (existing) return existing as ReturnType<typeof this.runInternal>;
+
+    const p = this.runInternal(ref, req).finally(() => this.inFlight.delete(ref));
+    this.inFlight.set(ref, p);
+    return p;
+  }
+
+  private async runInternal(ref: string, req: EnrollmentDto) {
+    // Fast path: if a previous completed run already has an orderId,
+    // return it without touching Q10 again. The public response shape
+    // stays stable so retries from the form look identical to the first
+    // submission.
+    const prior = await this.tracking.get(ref);
+    if (prior?.status === 'filled' && prior.paymentOrderId) {
+      this.logger.log(`[enrollment:${ref}] returning cached result (status=filled)`);
+      return {
+        success: true as const,
+        ref,
+        status: 'filled' as const,
+        message: 'Enrollment already completed',
+        paymentDetails: {
+          orderId: prior.paymentOrderId,
+          amount: req.payment?.Valor ?? 0,
+          concept: req.payment?.Concepto_pago ?? 'Matrícula',
+          dueDate: req.payment?.Fecha_vencimiento ?? '',
+        },
+      };
+    }
+
     const steps: StepResult[] = [];
 
     // Reuse IDs from a previous partial run so retries don't duplicate records.
-    let contactId = existing?.contactId;
-    let studentId = existing?.studentId;
-    let enrollmentId = existing?.enrollmentId;
-    let matriculaId = existing?.matriculaId;
-    let paymentOrderId = existing?.paymentOrderId;
+    let contactId = prior?.contactId;
+    let studentId = prior?.studentId;
+    let enrollmentId = prior?.enrollmentId;
+    let matriculaId = prior?.matriculaId;
+    let paymentOrderId = prior?.paymentOrderId;
 
     try {
       // ── Step 1: Contact ──
