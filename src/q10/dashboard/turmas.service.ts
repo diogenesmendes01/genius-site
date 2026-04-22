@@ -50,9 +50,13 @@ export class TurmasService extends DashboardBaseService {
     const errors: Record<string, string> = {};
     const degraded: Record<string, string> = {};
 
+    // Cap /cursos at 5k: course catalog is bounded, conservative safety limit.
     const [periodos, cursos] = await Promise.all([
       this.tryFetch<Item>('periods', '/periodos', errors),
-      this.tryFetch<Item>('courses', '/cursos', errors),
+      this.tryFetch<Item>('courses', '/cursos', errors, undefined, {
+        maxRecords: 5_000,
+        degraded,
+      }),
     ]);
 
     const active = currentlyActivePeriods(periodos);

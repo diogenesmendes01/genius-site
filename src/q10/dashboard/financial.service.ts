@@ -62,12 +62,19 @@ export class FinancialService extends DashboardBaseService {
         )
       : monthsBack;
 
+    // Cap /pagos at 20k: payment rows grow unbounded over long date ranges.
     const [periodos, pagos] = await Promise.all([
       this.tryFetch<Item>('periods', '/periodos', errors),
-      this.tryFetch<Item>('payments', '/pagos', errors, {
-        Fecha_inicio: isoDate(rangeStart),
-        Fecha_fin: isoDate(now),
-      }),
+      this.tryFetch<Item>(
+        'payments',
+        '/pagos',
+        errors,
+        {
+          Fecha_inicio: isoDate(rangeStart),
+          Fecha_fin: isoDate(now),
+        },
+        { maxRecords: 20_000, degraded },
+      ),
     ]);
 
     const active = currentlyActivePeriods(periodos);

@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { AcademicService } from '../src/q10/dashboard/academic.service';
+import { RiskAnalysisService } from '../src/q10/dashboard/risk-analysis.service';
 import { Q10ClientService } from '../src/q10/q10-client.service';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -45,6 +46,7 @@ const buildService = async (responses: Record<string, any[] | (() => any[])>) =>
   const moduleRef = await Test.createTestingModule({
     providers: [
       AcademicService,
+      RiskAnalysisService,
       { provide: Q10ClientService, useValue: q10 },
     ],
   }).compile();

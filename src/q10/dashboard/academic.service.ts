@@ -4,26 +4,23 @@ import { DashboardBaseService } from './dashboard-base.service';
 import {
   ageBucket,
   ageFromBirthdate,
-  cefrIndex,
   CEFR_LEVELS,
   classifyModality,
   cleanStr,
   currentlyActivePeriods,
-  expectedLevelAdvance,
   groupCount,
   Item,
   Modality,
-  monthsBetween,
   periodKey,
   previousPeriod,
-  studentFullName,
 } from './helpers';
+import { RiskAnalysisService } from './risk-analysis.service';
 
 @Injectable()
 export class AcademicService extends DashboardBaseService {
   protected readonly logPrefix = 'academic';
 
-  constructor(q10: Q10ClientService) {
+  constructor(q10: Q10ClientService, private readonly risk: RiskAnalysisService) {
     super(q10);
   }
 
@@ -108,11 +105,13 @@ export class AcademicService extends DashboardBaseService {
     // This endpoint consolidates what /inasistencias should have returned
     // (empty on this tenant) — Cantidad_inasistencia is available here per
     // student-asignatura pairing. Best fallback for attendance signal.
+    // Cap at 20k: /evaluaciones produces one row per student-asignatura pair and grows fastest.
     const evaluations = await this.tryFetch<Item>(
       'evaluations',
       '/evaluaciones',
       errors,
       { Programa: '01' },
+      { maxRecords: 20_000, degraded },
     );
     const evalByStudent = new Map<string, Item[]>();
     for (const e of evaluations) {
@@ -175,44 +174,8 @@ export class AcademicService extends DashboardBaseService {
     }
     const avgAge = ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : null;
 
-    // ─── Risk flags — high-inasistencia, low-grade, level-stalled ───
-    // Threshold choices are conservative defaults; operators can refine once
-    // they eyeball real data.
-    const ABSENCE_THRESHOLD = 20;    // % inasistencia above which we flag
-    const GRADE_THRESHOLD = 0.6;     // Promedio_evaluacion below which we flag
-    const STALL_MULTIPLIER = 1.5;    // behind expected progression × this = stalled
-
-    const riskFlags = enriched
-      .map(({ student, modality, inasistencia, promedio, cursoNombre }) => {
-        const months = monthsBetween(student.Fecha_matricula) ?? 0;
-        const expectedIdx = modality === 'Desconocida'
-          ? null
-          : expectedLevelAdvance(modality, months);
-        const currentIdx = cefrIndex(student.Nombre_nivel);
-        const behindLevels = expectedIdx !== null && currentIdx !== null
-          ? Math.max(0, expectedIdx - currentIdx)
-          : 0;
-        const flags: string[] = [];
-        if (inasistencia > ABSENCE_THRESHOLD) flags.push(`${Math.round(inasistencia)}% faltas`);
-        if (promedio > 0 && promedio < GRADE_THRESHOLD) flags.push(`nota ${promedio.toFixed(2)}`);
-        if (modality !== 'Desconocida' && months >= STALL_MULTIPLIER * 3 && behindLevels > 0) {
-          flags.push(`${behindLevels} nivel(es) atrás del esperado`);
-        }
-        if (flags.length === 0) return null;
-        return {
-          Codigo: cleanStr(student.Codigo_estudiante),
-          nombre: studentFullName(student) || '—',
-          nivel: cleanStr(student.Nombre_nivel),
-          modality,
-          curso: cursoNombre || '—',
-          mesesMatriculado: months,
-          inasistencia: Math.round(inasistencia),
-          promedio,
-          flags,
-        };
-      })
-      .filter((r): r is NonNullable<typeof r> => r !== null)
-      .sort((a, b) => b.flags.length - a.flags.length || b.inasistencia - a.inasistencia);
+    // ─── Risk flags — delegated to RiskAnalysisService ───
+    const riskFlags = this.risk.computeRiskFlags(enriched).slice(0, 30);
 
     return {
       generatedAt: new Date().toISOString(),
@@ -252,7 +215,7 @@ export class AcademicService extends DashboardBaseService {
           (e) => cleanStr(e.student.Nombre_nivel) || 'Sin nivel',
         ),
       },
-      riskFlags: riskFlags.slice(0, 30),
+      riskFlags,
       teachers: docentes.slice(0, 20).map((d) => ({
         Codigo: cleanStr(d.Codigo),
         Nombres: [d.Primer_nombre, d.Segundo_nombre].map(cleanStr).filter(Boolean).join(' '),

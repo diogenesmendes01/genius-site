@@ -5,6 +5,7 @@ import { AcademicService } from './dashboard/academic.service';
 import { CommercialService } from './dashboard/commercial.service';
 import { CurrencyService } from './dashboard/currency.service';
 import { FinancialService } from './dashboard/financial.service';
+import { RiskAnalysisService } from './dashboard/risk-analysis.service';
 import { TurmasService } from './dashboard/turmas.service';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
@@ -25,6 +26,7 @@ import { TrackingService } from './tracking.service';
     EnrollmentService,
     DashboardService,
     AcademicService,
+    RiskAnalysisService,
     FinancialService,
     CommercialService,
     CurrencyService,

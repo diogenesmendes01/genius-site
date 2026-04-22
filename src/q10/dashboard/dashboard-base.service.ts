@@ -15,9 +15,20 @@ export abstract class DashboardBaseService {
     path: string,
     errors: Record<string, string>,
     params?: Record<string, unknown>,
+    opts?: { pageSize?: number; maxRecords?: number; degraded?: Record<string, string> },
   ): Promise<T[]> {
     try {
-      return safeArray(await this.q10.getAll(path, params)) as T[];
+      const out = safeArray(
+        await this.q10.getAll(path, params, {
+          pageSize: opts?.pageSize,
+          maxRecords: opts?.maxRecords,
+        }),
+      ) as T[];
+      const cap = opts?.maxRecords ?? 50_000;
+      if (out.length === cap && opts?.degraded) {
+        opts.degraded[key] = `Posible truncamiento — límite de ${cap} registros alcanzado`;
+      }
+      return out;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errors[key] = message;
