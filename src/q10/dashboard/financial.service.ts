@@ -185,7 +185,7 @@ export class FinancialService extends DashboardBaseService {
       }));
 
     const revenueByConcept = groupSum(pagos, (p) =>
-      cleanStr(p.Nombre_programa) || 'Sin programa',
+      cleanStr(p.Nombre_producto) || 'Sin concepto',
       'Valor_pagado',
     );
 

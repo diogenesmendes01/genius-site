@@ -72,6 +72,42 @@ describe('FinancialService — modality-segmented revenue', () => {
     expect(result.charts.revenueByModality.Desconocida).toBe(40);
   });
 
+  it('revenueByConcept groups by Nombre_producto, not Nombre_programa', async () => {
+    const pagosWithNullPrograma = [
+      {
+        Codigo_persona: 'P1',
+        Nombre_producto: 'Mensualidad 14 R - Recife',
+        Nombre_programa: null,
+        Valor_pagado: 90,
+        Fecha_pago: '2026-03-01',
+      },
+      {
+        Codigo_persona: 'P2',
+        Nombre_producto: 'Matrícula',
+        Nombre_programa: null,
+        Valor_pagado: 50,
+        Fecha_pago: '2026-03-02',
+      },
+      {
+        Codigo_persona: 'P3',
+        Nombre_producto: 'Mensualidad 14 R - Recife',
+        Nombre_programa: null,
+        Valor_pagado: 90,
+        Fecha_pago: '2026-03-03',
+      },
+    ];
+    const q10 = makeQ10({ '/periodos': [], '/pagos': pagosWithNullPrograma });
+    const svc = new FinancialService(q10);
+
+    const result = await svc.financial(12);
+    const concept = result.charts.revenueByConcept;
+
+    expect(concept['Mensualidad 14 R - Recife']).toBe(180);
+    expect(concept['Matrícula']).toBe(50);
+    expect(concept['Sin programa']).toBeUndefined();
+    expect(concept['Sin concepto']).toBeUndefined();
+  });
+
   it('honours explicit from/to ISO dates', async () => {
     const q10 = makeQ10({
       '/periodos': [],
