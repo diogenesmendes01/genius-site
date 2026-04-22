@@ -70,23 +70,77 @@
 > - Glossário rápido de **padrões textuais** nos nomes (ex.: classificação de modalidade por regex)
 > - **Lacunas de dados** que o operador ainda precisa preencher no Q10
 >
-> Última atualização: abril/2026 — após PR #11.
+> Última atualização: 2026-04-22 — após probe ao vivo (scripts/q10-probe.js).
 
-### Status dos endpoints neste plano
+### Status dos endpoints neste plano (probe 2026-04-22)
 
-| Endpoint | Estado | Observação |
-|---|---|---|
-| `/periodos` | OK | Base de tudo. `Nombre` + `Consecutivo` + `Fecha_inicio`/`Fecha_fin` + `Estado` |
-| `/estudiantes` | OK | 34 campos por registro. Filtrar por `Periodo=<Consecutivo_periodo>` |
-| `/docentes` | OK | Mas `Email` e `Celular` vêm vazios para muitos registros |
-| `/contactos` | OK | Leads do CRM |
-| `/oportunidades` | OK | Carrega `Negocio_favorito.Estado_negocio` aninhado |
-| `/cursos` | OK | **Gold endpoint para turmas.** Tem `Cupo_maximo` + `Cantidad_estudiantes_matriculados` prontos |
-| `/pagos` | OK | Filtrar com `Fecha_inicio` + `Fecha_fin` (ISO yyyy-mm-dd). Valores em **USD** |
-| `/pagosPendientes` | OK | Filtrar por `Consecutivo_periodo`. **Não expõe `Fecha_vencimiento`** neste plano |
-| `/evaluaciones` | OK | Requer `Programa=01` como filtro. Tem `Porcentaje_inasistencia` (fallback para `/inasistencias`) |
-| `/inasistencias` | **VAZIO** | Retorna array vazio neste tenant. Usar `/evaluaciones` como proxy |
-| `/estadocuentaestudiantes` | **REJEITADO** | Erro: _"no aplica al modelo financiero correspondiente"_. Conciliar via `/pagos.Codigo_persona` × `/estudiantes.Codigo_estudiante` |
+Legenda:
+- ✅ = retorna array com dados
+- 📭 = retorna array vazio (endpoint existe mas sem dados cadastrados)
+- ⛔ 404 = não rotado neste plano
+- ⛔ 400 = rotado, mas rejeita com mensagem de erro específica (ver abaixo)
+
+| Endpoint | HTTP | Observação |
+|---|---:|---|
+| `/periodos` | ✅ 200 | 2 records. Base de tudo. `Nombre` + `Consecutivo` + `Fecha_inicio`/`Fecha_fin` + `Estado` |
+| `/docentes` | ✅ 200 | 5 records. `Email`/`Celular` vazios em muitos |
+| `/cursos` | ✅ 200 | 5 records. **Gold endpoint para turmas.** Requer `Estado` filter quando consultado com `?Estado=` |
+| `/pagos` | ✅ 200 | Requer `Fecha_inicio`+`Fecha_fin` (ISO yyyy-mm-dd). Valores em **USD** |
+| `/evaluaciones` | ✅ 200 | Requer `Programa=01` como filtro |
+| `/administrativos` | ✅ 200 | 5 records (novo — nunca usamos). Mesma shape de `/docentes` |
+| `/asignaturas` | ✅ 200 | 5 records (novo — catálogo CEFR) |
+| `/aulasVirtuales` | ✅ 200 | 3 records (novo) |
+| `/descuentos` | ✅ 200 | 4 records (novo) |
+| `/jornadas` | ✅ 200 | 4 records (novo) |
+| `/perfiles` | ✅ 200 | 2 records (novo — RBAC) |
+| `/usuarios` | ✅ 200 | 5 records (novo) |
+| `/programas` | ✅ 200 | 1 record (`Curso de Português`, `Codigo: "01"`) |
+| `/sedes` | ✅ 200 | 1 record (`Principal`) |
+| `/contactos` | 📭 200 | Retorna array vazio |
+| `/aulas` | 📭 200 | Retorna array vazio |
+| `/codeudores` | 📭 200 | Retorna array vazio |
+| `/familiares` | 📭 200 | Retorna array vazio |
+| `/anosLectivos` | ⛔ 404 | Não rotado neste plano |
+| `/areas` | ⛔ 404 | Não rotado neste plano |
+| `/barrios` | ⛔ 404 | Não rotado neste plano |
+| `/cargasAcademicas` | ⛔ 404 | Não rotado neste plano |
+| `/colegios` | ⛔ 404 | Não rotado neste plano |
+| `/cursosRotativos` | ⛔ 404 | Não rotado neste plano |
+| `/encuestas` | ⛔ 404 | Não rotado neste plano |
+| `/especialidades` | ⛔ 404 | Não rotado neste plano |
+| `/horarios` | ⛔ 404 | Não rotado neste plano |
+| `/indicadores` | ⛔ 404 | Não rotado neste plano |
+| `/institucionesEducativas` | ⛔ 404 | Não rotado neste plano |
+| `/matriculas` | ⛔ 404 | Não rotado neste plano |
+| `/pensiones` | ⛔ 404 | Não rotado neste plano |
+| `/planesDePago` | ⛔ 404 | Não rotado neste plano |
+| `/practicasLaborales` | ⛔ 404 | Não rotado neste plano |
+| `/renovacion` | ⛔ 404 | Não rotado neste plano |
+| `/otrosIngresos` | ⛔ 404 | Não rotado neste plano |
+| `/estudiantes` | ⛔ 404* | *Filter required em disfarce — requer `Periodo` |
+| `/oportunidades` | ⛔ 404* | *Filter required em disfarce — requer `Fecha_inicio`+`Fecha_fin` |
+| `/pagosPendientes` | ⛔ 404* | *Filter required em disfarce — requer `Consecutivo_periodo` |
+| `/inasistencias` | ⛔ 404* | *Filter required em disfarce — também vazio mesmo com filtro neste plano |
+| `/estadocuentaestudiantes` | ⛔ 400 | _"No es posible realizar la petición ya que no cuenta con el modelo financiero correspondiente."_ |
+| `/facturas` | ⛔ 400 | _"No es posible hacer uso de la API ya que el modelo financiero no corresponde."_ |
+| `/grados` | ⛔ 400 | _"La API no aplica para el modelo académico de la institución."_ |
+| `/egresos` | ⛔ 400 | _"Los siguientes campos son obligatorios: 'Codigo_persona' o 'Consecutivo_tercero'"_ |
+| `/inscripciones` | ⛔ 400 | _"No se ha ingresado ningún filtro"_ |
+| `/negocios` | ⛔ 400 | _"Es necesario ingresar al menos un parámetro de consulta para procesar la solicitud."_ |
+| `/niveles` | ⛔ 400 | _"El campo 'Estado' es obligatorio"_ ← ✨ pode funcionar com `?Estado=true/false`! |
+
+Nota: Q10 trata "parâmetro obrigatório ausente" como 404 para alguns endpoints (coluna `⛔ 404*`) — só dá pra diferenciar de um 404 real re-probado com o filtro canônico. Ver "Taxonomia de erros" abaixo.
+
+### Taxonomia de erros do Q10
+
+Duas famílias distintas de resposta de erro, descobertas no probe:
+
+| Shape | statusCode | Significado |
+|---|---:|---|
+| `{"statusCode":404,"message":"Resource not found"}` | 404 | Endpoint não rotado no plano **OU** parâmetro obrigatório ausente (Q10 não diferencia — ambos caem em 404) |
+| `{"code":"400","message":"<mensagem em espanhol>"}` | 400 | Endpoint existe, retorna motivo exato: modelo financeiro/acadêmico incompatível, campo obrigatório faltando, ou filtro ausente |
+
+**Implicação prática**: só pela mensagem dá pra saber o que acontece. Nosso `tryFetch` registra em `errors[key]` o texto do `message` — se o operador vê "Resource not found" o culpado mais comum é **filtro faltando**, não endpoint inexistente.
 
 ### Vocabulário de `Estado` — **inconsistente entre endpoints**
 
@@ -94,9 +148,12 @@ Este é o tropeço mais perigoso do Q10. Os endpoints não compartilham o mesmo 
 
 | Endpoint | Valores aceitos |
 |---|---|
-| `/periodos`, `/estudiantes` | `"Activo"` / `"Inactivo"` |
+| `/periodos` | `true` / `false` (boolean) |
+| `/estudiantes` | `"Activo"` / `"Inactivo"` |
 | `/cursos` | `"Abierto"` / `"Cerrado"` / `"Finalizado"` |
 | `/oportunidades.Negocio_favorito.Estado_negocio` | `"Ganada"` / `"Perdida"` / `"Presentación"` (e outros mid-funnel inconsistentes) |
+
+⚠️ `/periodos.Estado` na verdade é boolean (probe 2026-04-22) — nosso `isActivo()` já aceita esse formato, mas a spec estava errada. `/estudiantes.Estado` ainda não foi verificado.
 
 **Consequência prática**: um único helper `isActivo()` não cobre `/cursos` — filtrar turmas ativas requer um set dedicado:
 
@@ -188,6 +245,102 @@ A doc menciona `Valor` genérico; o tenant retorna nomes diferenciados:
   - Classificar modalidade via regex (ver abaixo)
   - Extrair cidade: `Nombre.match(/-\s*(.+)$/)[1]`
 
+### Shapes dos endpoints descobertos (probe 2026-04-22)
+
+Endpoints que o probe destravou e que ainda não tínhamos shape documentada.
+
+**`/asignaturas`** — catálogo CEFR + outros cursos
+
+```json
+{
+  "Codigo": "01",
+  "Nombre": "...",
+  "Abreviacion": "A1",
+  "Estado": true
+}
+```
+
+- `Abreviacion` enumera `A1/A2/B1/B2/C1` — ⚠ **C2 ausente** na amostra de 5 records. Confirmar se existe via paginação completa antes de assumir que nosso `CEFR_LEVELS` está errado.
+- É a fonte canônica de níveis ativos — se quisermos popular um dropdown de CEFR vindo do ERP, aqui é o lugar.
+
+**`/jornadas`** — turnos
+
+```json
+{ "Codigo": "001", "Nombre": "...", "Estado": true }
+```
+
+- 4 turnos cadastrados (001-004). Usa boolean `Estado`.
+- `Nombre` provavelmente é `"Mañana"/"Tarde"/"Noche"/"Fim de semana"` — bate com os `Nombre_sede_jornada: "Principal - Mañana/Tarde/Noche"` que vimos em `/cursos`.
+
+**`/descuentos`**
+
+```json
+{
+  "Codigo": 7,
+  "Nombre": "...",
+  "Tipo": "Descuento",
+  "Caracter": "Porcentaje",
+  "Valor": 15
+}
+```
+
+- Todos os 4 descontos cadastrados são `Caracter: Porcentaje`. Valores 10/15/20/100%.
+- `Tipo: "Descuento"` sugere que `Tipo: "Recargo"` pode existir (hipótese, confirmar).
+
+**`/aulasVirtuales`**
+
+```json
+{ "Consecutivo_aula": "351915316", "Nombre_aula": "Aula Virtual 1", "Capacidad_aula": 300 }
+```
+
+- Só 3 salas virtuais, todas com capacidade 300. Subutilizado se o tenant tem mais alunos que 900 simultâneos.
+
+**`/programas`**
+
+```json
+{
+  "Codigo": "01",
+  "Nombre": "Curso de Português",
+  "Aplica_preinscripcion": true,
+  "Aplica_grupo": false,
+  "Tipo_evaluacion": "Cuantitativo",
+  "Categoria": "Educación y formación",
+  "Estado": true
+}
+```
+
+- **Único programa cadastrado**: `Curso de Português` (`Codigo: "01"`). Explica por que `/evaluaciones?Programa=01` funciona — é o filtro canônico neste tenant.
+- `Tipo_evaluacion: "Cuantitativo"` confirma a escala numérica (ver gotcha abaixo sobre `Promedio_evaluacion`).
+
+**`/sedes`**
+
+```json
+{ "Codigo": "001", "Nombre": "Principal", "Estado": true }
+```
+
+- **Uma única sede** (`"Principal"`). Qualquer feature de "filtrar por sede" é trivial hoje.
+
+**`/administrativos`** — mesma shape de `/docentes` (Codigo + Primer/Segundo_nombre/apellido + contato). Staff administrativo.
+
+**`/perfiles`** + **`/usuarios`** — RBAC do Q10
+
+```json
+// /perfiles
+{ "Consecutivo": 1, "Nombre": "...", "Descripcion": null, "Estado": true }
+// /usuarios
+{
+  "Codigo_persona": "112025089749",
+  "Nombre_usuario": "119480827",
+  "Consecutivo_perfil": null,
+  "Perfil": null,
+  "Roles": [],
+  "Correo_institucional": null
+}
+```
+
+- ⚠ **`Consecutivo_perfil: null` em 100% dos usuários da amostra** — os perfis existem no ERP mas não estão mapeados aos usuários. RBAC via Q10 não é confiável neste tenant; manter auth no nosso lado.
+- `Nombre_usuario` = `Numero_identificacion` (mesmo valor em todos os samples).
+
 ### Classificação de modalidade — **regex no nome**
 
 Não existe campo dedicado `Modalidad` nos produtos/cursos. O negócio convenciona o padrão textual:
@@ -225,10 +378,52 @@ Usado para calcular se o aluno está **atrasado em relação ao esperado** — c
 | `Fecha_vencimiento` | `/pagosPendientes` | Não existe neste plano |
 | `Fecha_pago` | `/pagos` | Alguns registros vêm com timestamp (`"2026-03-15T14:20:00"`), outros só com data (`"2026-03-15"`). Normalizar com `.slice(0, 10)` antes de filtrar |
 
+### Gotchas de campo descobertas no probe
+
+**`/pagos.Codigo_programa` e `.Nombre_programa` — 100% null na amostra**
+Dos 5 `/pagos` do primeiro probe, **todos** têm `Codigo_programa: null` + `Nombre_programa: null`. Implicação: nosso `revenueByConcept` no `FinancialService` agrupa tudo como `"Sin programa"`. Investigar se Q10 popula esses campos para outros tipos de pago (ex: filtrando por `Codigo_persona` específico). Se confirmar que nunca vem, **preferir agrupar por `Nombre_producto`** (que está populado: ex. "Mensualidad 14 R - Recife").
+
+**`/pagos.Fecha_pago` com precisão de milissegundo variável**
+Amostras reais: `"2026-01-22T19:40:55.803"` vs `"2026-04-20T17:37:02.2"` (1 digito de ms). Sempre `.slice(0, 10)` antes de comparar/filtrar.
+
+**`/pagos.Valor_pagado: 0` existe em amostras reais**
+Possivelmente pagos anulados/devueltos (`Anulado: false, Devuelto: false` nos exemplos). Investigar casos de zero — provavelmente são `Formas_pago: []` (sem forma de pagamento associada ainda). Filtrar `> 0` nas KPIs financeiras para evitar ruído.
+
+**`/pagos.Numero_recibo_pago` é number, não string**
+A doc documenta como string; o tenant retorna number. `cleanStr()` converte corretamente, mas é sinal de que a spec e a realidade divergem.
+
+**`/evaluaciones.Promedio_evaluacion` está em escala 0-10, NÃO 0-1**
+Amostras: `0, 1.4, 6, 6.1, 6.2`. Nosso `GRADE_THRESHOLD = 0.6` no `RiskAnalysisService` foi calibrado assumindo 0-1 e **quase nunca dispara** na prática. Ajustar para `3.0` (abaixo de 3/10 = reprovação grave) ou `6.0` (abaixo da média) antes que o dashboard fique mostrando "nota baixa" vazio.
+
+**`/evaluaciones.Estado_matricula_asignatura`** — novo enum
+Valor canônico observado: `"En Curso"`. Outros valores prováveis (não observados na amostra): `"Aprobada"`, `"Reprobada"`, `"Cancelada"`. Pode ser mais confiável que inferir por ausência.
+
+**`/evaluaciones.Porcentaje_inasistencia` — 0 em 100% dos registros sample**
+Tanto `Porcentaje_inasistencia` quanto `Cantidad_inasistencia` vieram zero em 8/8 registros. Se isso persistir em paginação completa, nosso fallback para `/inasistencias` via `/evaluaciones` está efetivamente vazio. Confirmar em fase 2.
+
+**`/docentes.Telefono` — 100% null, `.Celular` populado**
+Não renderizar coluna `Telefono` no UI. Tanto `/docentes` quanto `/administrativos` seguem o mesmo padrão.
+
+**`/docentes.Estudiantes_relacionados` — array existente, não consumido**
+Campo presente mas nunca tocamos. Poderia substituir o cruzamento manual que fazemos em `TurmasService.teachersByLoad`.
+
 ### Buracos conhecidos (gap entre Q10 e o negócio)
 
 - **Aulas particulares não estão cadastradas** em `/cursos`. Receita e matrículas dessa modalidade não contabilizam. Quando cadastrarem, usar `Nombre` tipo `"P - {Aluno} - {Cidade}"` e estender o regex de modalidade.
 - **Cancelamentos não são registrados**. Churn é inferido por **ausência entre períodos** (set-based diff entre `/estudiantes?Periodo=P_atual` e `P_anterior`). Ver `AcademicService.retention`.
+
+### Endpoints pra reprobar com filtros (fase 2)
+
+Endpoints que retornaram 400 com mensagem específica — daria pra destravar com o parâmetro certo:
+
+| Endpoint | Filtro sugerido | Por quê |
+|---|---|---|
+| `/niveles?Estado=true` | `Estado=true` | Q10 disse "El campo 'Estado' es obligatorio". Se funcionar, dá o catálogo de níveis do ERP |
+| `/egresos?Codigo_persona=<id>` | ID de pessoa | Listar ex-alunos (catch para churn) |
+| `/inscripciones?Codigo_persona=<id>` | qualquer filtro | Registros de pré-matrícula |
+| `/negocios?Codigo_persona=<id>` ou `?Estado=Ganada` | qualquer filtro | Pode ser a fonte primária do funil de vendas, com enum de estado confiável |
+
+E os detail endpoints (`/{resource}/{id}`) nunca foram probedados — nosso `Q10ClientService.get` só faz list.
 
 ### Lista de atualizações pedidas ao Q10
 
