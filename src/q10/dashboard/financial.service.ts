@@ -3,18 +3,26 @@ import { Q10ClientService } from '../q10-client.service';
 import { DashboardBaseService } from './dashboard-base.service';
 import {
   classifyModality,
+  classifyProduct,
   cleanStr,
   currentlyActivePeriods,
   groupSum,
   isoDate,
   Item,
   Modality,
+  MONTHS_PER_LEVEL,
   monthKey,
   parseDate,
   periodKey,
   studentFullName,
   sum,
 } from './helpers';
+
+// Full-course LTV horizon: a student progressing A1 → C1 goes through 5
+// levels. Multiply by months-per-level (3 Regular / 1.5 Semi Intensivo)
+// to get the expected student lifetime in months. C2 is not offered at
+// this tenant (confirmed via /niveles probe).
+const CEFR_LEVELS_TO_COMPLETE = 5;
 
 @Injectable()
 export class FinancialService extends DashboardBaseService {
@@ -131,46 +139,126 @@ export class FinancialService extends DashboardBaseService {
     }));
     const totalRevenue = sum(pagos, 'Valor_pagado');
 
-    // ─── Ticket + LTV approximation (revenue-per-paying-person) ───
+    // ─── Ticket (revenue-per-paying-person, filtering voided rows) ───
+    // The debt-decomposition probe (2026-04-22) confirmed Valor_pagado=0 is
+    // rare in this tenant — but we still guard so any future voided rows
+    // don't inflate the paying-student count.
     const revenuePerPerson: Record<string, number> = {};
     for (const p of pagos) {
       const k = cleanStr(p.Codigo_persona);
-      if (!k) continue;
-      revenuePerPerson[k] = (revenuePerPerson[k] ?? 0) + (Number(p.Valor_pagado) || 0);
+      const v = Number(p.Valor_pagado) || 0;
+      if (!k || v <= 0) continue;
+      revenuePerPerson[k] = (revenuePerPerson[k] ?? 0) + v;
     }
     const payingTotals = Object.values(revenuePerPerson);
     const avgTicket = payingTotals.length > 0
       ? totalRevenue / payingTotals.length
       : 0;
-    const ltvApprox = payingTotals.length > 0
-      ? payingTotals.reduce((a, b) => a + b, 0) / payingTotals.length
-      : 0;
     const maxPaid = payingTotals.length > 0 ? Math.max(...payingTotals) : 0;
 
-    // ─── Debt + reconciliation ───
-    const outstandingDebt = sum(pending, 'Valor_saldo');
+    // ─── Real LTV (matrícula + mensalidade × meses_CEFR por modalidade) ───
+    // A student following the CEFR path (A1 → C1) goes through 5 levels.
+    // The company is young so observational LTV would be biased; we use
+    // the contractual expectation instead. Revenue is split by product
+    // type — matrícula and mensualidade — using classifyProduct(), which
+    // handles the pt/es name drift revealed by the 2026-04-22 probe
+    // ("Mensalidade $75", "Nivel Regular", custom names like "Adriana 1"
+    // all collapse to mensualidad).
+    let matriculaSum = 0;
+    let matriculaCount = 0;
+    let mensualidadSum = 0;
+    let mensualidadCount = 0;
+    for (const p of pagos) {
+      const v = Number(p.Valor_pagado) || 0;
+      if (v <= 0) continue;
+      const t = classifyProduct(p.Nombre_producto);
+      if (t === 'matricula') {
+        matriculaSum += v;
+        matriculaCount += 1;
+      } else if (t === 'mensualidad') {
+        mensualidadSum += v;
+        mensualidadCount += 1;
+      }
+    }
+    const avgMatricula = matriculaCount > 0 ? matriculaSum / matriculaCount : 0;
+    const avgMensualidad = mensualidadCount > 0 ? mensualidadSum / mensualidadCount : 0;
+    const ltvByModality: Record<Exclude<Modality, 'Desconocida'>, number> = {
+      Regular: avgMatricula + avgMensualidad * (MONTHS_PER_LEVEL.Regular * CEFR_LEVELS_TO_COMPLETE),
+      'Semi Intensivo':
+        avgMatricula + avgMensualidad * (MONTHS_PER_LEVEL['Semi Intensivo'] * CEFR_LEVELS_TO_COMPLETE),
+    };
+    // Headline LTV — weighted by the number of distinct paying persons per
+    // modality (not a flat 50/50 average) so an imbalanced student mix
+    // doesn't skew the KPI. Payer modality comes from the payment's
+    // Nombre_producto: a person is Regular if the majority of their paid
+    // volume falls in Regular-tagged products, Semi Intensivo otherwise.
+    // Desconocida-only payers fall back to the flat average so they still
+    // contribute — with "Nivel Regular" and other mis-tagged names the
+    // classifier already folds them into one of the real modalities.
+    const modalityByPerson: Record<string, { reg: number; int: number }> = {};
+    for (const p of pagos) {
+      const v = Number(p.Valor_pagado) || 0;
+      if (v <= 0) continue;
+      const k = cleanStr(p.Codigo_persona);
+      if (!k) continue;
+      const label = cleanStr(p.Nombre_producto) || cleanStr(p.Nombre_programa);
+      const m = classifyModality(label);
+      if (m === 'Desconocida') continue;
+      if (!modalityByPerson[k]) modalityByPerson[k] = { reg: 0, int: 0 };
+      if (m === 'Regular') modalityByPerson[k].reg += v;
+      else modalityByPerson[k].int += v;
+    }
+    let regCount = 0;
+    let intCount = 0;
+    for (const { reg, int } of Object.values(modalityByPerson)) {
+      if (reg > int) regCount += 1;
+      else if (int > 0) intCount += 1;
+    }
+    const totalWeight = regCount + intCount;
+    const ltvEstimated =
+      totalWeight > 0
+        ? (ltvByModality.Regular * regCount +
+            ltvByModality['Semi Intensivo'] * intCount) /
+          totalWeight
+        : (ltvByModality.Regular + ltvByModality['Semi Intensivo']) / 2;
+
+    // ─── Debt reconciliation (filter ghost proposals) ───
+    // /pagosPendientes includes rows for enrollment proposals that were
+    // never paid ("matrícula fantasma"). The 2026-04-22 probe showed
+    // ~47% of the raw debt total is from people who are neither active
+    // students nor ever paid anything. We exclude those so the KPI
+    // matches real collectable debt.
     const currentStudentIds = new Set(
       currentStudents.map((s) => cleanStr(s.Codigo_estudiante)).filter(Boolean),
     );
+    const paidSomething = new Set(Object.keys(revenuePerPerson));
+    const realDebt = pending.filter((p) => {
+      const code = cleanStr(p.Estudiante?.Codigo_persona);
+      if (!code) return false;
+      return currentStudentIds.has(code) || paidSomething.has(code);
+    });
+    const outstandingDebt = sum(realDebt, 'Valor_saldo');
     const inadCodes = new Set<string>();
-    for (const p of pending) {
+    for (const p of realDebt) {
       const c = cleanStr(p.Estudiante?.Codigo_persona);
       if (c) inadCodes.add(c);
     }
     const activeWithDebt = [...inadCodes].filter((c) => currentStudentIds.has(c)).length;
+    const debtorsTotal = inadCodes.size;
+    const ghostDebt = sum(pending, 'Valor_saldo') - outstandingDebt;
     const inadimplenciaRate = currentStudentIds.size > 0
       ? Math.round((activeWithDebt / currentStudentIds.size) * 100)
       : null;
 
-    // ─── Projection ───
-    const projectedThisPeriod = sum(pending, 'Valor_total');
-    const paidThisPeriod = sum(pending, 'Valor_pagado');
+    // ─── Projection (uses realDebt so proposals don't skew the rate) ───
+    const projectedThisPeriod = sum(realDebt, 'Valor_total');
+    const paidThisPeriod = sum(realDebt, 'Valor_pagado');
     const projectionRate = projectedThisPeriod > 0
       ? Math.round((paidThisPeriod / projectedThisPeriod) * 100)
       : null;
 
-    // ─── Drill-downs ───
-    const topDebtors = pending
+    // ─── Drill-downs (realDebt, not raw pending) ───
+    const topDebtors = realDebt
       .slice()
       .sort((a, b) => (Number(b.Valor_saldo) || 0) - (Number(a.Valor_saldo) || 0))
       .slice(0, 15)
@@ -228,6 +316,16 @@ export class FinancialService extends DashboardBaseService {
       partial: Object.keys(errors).length > 0,
       errors,
       degraded,
+      // Data-scope advisory — surfaced by the UI as an info banner so the
+      // operator doesn't read these KPIs as a full-company picture while
+      // the Costa Rica payments are still being backfilled into the ERP.
+      // Drop this once the admin team confirms full coverage.
+      scopeNotice: {
+        level: 'info',
+        title: 'Alcance financiero parcial',
+        message:
+          'Los pagos de Costa Rica todavía no están registrados en el ERP. Los KPIs financieros reflejan solo la sede Panamá hasta que el equipo administrativo complete la carga retroactiva.',
+      },
       summary: {
         monthsBack,
         windowMonths,
@@ -235,12 +333,18 @@ export class FinancialService extends DashboardBaseService {
         to: isoDate(now),
         totalRevenue,
         outstandingDebt,
+        ghostDebt: Math.round(ghostDebt * 100) / 100,
+        debtorsTotal,
         payingStudents: payingTotals.length,
         activeWithDebt,
         inadimplenciaRate,
         projectionRate,
         avgTicket: Math.round(avgTicket * 100) / 100,
-        ltvApprox: Math.round(ltvApprox * 100) / 100,
+        avgMatricula: Math.round(avgMatricula * 100) / 100,
+        avgMensualidad: Math.round(avgMensualidad * 100) / 100,
+        ltvEstimated: Math.round(ltvEstimated * 100) / 100,
+        ltvRegular: Math.round(ltvByModality.Regular * 100) / 100,
+        ltvIntensivo: Math.round(ltvByModality['Semi Intensivo'] * 100) / 100,
         maxPaid,
         revenueRegular: revenueByModality.Regular,
         revenueIntensivo: revenueByModality['Semi Intensivo'],

@@ -3,6 +3,7 @@ import {
   ageFromBirthdate,
   cefrIndex,
   classifyModality,
+  classifyProduct,
   currentlyActivePeriods,
   expectedLevelAdvance,
   groupCount,
@@ -42,6 +43,63 @@ describe('classifyModality', () => {
 
   it('is case-insensitive', () => {
     expect(classifyModality('14 r - Recife')).toBe('Regular');
+  });
+});
+
+describe('classifyProduct', () => {
+  // Cases drawn from the live /pagosPendientes probe (2026-04-22) — every
+  // distinct Nombre_producto the tenant actually emits today, plus the
+  // baseline Spanish forms the doc hints at.
+  it('classifies Spanish "Mensualidad $ 50" as mensualidad', () => {
+    expect(classifyProduct('Mensualidad $ 50')).toBe('mensualidad');
+  });
+
+  it('classifies Portuguese "Mensalidade $75" as mensualidad', () => {
+    expect(classifyProduct('Mensalidade $75')).toBe('mensualidad');
+  });
+
+  it('classifies "Regular Mensalidade" as mensualidad', () => {
+    expect(classifyProduct('Regular Mensalidade')).toBe('mensualidad');
+  });
+
+  it('classifies "Nivel Regular" (custom name) as mensualidad', () => {
+    expect(classifyProduct('Nivel Regular')).toBe('mensualidad');
+  });
+
+  it('classifies "Matricula $20" as matricula', () => {
+    expect(classifyProduct('Matricula $20')).toBe('matricula');
+  });
+
+  it('classifies "Matrícula única" (with accent) as matricula', () => {
+    expect(classifyProduct('Matrícula única')).toBe('matricula');
+  });
+
+  it('classifies personalised mensualidade ("Mensalidade Adriana 1") as mensualidad', () => {
+    expect(classifyProduct('Mensalidade Adriana 1')).toBe('mensualidad');
+  });
+
+  it('returns otro for generic names like "66 Dolares"', () => {
+    expect(classifyProduct('66 Dolares')).toBe('otro');
+  });
+
+  it('returns otro for personalised names without mensal-root ("Adriana 1")', () => {
+    expect(classifyProduct('Adriana 1')).toBe('otro');
+  });
+
+  it('returns otro for empty/null input', () => {
+    expect(classifyProduct('')).toBe('otro');
+    expect(classifyProduct(null)).toBe('otro');
+    expect(classifyProduct(undefined)).toBe('otro');
+  });
+
+  it('is case-insensitive', () => {
+    expect(classifyProduct('MATRICULA')).toBe('matricula');
+    expect(classifyProduct('mensualidad extra')).toBe('mensualidad');
+  });
+
+  it('does not match mid-word substrings (no false positives)', () => {
+    // "Complemento" has no "matr", no "mensal", no "nivel regular".
+    expect(classifyProduct('Complemento didáctico')).toBe('otro');
   });
 });
 

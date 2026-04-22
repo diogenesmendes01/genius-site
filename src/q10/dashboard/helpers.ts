@@ -175,6 +175,25 @@ export function classifyModality(nombreCurso: unknown): Modality {
   return 'Desconocida';
 }
 
+export type ProductType = 'matricula' | 'mensualidad' | 'otro';
+
+/**
+ * Classify a payment/debt line by its `Nombre_producto`. The tenant has
+ * inconsistent product names — some staff register in Spanish
+ * ("Mensualidad $50"), others in Portuguese ("Mensalidade $75"), plus
+ * custom names like "Nivel Regular" or "Mensalidade Adriana 1". The
+ * debt-decomposition probe (2026-04-22) mapped the full distribution;
+ * this matcher covers the buckets that actually appear.
+ */
+export function classifyProduct(nombreProducto: unknown): ProductType {
+  const s = cleanStr(nombreProducto).toLowerCase();
+  if (!s) return 'otro';
+  if (/\bmatr/.test(s)) return 'matricula';
+  if (/mensual|mensalid/.test(s)) return 'mensualidad';
+  if (/\bnivel\b.*\bregular\b/.test(s)) return 'mensualidad';
+  return 'otro';
+}
+
 /**
  * Index of a CEFR level (A1=0 … C2=5). Returns null if the string isn't a
  * recognised CEFR code; callers skip those from progression math.
