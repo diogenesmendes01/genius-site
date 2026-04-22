@@ -85,15 +85,16 @@ function bindEvents() {
       syncCustomRangeVisibility();
       onDateRangeChanged();
     });
+    const debouncedDateChanged = debounce(onDateRangeChanged, 300);
     customFrom.addEventListener('change', (e) => {
       state.customFrom = e.target.value;
       localStorage.setItem('genius:customFrom', state.customFrom);
-      if (state.datePreset === 'custom') onDateRangeChanged();
+      if (state.datePreset === 'custom') debouncedDateChanged();
     });
     customTo.addEventListener('change', (e) => {
       state.customTo = e.target.value;
       localStorage.setItem('genius:customTo', state.customTo);
-      if (state.datePreset === 'custom') onDateRangeChanged();
+      if (state.datePreset === 'custom') debouncedDateChanged();
     });
   }
 
@@ -132,6 +133,14 @@ function onDateRangeChanged() {
   if (DATE_PICKER_APPLIES_TO.has(state.activeTab)) refreshActiveTab(false);
 }
 
+function debounce(fn, ms) {
+  let timer = null;
+  return (...args) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
 // Compute {from, to} in YYYY-MM-DD for the current preset.
 // Returns {} for "all" — no params → backend uses its own default window.
 function computeDateRange() {
@@ -163,7 +172,9 @@ function computeDateRange() {
       }
       return {};
     }
-    default: return {};
+    default:
+      console.warn('[dashboard] unknown datePreset:', state.datePreset);
+      return {};
   }
 }
 
@@ -173,7 +184,10 @@ function currentRangeDays() {
   if (!r.from || !r.to) return 30;
   const d1 = new Date(r.from).getTime();
   const d2 = new Date(r.to).getTime();
-  if (isNaN(d1) || isNaN(d2)) return 30;
+  if (isNaN(d1) || isNaN(d2)) {
+    console.warn('[dashboard] currentRangeDays: unparsable range', r);
+    return 30;
+  }
   return Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
 }
 
@@ -622,6 +636,16 @@ function escapeHtml(v) {
   }[c]));
 }
 
+// Reorder a CEFR distribution respecting `levelsOrder` (A1 → C2). Any key
+// not in the canonical order gets appended at the end so nothing disappears
+// if Q10 introduces a new level we haven't seen.
+function orderedCefr(raw, order) {
+  const out = {};
+  for (const lv of order) if (raw[lv] != null) out[lv] = raw[lv];
+  for (const k of Object.keys(raw)) if (!(k in out)) out[k] = raw[k];
+  return out;
+}
+
 // Render a simple `key: count` distribution as a horizontal bar chart.
 function renderDistributionChart(canvasId, dist, colour = '#000E38') {
   destroyChart(canvasId);
@@ -710,15 +734,6 @@ async function loadAcademic(force) {
     { label: 'Churn', value: r.churned, sub: r.churnRate != null ? `${r.churnRate}% salieron` : '—' },
     { label: 'Nuevos', value: r.newcomers, sub: 'entraron ahora' },
   ].map(funnelStage).join('');
-
-  // Helper: reorder a distribution object to respect a predefined key order
-  // (keys outside the order list are appended in their original order).
-  const orderedCefr = (raw, order) => {
-    const out = {};
-    for (const lv of order) if (raw[lv] != null) out[lv] = raw[lv];
-    for (const k of Object.keys(raw)) if (!(k in out)) out[k] = raw[k];
-    return out;
-  };
 
   const dist = data.distributions || {};
   const prog = data.progression || {};

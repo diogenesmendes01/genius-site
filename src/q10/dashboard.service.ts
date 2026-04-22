@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Q10ClientService } from './q10-client.service';
+import { DashboardBaseService } from './dashboard/dashboard-base.service';
 import {
   cleanStr,
   currentlyActivePeriods,
@@ -7,31 +8,16 @@ import {
   Item,
   parseDate,
   periodKey,
-  safeArray,
   studentFullName,
   sum,
 } from './dashboard/helpers';
 
 @Injectable()
-export class DashboardService {
-  private readonly logger = new Logger(DashboardService.name);
+export class DashboardService extends DashboardBaseService {
+  protected readonly logPrefix = 'dashboard';
 
-  constructor(private readonly q10: Q10ClientService) {}
-
-  private async tryFetch<T>(
-    key: string,
-    path: string,
-    errors: Record<string, string>,
-    params?: Record<string, unknown>,
-  ): Promise<T[]> {
-    try {
-      return safeArray(await this.q10.getAll(path, params)) as T[];
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      errors[key] = message;
-      this.logger.warn(`[dashboard] ${path} failed: ${message}`);
-      return [];
-    }
+  constructor(q10: Q10ClientService) {
+    super(q10);
   }
 
   /**

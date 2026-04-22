@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Q10ClientService } from '../q10-client.service';
+import { DashboardBaseService } from './dashboard-base.service';
 import {
   ageBucket,
   ageFromBirthdate,
@@ -15,30 +16,15 @@ import {
   monthsBetween,
   periodKey,
   previousPeriod,
-  safeArray,
   studentFullName,
 } from './helpers';
 
 @Injectable()
-export class AcademicService {
-  private readonly logger = new Logger(AcademicService.name);
+export class AcademicService extends DashboardBaseService {
+  protected readonly logPrefix = 'academic';
 
-  constructor(private readonly q10: Q10ClientService) {}
-
-  private async tryFetch<T>(
-    key: string,
-    path: string,
-    errors: Record<string, string>,
-    params?: Record<string, unknown>,
-  ): Promise<T[]> {
-    try {
-      return safeArray(await this.q10.getAll(path, params)) as T[];
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      errors[key] = message;
-      this.logger.warn(`[academic] ${path} failed: ${message}`);
-      return [];
-    }
+  constructor(q10: Q10ClientService) {
+    super(q10);
   }
 
   /**

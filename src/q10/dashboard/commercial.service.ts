@@ -1,34 +1,20 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Q10ClientService } from '../q10-client.service';
+import { DashboardBaseService } from './dashboard-base.service';
 import {
   cleanStr,
   groupCount,
   Item,
   monthKey,
   parseDate,
-  safeArray,
 } from './helpers';
 
 @Injectable()
-export class CommercialService {
-  private readonly logger = new Logger(CommercialService.name);
+export class CommercialService extends DashboardBaseService {
+  protected readonly logPrefix = 'commercial';
 
-  constructor(private readonly q10: Q10ClientService) {}
-
-  private async tryFetch<T>(
-    key: string,
-    path: string,
-    errors: Record<string, string>,
-    params?: Record<string, unknown>,
-  ): Promise<T[]> {
-    try {
-      return safeArray(await this.q10.getAll(path, params)) as T[];
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      errors[key] = message;
-      this.logger.warn(`[commercial] ${path} failed: ${message}`);
-      return [];
-    }
+  constructor(q10: Q10ClientService) {
+    super(q10);
   }
 
   /**
