@@ -208,8 +208,9 @@ function render(data) {
   renderFunnel(data.funnel, data.degraded);
   renderRevenueChart(data.charts.revenueByDay);
   renderStudentsChart(data.charts.newStudentsByDay);
-  renderProgramsChart(data.distributions.studentsByProgram);
-  renderOriginsChart(data.distributions.opportunitiesByOrigin);
+  // Distribution charts moved to the Académico tab — overview no longer
+  // returns `data.distributions`. Calling renderProgramsChart/Origins here
+  // would crash with "Cannot read properties of undefined".
   renderRecentStudents(data.recent.students);
   renderPendingPayments(data.recent.pendingPayments);
 }
@@ -363,47 +364,6 @@ function renderStudentsChart(series) {
   });
 }
 
-function renderProgramsChart(dist) {
-  destroyChart('programs');
-  const ctx = el('programsChart').getContext('2d');
-  const labels = Object.keys(dist);
-  const values = Object.values(dist);
-  state.charts.programs = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: ['#000E38', '#DCAF63', '#1a2456', '#EBC584', '#606060', '#FFF8EF'],
-      }],
-    },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
-  });
-}
-
-function renderOriginsChart(dist) {
-  destroyChart('origins');
-  const ctx = el('originsChart').getContext('2d');
-  state.charts.origins = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(dist),
-      datasets: [{
-        data: Object.values(dist),
-        backgroundColor: '#DCAF63',
-        borderRadius: 6,
-      }],
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
-    },
-  });
-}
-
-// ─── Tables ───
 function renderRecentStudents(list) {
   const tbody = document.querySelector('#recentStudents tbody');
   if (!list?.length) {
