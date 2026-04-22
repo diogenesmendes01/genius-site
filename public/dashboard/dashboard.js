@@ -636,15 +636,8 @@ function escapeHtml(v) {
   }[c]));
 }
 
-// Reorder a CEFR distribution respecting `levelsOrder` (A1 → C2). Any key
-// not in the canonical order gets appended at the end so nothing disappears
-// if Q10 introduces a new level we haven't seen.
-function orderedCefr(raw, order) {
-  const out = {};
-  for (const lv of order) if (raw[lv] != null) out[lv] = raw[lv];
-  for (const k of Object.keys(raw)) if (!(k in out)) out[k] = raw[k];
-  return out;
-}
+// `orderedCefr` now lives in /dashboard/helpers.js — loaded before this
+// script so it's available on the global scope.
 
 // Render a simple `key: count` distribution as a horizontal bar chart.
 function renderDistributionChart(canvasId, dist, colour = '#000E38') {
