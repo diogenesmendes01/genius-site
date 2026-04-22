@@ -2,6 +2,7 @@ import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AcademicService } from './dashboard/academic.service';
 import { CommercialService } from './dashboard/commercial.service';
+import { CurrencyService } from './dashboard/currency.service';
 import { FinancialService } from './dashboard/financial.service';
 import { DashboardService } from './dashboard.service';
 import { Q10ClientService } from './q10-client.service';
@@ -14,6 +15,7 @@ export class DashboardController {
     private readonly academic: AcademicService,
     private readonly financial: FinancialService,
     private readonly commercial: CommercialService,
+    private readonly currency: CurrencyService,
     private readonly q10: Q10ClientService,
   ) {}
 
@@ -37,6 +39,16 @@ export class DashboardController {
   @Get('commercial')
   commercialView() {
     return this.commercial.commercial();
+  }
+
+  /**
+   * Exchange rates for the dashboard's currency switcher. Q10 stores all
+   * monetary values in USD on this tenant, so the FE uses these rates
+   * (USD → CRC, USD → BRL) to relabel KPIs without touching backend.
+   */
+  @Get('currency-rates')
+  rates() {
+    return this.currency.getRates();
   }
 
   @Post('refresh')
