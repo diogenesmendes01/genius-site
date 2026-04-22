@@ -10,6 +10,7 @@
 
 ## Table of Contents
 
+0. [**Implementation Notes — Genius Idiomas tenant**](#implementation-notes--genius-idiomas-tenant) ⭐ _Conhecimento empírico coletado em produção_
 1. [Administrativos](#administrativos)
 2. [Años Lectivos](#años-lectivos)
 3. [Áreas](#áreas)
@@ -53,7 +54,221 @@
 
 ---
 
-## Administrativos
+## Implementation Notes — Genius Idiomas tenant
+
+> **Tudo nesta seção é conhecimento empírico**, coletado através de probes ao
+> vivo contra a API do tenant Genius Idiomas (Costa Rica + Panamá, modelo
+> financeiro "pagos regulares", ETDH). Os comportamentos aqui podem diferir
+> em outros tenants/planos do Q10 — a doc oficial continua sendo a fonte da
+> verdade para o contrato formal.
+>
+> Esta seção complementa a spec com:
+> - Quais endpoints **funcionam, estão vazios ou são rejeitados** neste plano
+> - **Inconsistências de vocabulário** entre endpoints (mesma API, dicionários diferentes)
+> - Shapes **reais** de resposta (nomes de campos que a doc hinta mas que retornam com nome diferente)
+> - **Paginação** real, incluindo envelopes inesperados
+> - Glossário rápido de **padrões textuais** nos nomes (ex.: classificação de modalidade por regex)
+> - **Lacunas de dados** que o operador ainda precisa preencher no Q10
+>
+> Última atualização: abril/2026 — após PR #11.
+
+### Status dos endpoints neste plano
+
+| Endpoint | Estado | Observação |
+|---|---|---|
+| `/periodos` | OK | Base de tudo. `Nombre` + `Consecutivo` + `Fecha_inicio`/`Fecha_fin` + `Estado` |
+| `/estudiantes` | OK | 34 campos por registro. Filtrar por `Periodo=<Consecutivo_periodo>` |
+| `/docentes` | OK | Mas `Email` e `Celular` vêm vazios para muitos registros |
+| `/contactos` | OK | Leads do CRM |
+| `/oportunidades` | OK | Carrega `Negocio_favorito.Estado_negocio` aninhado |
+| `/cursos` | OK | **Gold endpoint para turmas.** Tem `Cupo_maximo` + `Cantidad_estudiantes_matriculados` prontos |
+| `/pagos` | OK | Filtrar com `Fecha_inicio` + `Fecha_fin` (ISO yyyy-mm-dd). Valores em **USD** |
+| `/pagosPendientes` | OK | Filtrar por `Consecutivo_periodo`. **Não expõe `Fecha_vencimiento`** neste plano |
+| `/evaluaciones` | OK | Requer `Programa=01` como filtro. Tem `Porcentaje_inasistencia` (fallback para `/inasistencias`) |
+| `/inasistencias` | **VAZIO** | Retorna array vazio neste tenant. Usar `/evaluaciones` como proxy |
+| `/estadocuentaestudiantes` | **REJEITADO** | Erro: _"no aplica al modelo financiero correspondiente"_. Conciliar via `/pagos.Codigo_persona` × `/estudiantes.Codigo_estudiante` |
+
+### Vocabulário de `Estado` — **inconsistente entre endpoints**
+
+Este é o tropeço mais perigoso do Q10. Os endpoints não compartilham o mesmo dicionário de estado:
+
+| Endpoint | Valores aceitos |
+|---|---|
+| `/periodos`, `/estudiantes` | `"Activo"` / `"Inactivo"` |
+| `/cursos` | `"Abierto"` / `"Cerrado"` / `"Finalizado"` |
+| `/oportunidades.Negocio_favorito.Estado_negocio` | `"Ganada"` / `"Perdida"` / `"Presentación"` (e outros mid-funnel inconsistentes) |
+
+**Consequência prática**: um único helper `isActivo()` não cobre `/cursos` — filtrar turmas ativas requer um set dedicado:
+
+```ts
+const OPEN_COURSE_STATES = new Set(['abierto', 'abierta', 'activo', 'active', 'true', '1']);
+```
+
+A implementação desse fix está em `src/q10/dashboard/turmas.service.ts`.
+
+### Paginação real
+
+A doc hinta `Limit`/`Offset` mas deixa detalhes por conta. O que observamos em produção:
+
+- **Offsets são 1-based** (não 0-based). Começar com `Offset=1`, incrementar em `+pageSize` a cada chamada.
+- **Fim do paginado**: quando a página retorna menos registros do que `pageSize`. Não existe `total` no header.
+- **pageSize recomendado**: 500 (testado para todos os endpoints sem throttling).
+- **Envelopes**: a maior parte retorna o array cru (`[ {...}, {...} ]`), mas alguns planos/endpoints embrulham em `{ items: [...] }`, `{ data: [...] }` ou `{ results: [...] }`. Trate ambos os formatos ou você vai silenciosamente reportar `0 registros` quando na verdade veio tudo embrulhado.
+
+Ver a implementação canônica em `src/q10/q10-client.service.ts#getAll` (com cap de `maxRecords` para evitar loop infinito em endpoints patológicos).
+
+### Shape real vs hintado de `/pagos`
+
+A doc menciona `Valor` genérico; o tenant retorna nomes diferenciados:
+
+```json
+{
+  "Codigo_persona": "00000012345",
+  "Nombre_estudiante": "...",
+  "Identificacion_estudiante": "...",
+  "Nombre_programa": "Portugués",
+  "Nombre_producto": "Mensualidad 14 R - Recife",
+  "Numero_recibo_pago": "R-0001",
+  "Fecha_pago": "2026-03-15",
+  "Valor_pagado": 120.00,
+  "Valor_saldo": 0,
+  "Valor_total": 120.00
+}
+```
+
+- **`Valor_pagado`** é o que você quer somar para "receita".
+- **`Valor_saldo`** é a dívida remanescente do recibo.
+- **`Codigo_persona` === `Codigo_estudiante`** (12 dígitos). É a chave natural para conciliar pagos × estudantes neste plano.
+- **Moeda base: USD.** Verificado ao vivo — não converter para BRL/CRC antes de exibir; persistir USD e converter via rates no frontend (ver `CurrencyService`).
+
+### Shape real de `/pagosPendientes`
+
+```json
+{
+  "Estudiante": {
+    "Codigo_persona": "...",
+    "Nombre_completo": "..."
+  },
+  "Nombre_producto": "Mensualidad 14 R - Recife",
+  "Nombre_periodo": "Período 14 - 2026",
+  "Consecutivo_periodo": "14",
+  "Valor_pagado": 0,
+  "Valor_saldo": 120.00,
+  "Valor_total": 120.00
+}
+```
+
+- Aluno vem **aninhado** em `Estudiante`. A doc não deixa isso explícito.
+- `Estudiante.Nombre_completo` já vem pré-joined — use antes de tentar montar de `Primer_nombre/Apellido`.
+- **Não tem `Fecha_vencimiento`** — não dá pra calcular aging (0-30/31-60/61-90/90+ dias vencido) neste plano. Já está na lista de pedidos ao Q10.
+
+### Shape real de `/cursos`
+
+```json
+{
+  "Codigo": "C14R-01",
+  "Consecutivo": "12345",
+  "Consecutivo_periodo": "14",
+  "Nombre": "01 R - Recife",
+  "Nombre_asignatura": "A1",
+  "Nombre_sede_jornada": "Recife - Matutino",
+  "Nombre_docente": "Ana Silva",
+  "Codigo_docente": "D-0001",
+  "Nombre_periodo": "Período 14 - 2026",
+  "Fecha_inicio": "2026-02-01",
+  "Fecha_fin": "2026-04-30",
+  "Estado": "Abierto",
+  "Cupo_maximo": 15,
+  "Cantidad_estudiantes_matriculados": 12
+}
+```
+
+- **`Cupo_maximo` + `Cantidad_estudiantes_matriculados` são ouro.** Permitem calcular ocupação sem crawlear `/estudiantes` por turma.
+- `Nombre` segue o padrão `"NN {R|S} - Cidade"` (NN = código da turma, R = Regular, S = Semi Intensivo). Usado para:
+  - Classificar modalidade via regex (ver abaixo)
+  - Extrair cidade: `Nombre.match(/-\s*(.+)$/)[1]`
+
+### Classificação de modalidade — **regex no nome**
+
+Não existe campo dedicado `Modalidad` nos produtos/cursos. O negócio convenciona o padrão textual:
+
+```ts
+const MODALITY_RE = /\s(R|Regular|S|Semi\s*Intensivo)\s*-/i;
+```
+
+Mapeamento:
+- Match em `R` / `Regular` → **Regular** (CEFR avança a cada 3 meses)
+- Match em `S` / `Semi Intensivo` → **Semi Intensivo** (avança a cada 1.5 meses)
+- Sem match → **Desconocida** (inclui produtos modalidade-agnósticos como "Matrícula")
+
+Aplica tanto em `cursos.Nombre` quanto em `pagos.Nombre_producto` — o padrão é o mesmo. Se esse padrão mudar, **o dashboard inteiro de modalidade quebra silenciosamente**. Pedir ao Q10 um campo dedicado (item #9 da lista de atualizações urgentes).
+
+### CEFR — níveis e progressão esperada
+
+```ts
+const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+const MONTHS_PER_LEVEL: Record<Modality, number> = {
+  Regular: 3,
+  'Semi Intensivo': 1.5,
+  Desconocida: NaN,
+};
+```
+
+Usado para calcular se o aluno está **atrasado em relação ao esperado** — compare `cefrIndex(student.Nombre_nivel)` com `floor(mesesMatriculado / MONTHS_PER_LEVEL[modality])`. Ver `src/q10/dashboard/risk-analysis.service.ts` + `src/q10/dashboard/helpers.ts#expectedLevelAdvance`.
+
+### Campos inconsistentes ou vazios neste tenant
+
+| Campo | Endpoint | Observação |
+|---|---|---|
+| `Condicion_matricula` | `/estudiantes` | **`null` em 100% dos registros do P1**. Populado a partir de P2. Afeta KPI "Novos neste período" |
+| `Email`, `Celular` | `/docentes` | Vazios para muitos docentes |
+| `Fecha_vencimiento` | `/pagosPendientes` | Não existe neste plano |
+| `Fecha_pago` | `/pagos` | Alguns registros vêm com timestamp (`"2026-03-15T14:20:00"`), outros só com data (`"2026-03-15"`). Normalizar com `.slice(0, 10)` antes de filtrar |
+
+### Buracos conhecidos (gap entre Q10 e o negócio)
+
+- **Aulas particulares não estão cadastradas** em `/cursos`. Receita e matrículas dessa modalidade não contabilizam. Quando cadastrarem, usar `Nombre` tipo `"P - {Aluno} - {Cidade}"` e estender o regex de modalidade.
+- **Cancelamentos não são registrados**. Churn é inferido por **ausência entre períodos** (set-based diff entre `/estudiantes?Periodo=P_atual` e `P_anterior`). Ver `AcademicService.retention`.
+
+### Lista de atualizações pedidas ao Q10
+
+Essa é a lista que circula com o suporte do Q10 para destravar features do painel. Mantida em sincronia com o corpo da PR #11.
+
+**Alta prioridade (quebra KPIs do painel)**
+1. Cadastrar aulas particulares em `/cursos`
+2. Preencher `Condicion_matricula` em `/estudiantes` desde P1
+3. Padronizar `Estado` entre `/cursos` e o resto (`Activo`/`Inactivo`)
+4. Popular `/inasistencias`
+5. Expor `Fecha_vencimiento` em `/pagosPendientes`
+
+**Média prioridade**
+6. Habilitar `/estadocuentaestudiantes`
+7. Cadastrar `Email` e `Celular` dos docentes
+8. Validar cobertura de `Estado_negocio` em `/oportunidades` (estágios intermediários)
+
+**Baixa prioridade**
+9. Uniformizar `Nombre_producto` com campo `Modalidad` dedicado
+10. `Fecha_pago` consistente (sempre `yyyy-mm-dd`, sem timestamp)
+
+### Filtros que funcionam (úteis em produção)
+
+- `/estudiantes?Periodo={Consecutivo_periodo}` — filtra por período específico
+- `/pagosPendientes?Consecutivo_periodo={n}` — filtra pendências do período
+- `/pagos?Fecha_inicio=YYYY-MM-DD&Fecha_fin=YYYY-MM-DD` — janela de pagamentos
+- `/evaluaciones?Programa=01` — requerido para retornar dados (sem isso, vazio)
+
+Todos os filtros são **case-sensitive** — respeitar exatamente o nome do parâmetro (PascalCase, singular, sem plural).
+
+### Boas práticas derivadas
+
+1. **Sempre envolver chamadas ao Q10 em `tryFetch`** — a API falha silenciosamente (timeout, 502, envelope inesperado) e o dashboard precisa renderizar com dados parciais + banner de aviso, nunca em branco. Padrão canônico: `src/q10/dashboard/dashboard-base.service.ts`.
+2. **Não confiar em que um campo exista** — checar com `cleanStr()` antes de concatenar ou comparar.
+3. **Cap agressivo de `maxRecords`** por endpoint — `/evaluaciones` e `/pagos` em 20k, `/cursos` em 5k. Serializa no campo `degraded` quando o cap é atingido para o operador ver no UI.
+4. **Cache por página**: `Q10ClientService.get` cacheia por chave `path + params` (incluindo `Limit`/`Offset`), então re-chamar `getAll` é barato após o primeiro crawl.
+5. **Janela de data sempre ISO-8601 puro** (`^\d{4}-\d{2}-\d{2}$`) — o Q10 rejeita datetime com timezone. Ver `validateIsoDate` no controller.
+
+---
+
 
 ### Obtener administrativos
 - **ID:** `obtener-administrativos`
