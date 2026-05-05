@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Encuesta mensual — Genius Idiomas</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000E38">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/pesquisa/pesquisa.css">
+</head>
+<body>
+
+<main class="survey">
+
+  <!-- ───────── Loading state ───────── -->
+  <section id="state-loading" class="state state--loading" aria-live="polite">
+    <div class="spinner"></div>
+    <p>Cargando encuesta…</p>
+  </section>
+
+  <!-- ───────── Error state (404 / 410) ───────── -->
+  <section id="state-error" class="state state--error hidden" aria-live="polite">
+    <div class="state__icon" aria-hidden="true">!</div>
+    <h1 class="state__title">Enlace no válido</h1>
+    <p class="state__msg" id="errorMsg">Este enlace ya no se puede usar.</p>
+    <p class="state__sub">Si crees que es un error, escríbenos por WhatsApp.</p>
+  </section>
+
+  <!-- ───────── Intro (no token) ───────── -->
+  <section id="state-intro" class="state state--intro hidden">
+    <h1 class="state__title">Encuesta mensual</h1>
+    <p class="state__msg">
+      Cada mes enviamos a cada estudiante un enlace personal para responder
+      una encuesta corta sobre las clases. Si llegaste aquí sin enlace,
+      pídele al equipo que te lo reenvíe.
+    </p>
+  </section>
+
+  <!-- ───────── Form ───────── -->
+  <section id="state-form" class="state state--form hidden">
+    <header class="survey__header">
+      <div class="survey__brand">Genius Idiomas</div>
+      <div class="survey__group" id="groupBadge">
+        <span id="turmaName">—</span>
+        <span class="dot" aria-hidden="true">·</span>
+        <span id="profName">—</span>
+      </div>
+      <div class="survey__meta">
+        <span id="periodLabel">—</span>
+      </div>
+      <div class="progress" aria-hidden="true">
+        <div class="progress__bar" id="progressBar" style="width:0%"></div>
+      </div>
+    </header>
+
+    <form id="surveyForm" class="survey__form" novalidate>
+
+      <!-- ─── Section 1: Aulas ─── -->
+      <fieldset class="section" data-section="1">
+        <legend class="section__legend">
+          <span class="section__step">1 / 4</span>
+          <span class="section__title">Sobre las clases</span>
+        </legend>
+
+        <div class="q">
+          <p class="q__label">¿Cómo calificas las clases este mes?</p>
+          <div class="rating" role="radiogroup" aria-label="Nota de las clases">
+            <!-- 5 stars/numbers populated by JS -->
+          </div>
+          <input type="hidden" name="nota_aulas" required>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Sentiste que progresaste?</p>
+          <div class="opts" data-name="progresso">
+            <label><input type="radio" name="progresso" value="mucho_progreso" required> Mucho progreso</label>
+            <label><input type="radio" name="progresso" value="un_poco"> Un poco</label>
+            <label><input type="radio" name="progresso" value="no_lo_noto"> No lo noto</label>
+            <label><input type="radio" name="progresso" value="retrocediendo"> Siento que retrocedí</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Cómo está el ritmo?</p>
+          <div class="opts" data-name="ritmo">
+            <label><input type="radio" name="ritmo" value="perfecto" required> Perfecto</label>
+            <label><input type="radio" name="ritmo" value="un_poco_rapido"> Un poco rápido</label>
+            <label><input type="radio" name="ritmo" value="un_poco_lento"> Un poco lento</label>
+            <label><input type="radio" name="ritmo" value="muy_rapido"> Muy rápido</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Las clases empiezan a tiempo?</p>
+          <div class="opts" data-name="pontualidade">
+            <label><input type="radio" name="pontualidade" value="siempre" required> Siempre</label>
+            <label><input type="radio" name="pontualidade" value="casi_siempre"> Casi siempre</label>
+            <label><input type="radio" name="pontualidade" value="a_veces_demoras"> A veces se demora</label>
+            <label><input type="radio" name="pontualidade" value="frecuentemente_demoras"> Frecuentemente se demora</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Y las tareas?</p>
+          <div class="opts" data-name="tarefas">
+            <label><input type="radio" name="tarefas" value="bien" required> Bien, en su punto</label>
+            <label><input type="radio" name="tarefas" value="un_poco_faciles"> Un poco fáciles</label>
+            <label><input type="radio" name="tarefas" value="un_poco_dificiles"> Un poco difíciles</label>
+            <label><input type="radio" name="tarefas" value="muy_dificiles"> Muy difíciles</label>
+            <label><input type="radio" name="tarefas" value="no_hubo"> No hubo tareas</label>
+            <label><input type="radio" name="tarefas" value="mas_tareas"> Me gustaría tener más</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <label class="q__label" for="feedback_conteudo">¿Algo que comentar sobre el contenido? <span class="opt">(opcional)</span></label>
+          <textarea id="feedback_conteudo" name="feedback_conteudo" rows="3" maxlength="2000"></textarea>
+        </div>
+
+        <div class="section__nav">
+          <button type="button" class="btn btn--primary" data-next>Continuar</button>
+        </div>
+      </fieldset>
+
+      <!-- ─── Section 2: Profesor ─── -->
+      <fieldset class="section hidden" data-section="2">
+        <legend class="section__legend">
+          <span class="section__step">2 / 4</span>
+          <span class="section__title">Sobre tu profesor/a</span>
+        </legend>
+
+        <div class="q">
+          <p class="q__label">¿Cómo calificas a tu profesor/a?</p>
+          <div class="rating" role="radiogroup" aria-label="Nota del profesor"></div>
+          <input type="hidden" name="nota_professor" required>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿El profesor/a explica bien?</p>
+          <div class="opts" data-name="professor_explica">
+            <label><input type="radio" name="professor_explica" value="siempre" required> Siempre</label>
+            <label><input type="radio" name="professor_explica" value="casi_siempre"> Casi siempre</label>
+            <label><input type="radio" name="professor_explica" value="a_veces_no"> A veces no</label>
+            <label><input type="radio" name="professor_explica" value="generalmente_no"> Generalmente no</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Las clases son dinámicas?</p>
+          <div class="opts" data-name="aulas_dinamicas">
+            <label><input type="radio" name="aulas_dinamicas" value="siempre" required> Siempre</label>
+            <label><input type="radio" name="aulas_dinamicas" value="casi_siempre"> Casi siempre</label>
+            <label><input type="radio" name="aulas_dinamicas" value="a_veces_monotonas"> A veces son monótonas</label>
+            <label><input type="radio" name="aulas_dinamicas" value="cuesta_atencion"> Me cuesta prestar atención</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <label class="q__label" for="feedback_professor">¿Algo más sobre tu profesor/a? <span class="opt">(opcional)</span></label>
+          <textarea id="feedback_professor" name="feedback_professor" rows="3" maxlength="2000"></textarea>
+        </div>
+
+        <div class="section__nav">
+          <button type="button" class="btn btn--ghost" data-prev>Volver</button>
+          <button type="button" class="btn btn--primary" data-next>Continuar</button>
+        </div>
+      </fieldset>
+
+      <!-- ─── Section 3: Experiencia general ─── -->
+      <fieldset class="section hidden" data-section="3">
+        <legend class="section__legend">
+          <span class="section__step">3 / 4</span>
+          <span class="section__title">Tu experiencia general</span>
+        </legend>
+
+        <div class="q">
+          <p class="q__label">Calificación general de Genius este mes</p>
+          <div class="rating" role="radiogroup" aria-label="Nota general"></div>
+          <input type="hidden" name="nota_geral" required>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Recomendarías Genius a un amigo?</p>
+          <div class="opts" data-name="recomendacao">
+            <label><input type="radio" name="recomendacao" value="definitivamente" required> Definitivamente sí</label>
+            <label><input type="radio" name="recomendacao" value="probablemente_si"> Probablemente sí</label>
+            <label><input type="radio" name="recomendacao" value="no_seguro"> No estoy seguro/a</label>
+            <label><input type="radio" name="recomendacao" value="probablemente_no"> Probablemente no</label>
+            <label><input type="radio" name="recomendacao" value="no_recomendaria"> No lo recomendaría</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Cómo es la atención del equipo administrativo?</p>
+          <div class="opts" data-name="atendimento">
+            <label><input type="radio" name="atendimento" value="excelente" required> Excelente</label>
+            <label><input type="radio" name="atendimento" value="buena"> Buena</label>
+            <label><input type="radio" name="atendimento" value="regular"> Regular</label>
+            <label><input type="radio" name="atendimento" value="mala"> Mala</label>
+          </div>
+        </div>
+
+        <div class="q">
+          <p class="q__label">¿Cómo te sientes con tu curso?</p>
+          <div class="opts" data-name="intencao_continuar">
+            <label><input type="radio" name="intencao_continuar" value="comprometido" required> Comprometido/a, voy a seguir</label>
+            <label><input type="radio" name="intencao_continuar" value="siguiendo"> Siguiendo el ritmo</label>
+            <label><input type="radio" name="intencao_continuar" value="desmotivado"> Algo desmotivado/a</label>
+            <label><input type="radio" name="intencao_continuar" value="pensando_pausa"> Pensando en hacer una pausa</label>
+            <label><input type="radio" name="intencao_continuar" value="considerando_no_continuar"> Considerando no continuar</label>
+          </div>
+        </div>
+
+        <div class="section__nav">
+          <button type="button" class="btn btn--ghost" data-prev>Volver</button>
+          <button type="button" class="btn btn--primary" data-next>Continuar</button>
+        </div>
+      </fieldset>
+
+      <!-- ─── Section 4: Comentarios libres ─── -->
+      <fieldset class="section hidden" data-section="4">
+        <legend class="section__legend">
+          <span class="section__step">4 / 4</span>
+          <span class="section__title">Comentarios libres <span class="opt">(opcional)</span></span>
+        </legend>
+
+        <div class="q">
+          <label class="q__label" for="feedback_escola">¿Algo más sobre la escuela?</label>
+          <textarea id="feedback_escola" name="feedback_escola" rows="3" maxlength="2000"
+                    placeholder="Lo que quieras compartir."></textarea>
+        </div>
+
+        <div class="q">
+          <label class="q__label" for="situacao_pessoal">¿Hay algo que esté afectando tus estudios y nos quieras contar?</label>
+          <textarea id="situacao_pessoal" name="situacao_pessoal" rows="3" maxlength="2000"
+                    placeholder="Trabajo, salud, familia… solo si quieres compartir."></textarea>
+        </div>
+
+        <div class="alert alert--error hidden" id="submitError"></div>
+
+        <div class="section__nav">
+          <button type="button" class="btn btn--ghost" data-prev>Volver</button>
+          <button type="submit" class="btn btn--primary" id="submitBtn">Enviar respuestas</button>
+        </div>
+      </fieldset>
+
+    </form>
+  </section>
+
+  <!-- ───────── Thank-you state ───────── -->
+  <section id="state-thanks" class="state state--thanks hidden">
+    <div class="state__icon state__icon--success" aria-hidden="true">✓</div>
+    <h1 class="state__title">¡Gracias por responder!</h1>
+    <p class="state__msg">
+      Tus respuestas son anónimas para tus profesores y nos ayudan a mejorar
+      las clases todos los meses.
+    </p>
+    <p class="state__sub">Que tengas un excelente mes en Genius. 🌟</p>
+  </section>
+
+</main>
+
+<script src="/pesquisa/pesquisa.js"></script>
+</body>
+</html>
