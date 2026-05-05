@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -19,6 +20,7 @@ export class SurveyResponse {
   period_id: string;
 
   @ManyToOne(() => SurveyPeriod, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'period_id' })
   period: SurveyPeriod;
 
   @Column({ type: 'varchar' })

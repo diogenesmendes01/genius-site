@@ -10,12 +10,15 @@ import { SubmitResponseDto } from './dto/submit-response.dto';
 import { SurveyResponseService } from './response.service';
 
 // AJAX endpoints called by the student-facing page. The HTML itself is
-// served by SurveyPagesController so it can sit outside the /api prefix.
+// served by SurveyPagesController and lives at /pesquisa/:token (outside
+// the /api prefix). To keep the global-prefix exclusion targeted to the
+// HTML route only, the AJAX context fetch uses `:token/info` so its full
+// path stays under /api.
 @Controller('pesquisa')
 export class PublicSurveyController {
   constructor(private readonly responses: SurveyResponseService) {}
 
-  @Get(':token')
+  @Get(':token/info')
   @Throttle({ default: { limit: 30, ttl: 3600_000 } })
   async getSurvey(@Param('token') token: string) {
     return this.responses.getSurveyByToken(token);

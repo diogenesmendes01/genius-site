@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -27,6 +28,7 @@ export class SurveyToken {
   period_id: string;
 
   @ManyToOne(() => SurveyPeriod, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'period_id' })
   period: SurveyPeriod;
 
   // Q10 identifiers — kept as plain strings because the local DB has no
