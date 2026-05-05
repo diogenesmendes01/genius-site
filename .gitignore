@@ -39,3 +39,9 @@ build/
 
 # Runtime data (SQLite, uploads)
 data/
+
+# Claude Code worktrees
+.claude/worktrees/
+
+# Probe / exploration outputs
+probe-output/
