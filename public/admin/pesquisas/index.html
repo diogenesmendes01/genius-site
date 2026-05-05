@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pesquisas de Satisfação — Genius Idiomas</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000E38">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/admin/pesquisas/pesquisas.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="topbar__title">Pesquisas de Satisfação</span>
+    <span class="topbar__sub">Painel administrativo</span>
+  </div>
+  <nav class="topbar__nav">
+    <a href="/dashboard" class="link">← Dashboard</a>
+    <button id="logoutBtn" class="link link--ghost" type="button">Sair</button>
+  </nav>
+</header>
+
+<main id="app" class="app">
+  <div id="loading" class="loading">Carregando…</div>
+</main>
+
+<!-- ───────── Modal: gerar período ───────── -->
+<div id="generateModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="genTitle">
+  <div class="modal__backdrop" data-close></div>
+  <div class="modal__panel">
+    <h2 id="genTitle">Gerar pesquisa do mês</h2>
+    <p class="modal__sub">Cria um link único por aluno ativo. Não pode ser desfeito — gere com cuidado.</p>
+
+    <form id="generateForm" class="form">
+      <div class="form__row">
+        <label class="form__group">
+          Mês
+          <select name="mes" required>
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+          </select>
+        </label>
+        <label class="form__group">
+          Ano
+          <input type="number" name="ano" required min="2025" max="2100">
+        </label>
+        <label class="form__group">
+          Validade (dias)
+          <input type="number" name="validade_dias" value="7" min="1" max="30">
+        </label>
+      </div>
+
+      <div class="alert alert--error hidden" id="genError"></div>
+
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary" id="genSubmitBtn">Gerar tokens</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/admin/pesquisas/pesquisas.js"></script>
+</body>
+</html>
