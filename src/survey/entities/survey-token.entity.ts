@@ -12,8 +12,12 @@ import { SurveyPeriod } from './survey-period.entity';
 // One row per (period, student). Identifies *who* responded so the operator
 // can chase down stragglers — but the response itself is stored in
 // SurveyResponse without aluno_codigo, preserving anonymity by design.
+//
+// (period_id, aluno_codigo) is unique: spec contract is "um link único por
+// aluno por mês". The DB enforces it; the service deduplicates the Q10
+// input before insert as defense in depth.
 @Entity('survey_tokens')
-@Index(['period_id', 'aluno_codigo'])
+@Index(['period_id', 'aluno_codigo'], { unique: true })
 @Index(['period_id', 'turma_codigo'])
 export class SurveyToken {
   @PrimaryGeneratedColumn('uuid')

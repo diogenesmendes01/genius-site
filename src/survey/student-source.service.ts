@@ -107,13 +107,21 @@ export class StudentSourceService {
       dominantTeacherByProgram.set(prog, best);
     }
 
+    // Deduplicate by aluno_codigo: Q10 occasionally returns the same student
+    // twice (e.g. enrolled in two programs at the same time, or duplicate
+    // rows in the source table). The DB also has a unique constraint on
+    // (period_id, aluno_codigo), but catching it here gives a cleaner error
+    // and keeps the failure mode "we generated fewer tokens than expected"
+    // instead of "the whole transaction blew up halfway through."
+    const seen = new Set<string>();
     const out: StudentForSurvey[] = [];
     for (const s of students) {
       if (!isActiveStudent(s)) continue;
       const id = studentId(s);
-      if (!id) continue;
+      if (!id || seen.has(id)) continue;
       const turmaCodigo = String(s.Codigo_programa ?? '');
       if (!turmaCodigo) continue;
+      seen.add(id);
       out.push({
         aluno_codigo: id,
         aluno_nome: fullName(s) || id,
