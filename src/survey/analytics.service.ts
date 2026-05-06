@@ -124,9 +124,17 @@ export class SurveyAnalyticsService {
   }
 
   /**
-   * WhatsApp messages, ready-to-paste, one per class. URL prefix is taken
-   * from PUBLIC_BASE_URL env var; falls back to a relative `/p/:token`,
-   * which the operator can prepend manually.
+   * Per-student WhatsApp messages, grouped by class for navigation but
+   * **never aggregated into a single block** — each `mensagem` contains
+   * exactly one token. The operator copies one message at a time into a
+   * 1-on-1 chat with the student.
+   *
+   * Why per-student: the token is the auth credential for the public POST
+   * endpoint, so any link visible to a third party can be consumed by
+   * them, locking out the legitimate student. A single "paste this in the
+   * group chat" block would expose every token to every classmate
+   * (review #17 finding). URL prefix is taken from PUBLIC_BASE_URL env;
+   * falls back to a relative `/p/:token`.
    */
   async whatsappMessages(period_id: string) {
     const period = await this.periods.findOne({ where: { id: period_id } });
@@ -136,7 +144,8 @@ export class SurveyAnalyticsService {
     const baseUrl = (this.config.get<string>('PUBLIC_BASE_URL') ?? '').replace(/\/+$/, '');
     const monthName = MES_PT[period.mes_referencia] ?? `${period.mes_referencia}`;
 
-    // Group by turma.
+    // Group by turma so the UI can show class context, but each entry's
+    // `mensagem` is for that single student — never the whole class.
     const byTurma = new Map<string, typeof tokens>();
     for (const t of tokens) {
       const arr = byTurma.get(t.turma_codigo) ?? [];
@@ -146,22 +155,27 @@ export class SurveyAnalyticsService {
 
     const turmas = [...byTurma.entries()].map(([turma_codigo, list]) => {
       const sample = list[0];
-      const lines = list
+      const alunos = list
         .slice()
         .sort((a, b) => a.aluno_nome.localeCompare(b.aluno_nome))
         .map((t) => {
           const url = baseUrl ? `${baseUrl}/p/${t.token}` : `/p/${t.token}`;
-          return `${t.aluno_nome} → ${url}`;
+          const firstName = t.aluno_nome.split(/\s+/)[0] || t.aluno_nome;
+          return {
+            aluno_codigo: t.aluno_codigo,
+            aluno_nome: t.aluno_nome,
+            mensagem:
+              `¡Hola ${firstName}! Tu encuesta de ${monthName} está aquí 🌟\n` +
+              `${url}\n\n` +
+              `Responder lleva menos de 3 minutos. ¡Gracias!`,
+          };
         });
-      const mensagem =
-        `¡Hola a todos! Encuesta de ${monthName} 🌟 ` +
-        `Cada uno tiene su link personal:\n${lines.join('\n')}`;
       return {
         turma_codigo,
         turma_nome: sample.turma_nome,
         professor_nome: sample.professor_nome,
         alunos_count: list.length,
-        mensagem,
+        alunos,
       };
     });
 

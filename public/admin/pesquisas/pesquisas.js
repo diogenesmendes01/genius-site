@@ -192,16 +192,28 @@
       </div>
     `;
 
-    const waBlocks = wa.turmas.map((t) => `
-      <div class="wa-block">
-        <div class="wa-block__head">
-          <span class="wa-block__title">${escapeHtml(t.turma_nome)}${t.professor_nome ? ' · Prof. ' + escapeHtml(t.professor_nome) : ''}</span>
-          <span class="wa-block__count">${t.alunos_count} aluno${t.alunos_count === 1 ? '' : 's'}</span>
-          <button class="btn btn--ghost btn--small" data-copy="wa-${escapeHtml(t.turma_codigo)}">Copiar</button>
+    const waBlocks = wa.turmas.map((t) => {
+      const alunosHtml = t.alunos.map((a) => `
+        <div class="wa-row">
+          <div class="wa-row__name">${escapeHtml(a.aluno_nome)}</div>
+          <textarea class="wa-row__msg" id="wa-${escapeHtml(a.aluno_codigo)}" rows="3" readonly>${escapeHtml(a.mensagem)}</textarea>
+          <button class="btn btn--ghost btn--small" data-copy="wa-${escapeHtml(a.aluno_codigo)}">Copiar</button>
         </div>
-        <textarea class="wa-block__msg" id="wa-${escapeHtml(t.turma_codigo)}" rows="${Math.min(8, t.alunos_count + 2)}" readonly>${escapeHtml(t.mensagem)}</textarea>
-      </div>
-    `).join('');
+      `).join('');
+      return `
+        <div class="wa-block">
+          <div class="wa-block__head">
+            <span class="wa-block__title">${escapeHtml(t.turma_nome)}${t.professor_nome ? ' · Prof. ' + escapeHtml(t.professor_nome) : ''}</span>
+            <span class="wa-block__count">${t.alunos_count} aluno${t.alunos_count === 1 ? '' : 's'}</span>
+          </div>
+          <div class="wa-block__body">${alunosHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    const waWarning = wa.turmas.length === 0
+      ? ''
+      : `<div class="wa-notice">⚠️ Envie cada link em <strong>conversa privada</strong> com o aluno. O link é a credencial de resposta — se outro aluno o abrir, a pesquisa fica inválida para o aluno real.</div>`;
 
     const turmasRows = detail.por_turma.map((t) => `
       <tr>
@@ -248,6 +260,7 @@
       </div>
 
       <div class="tab-pane" data-pane="whatsapp">
+        ${waWarning}
         ${waBlocks || '<div class="empty">Sem mensagens.</div>'}
       </div>
       <div class="tab-pane hidden" data-pane="turmas">

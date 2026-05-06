@@ -96,7 +96,7 @@ describe('Survey end-to-end', () => {
 
   // ─── WhatsApp messages give us the tokens ───────────────────────────
 
-  it('whatsapp messages endpoint returns one entry per turma with copy-pastable text', async () => {
+  it('whatsapp endpoint emits per-student messages, never aggregating tokens', async () => {
     const resp = await request(app.getHttpServer())
       .get(`/api/admin/pesquisas/${periodId}/mensagens-whatsapp`)
       .set('Cookie', cookie)
@@ -107,13 +107,28 @@ describe('Survey end-to-end', () => {
     const sample = resp.body.turmas[0];
     expect(sample.turma_nome).toBeTruthy();
     expect(sample.alunos_count).toBeGreaterThan(0);
-    expect(sample.mensagem).toContain('mayo');
+    expect(sample.alunos).toHaveLength(sample.alunos_count);
 
-    // Pull a real token out of the message — the format is
-    // "Nombre → /p/<token>" (or a full URL when PUBLIC_BASE_URL is set).
-    const match = sample.mensagem.match(/\/p\/([a-z0-9]{12})/);
-    expect(match).toBeTruthy();
-    firstToken = match![1];
+    // The shape is per-student, never one block with all tokens — that's
+    // the whole point of the refactor: a message visible to a third
+    // party only burns one token, not the entire class.
+    expect(sample).not.toHaveProperty('mensagem');
+
+    // Each individual message contains exactly one /p/<token> link, and
+    // the token belongs to that very student (cross-checked via the
+    // first-name greeting).
+    for (const turma of resp.body.turmas) {
+      for (const aluno of turma.alunos) {
+        const tokens = [...aluno.mensagem.matchAll(/\/p\/([a-z0-9]{12})/g)];
+        expect(tokens).toHaveLength(1);
+        const firstName = aluno.aluno_nome.split(/\s+/)[0];
+        expect(aluno.mensagem).toContain(`¡Hola ${firstName}!`);
+      }
+    }
+
+    const firstAluno = sample.alunos[0];
+    expect(firstAluno.mensagem).toContain('mayo');
+    firstToken = firstAluno.mensagem.match(/\/p\/([a-z0-9]{12})/)![1];
     firstTurmaCodigo = sample.turma_codigo;
   });
 
@@ -213,12 +228,13 @@ describe('Survey end-to-end', () => {
       .expect(200);
 
     let alarmingToken: string | null = null;
-    for (const turma of wResp.body.turmas) {
-      const matches = [...turma.mensagem.matchAll(/\/p\/([a-z0-9]{12})/g)];
-      const candidate = matches.map((m) => m[1]).find((t) => t !== firstToken);
-      if (candidate) {
-        alarmingToken = candidate;
-        break;
+    outer: for (const turma of wResp.body.turmas) {
+      for (const aluno of turma.alunos) {
+        const m = aluno.mensagem.match(/\/p\/([a-z0-9]{12})/);
+        if (m && m[1] !== firstToken) {
+          alarmingToken = m[1];
+          break outer;
+        }
       }
     }
     expect(alarmingToken).toBeTruthy();
