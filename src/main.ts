@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import cookieParser = require('cookie-parser');
 import { mkdirSync } from 'fs';
@@ -84,7 +84,16 @@ async function bootstrap() {
     }),
   );
 
-  app.setGlobalPrefix('api', { exclude: [] });
+  // Survey HTML pages live outside /api so the URLs are short enough to
+  // share over WhatsApp (`/p/:token`, `/pesquisa/:token`). The matching AJAX
+  // endpoints stay under /api/pesquisa/:token.
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'pesquisa', method: RequestMethod.GET },
+      { path: 'pesquisa/:token', method: RequestMethod.GET },
+      { path: 'p/:token', method: RequestMethod.GET },
+    ],
+  });
 
   const port = process.env.PORT || 3120;
   const host = process.env.HOST || '0.0.0.0';

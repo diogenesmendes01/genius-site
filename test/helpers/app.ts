@@ -1,4 +1,4 @@
-import { ValidationPipe, INestApplication } from '@nestjs/common';
+import { RequestMethod, ValidationPipe, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import cookieParser = require('cookie-parser');
 import { AppModule } from '../../src/app.module';
@@ -17,7 +17,16 @@ export async function createTestApp(): Promise<INestApplication> {
       transform: true,
     }),
   );
-  app.setGlobalPrefix('api');
+  // Mirror main.ts: survey HTML routes live outside /api so the URLs stay
+  // short for WhatsApp. Keeping the test app aligned with prod prevents
+  // route collisions between SurveyPagesController and PublicSurveyController.
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'pesquisa', method: RequestMethod.GET },
+      { path: 'pesquisa/:token', method: RequestMethod.GET },
+      { path: 'p/:token', method: RequestMethod.GET },
+    ],
+  });
   await app.init();
   return app;
 }
