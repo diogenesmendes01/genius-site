@@ -52,7 +52,10 @@ export class SurveysService {
     const profesor = dto.profesor?.trim() || null;
     const response = await this.responses.save(
       this.responses.create({
-        canal: dto.canal?.trim() || null,
+        // No ?src= on the link → store the explicit 'directo' channel, so it
+        // shows up in the filter options and `canal=directo` actually matches
+        // (a NULL here would chart as "directo" but be unfilterable).
+        canal: dto.canal?.trim() || 'directo',
         nps: dto.nps,
         csat: dto.csat,
         profesor,

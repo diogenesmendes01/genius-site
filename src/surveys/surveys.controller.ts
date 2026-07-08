@@ -63,13 +63,11 @@ export class SurveysController {
 }
 
 /**
- * Best-effort client IP for the duplicate-flagging hash. Behind the Coolify
- * proxy the socket address is the proxy, so we prefer the first hop of
- * X-Forwarded-For. Good enough for a dedup *signal* — this value is hashed
- * and never used as a security control.
+ * Client IP for the duplicate-flagging hash. `trust proxy` is configured in
+ * main.ts, so req.ip already resolves the real client behind the Coolify
+ * proxy — and, unlike reading X-Forwarded-For by hand, ignores entries the
+ * client forged itself.
  */
 function clientIp(req: Request): string | null {
-  const fwd = req.headers['x-forwarded-for'];
-  const first = Array.isArray(fwd) ? fwd[0] : fwd?.split(',')[0];
-  return first?.trim() || req.ip || req.socket?.remoteAddress || null;
+  return req.ip || req.socket?.remoteAddress || null;
 }

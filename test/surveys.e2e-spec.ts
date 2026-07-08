@@ -208,5 +208,24 @@ describe('Surveys — encuesta de satisfacción', () => {
       // The raw hash never leaves the API — only the derived flag.
       expect(list.body.entries[0]).not.toHaveProperty('ipHash');
     });
+
+    it('stores canal "directo" when the link has no ?src= and makes it filterable', async () => {
+      const body = validPayload();
+      delete (body as any).canal;
+      await request(app.getHttpServer()).post('/api/surveys').send(body).expect(201);
+
+      const direct = await request(app.getHttpServer())
+        .get('/api/surveys/stats?canal=directo')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      expect(direct.body.total).toBe(1);
+
+      const all = await request(app.getHttpServer())
+        .get('/api/surveys/stats')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      expect(all.body.filterOptions.canales).toContain('directo');
+      expect(all.body.canales.directo).toBe(1);
+    });
   });
 });
