@@ -12,3 +12,5 @@ process.env.ADMIN_PASSWORD = 'test-password-123';
 process.env.ADMIN_NAME = 'Test Admin';
 process.env.DATABASE_PATH = ':memory:';
 process.env.ALLOWED_ORIGINS = '';
+// The surveys e2e spec submits more than 5 POSTs in one run.
+process.env.SURVEY_THROTTLE_LIMIT = '100';

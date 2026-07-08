@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Encuesta de Satisfacción — Genius Academia de Lenguas</title>
+  <meta name="description" content="Tu opinión nos ayuda a mejorar. Encuesta anónima para alumnos de Genius.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#000E38">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/encuesta/encuesta.css">
+</head>
+<body>
+
+  <header class="hero">
+    <p class="hero__brand">Genius · Academia de Lenguas</p>
+    <h1 class="hero__title">Tu opinión nos ayuda a mejorar</h1>
+    <p class="hero__subtitle">La encuesta es anónima. Puedes avanzar y regresar sin perder tus respuestas.</p>
+  </header>
+
+  <main class="container">
+    <div class="prog" id="progBar" aria-label="Progreso de la encuesta"></div>
+
+    <div class="loading" id="loadingBox">Cargando encuesta…</div>
+
+    <div class="alert-error" id="stepAlert" role="alert"></div>
+
+    <div id="stepHost"></div>
+
+    <div class="s-nav hidden" id="navRow">
+      <button type="button" class="btn btn--ghost" id="btnBack">← Atrás</button>
+      <button type="button" class="btn btn--primary" id="btnNext">Continuar →</button>
+    </div>
+
+    <!-- Honeypot: invisible for humans, tempting for bots. -->
+    <div class="hp-field" aria-hidden="true">
+      <label for="website">Website</label>
+      <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+    </div>
+
+    <footer class="page-footer">
+      © <span id="year"></span> Genius Idiomas · <a href="/">geniusidiomas.com</a>
+    </footer>
+  </main>
+
+  <script src="/encuesta/app.js"></script>
+</body>
+</html>
