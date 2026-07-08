@@ -5,10 +5,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateSurveyResponseDto } from './dto/create-survey-response.dto';
 import { SURVEY_STEPS } from './survey-config';
@@ -35,7 +36,11 @@ export class SurveysController {
     return this.surveys.create(dto, clientIp(req));
   }
 
-  /** Admin: pre-aggregated stats for the "Encuesta" dashboard tab. */
+  /**
+   * Admin: pre-aggregated stats for the "Encuesta" dashboard tab.
+   * `commentsLimit` accepts a number or 'all' (used by the printable
+   * report, which must include every comment, not just the latest 30).
+   */
   @UseGuards(JwtAuthGuard)
   @Get('stats')
   stats(
@@ -44,8 +49,34 @@ export class SurveysController {
     @Query('canal') canal?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
+    @Query('commentsLimit') commentsLimit?: string,
   ) {
-    return this.surveys.stats({ nivel, profesor, canal, from, to });
+    const limit =
+      commentsLimit === 'all'
+        ? Number.MAX_SAFE_INTEGER
+        : Math.max(1, parseInt(commentsLimit ?? '', 10) || 30);
+    return this.surveys.stats({ nivel, profesor, canal, from, to }, limit);
+  }
+
+  /** Admin: download every response as CSV (respects the same filters). */
+  @UseGuards(JwtAuthGuard)
+  @Get('export.csv')
+  async exportCsv(
+    @Res() res: Response,
+    @Query('nivel') nivel?: string,
+    @Query('profesor') profesor?: string,
+    @Query('canal') canal?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const csv = await this.surveys.exportCsv({ nivel, profesor, canal, from, to });
+    const today = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="encuesta-respuestas-${today}.csv"`,
+    );
+    res.send(csv);
   }
 
   /** Admin: raw responses (with answers) for drill-down/export. */

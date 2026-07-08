@@ -134,6 +134,29 @@ function bindEvents() {
       });
     },
   );
+
+  // Informe imprimible + export CSV — both carry the tab's current filters
+  // and the header date range.
+  el('encReportBtn')?.addEventListener('click', () => {
+    window.open(`/dashboard/informe.html?${encQueryString()}`, '_blank');
+  });
+  el('encCsvBtn')?.addEventListener('click', () => {
+    window.location.href = `${API}/surveys/export.csv?${encQueryString()}`;
+  });
+}
+
+// Query string for the Encuesta report/CSV: date range + tab filters.
+function encQueryString() {
+  const params = new URLSearchParams();
+  const r = computeDateRange();
+  if (r.from && r.to) {
+    params.set('from', r.from);
+    params.set('to', r.to);
+  }
+  for (const [key, value] of Object.entries(state.encFilters)) {
+    if (value) params.set(key, value);
+  }
+  return params.toString();
 }
 
 function syncCustomRangeVisibility() {

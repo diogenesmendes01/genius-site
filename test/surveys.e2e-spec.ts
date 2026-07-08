@@ -228,4 +228,75 @@ describe('Surveys — encuesta de satisfacción', () => {
       expect(all.body.canales.directo).toBe(1);
     });
   });
+
+  describe('GET /api/surveys/export.csv', () => {
+    it('requires auth', async () => {
+      await request(app.getHttpServer()).get('/api/surveys/export.csv').expect(401);
+    });
+
+    it('downloads the responses as ;-separated CSV with one column per question', async () => {
+      const resp = await request(app.getHttpServer())
+        .get('/api/surveys/export.csv')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      expect(resp.headers['content-type']).toContain('text/csv');
+      expect(resp.headers['content-disposition']).toContain('attachment');
+
+      const lines = resp.text.replace(/^﻿/, '').split('\r\n');
+      const header = lines[0].split(';');
+      expect(header.slice(0, 6)).toEqual(['fecha', 'canal', 'nivel', 'tiempo', 'nps', 'csat']);
+      expect(header).toContain('prof_claridad');
+      expect(header).toContain('lo_mejor');
+      // One data row per stored response.
+      expect(lines.length - 1).toBeGreaterThanOrEqual(3);
+      expect(resp.text).toContain('whatsapp');
+      expect(resp.text).toContain('Ana Martínez');
+      // Multi-select answers join with " | ".
+      expect(resp.text).toContain('Conversación | Otro');
+    });
+
+    it('respects the same filters as stats', async () => {
+      const resp = await request(app.getHttpServer())
+        .get('/api/surveys/export.csv?nivel=C2')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      const lines = resp.text.replace(/^﻿/, '').split('\r\n');
+      expect(lines.length).toBe(1); // solo el header
+    });
+
+    it('neutralises formula injection in student-controlled cells', async () => {
+      const body = validPayload();
+      (body.answers as any).lo_mejor = '=HYPERLINK("https://evil.example","clic")';
+      body.profesor = '@SUM(A1:A9)';
+      await request(app.getHttpServer()).post('/api/surveys').send(body).expect(201);
+
+      const resp = await request(app.getHttpServer())
+        .get('/api/surveys/export.csv')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      // The values survive, but prefixed with an apostrophe so Excel/Sheets
+      // treat them as text — never as an executable formula right after a
+      // separator or at a cell start.
+      expect(resp.text).toContain("'=HYPERLINK");
+      expect(resp.text).toContain("'@SUM(A1:A9)");
+      expect(resp.text).not.toMatch(/;=HYPERLINK/);
+      expect(resp.text).not.toMatch(/;@SUM/);
+    });
+  });
+
+  describe('commentsLimit', () => {
+    it('caps the stats comments feed by default and expands with commentsLimit=all', async () => {
+      const capped = await request(app.getHttpServer())
+        .get('/api/surveys/stats?commentsLimit=1')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      expect(capped.body.comments.length).toBe(1);
+
+      const all = await request(app.getHttpServer())
+        .get('/api/surveys/stats?commentsLimit=all')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      expect(all.body.comments.length).toBeGreaterThan(1);
+    });
+  });
 });
