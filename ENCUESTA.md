@@ -67,6 +67,22 @@ O nome do professor é texto livre digitado pelo aluno; o agrupamento usa o
 nome normalizado (minúsculas, sem acentos). Grafias que não se unirem
 sozinhas podem ser corrigidas direto no banco (`survey_responses.profesorNorm`).
 
+## Relatórios e exportação
+
+Na aba **"Encuesta"** do dashboard há dois botões que respeitam os filtros
+ativos (nível, professor/a, canal e o período de datas do cabeçalho):
+
+- **📄 Generar informe** — abre `/dashboard/informe.html` em outra aba:
+  um relatório completo (KPIs, composição do NPS, médias por pergunta,
+  distribuições, visão por professor/a, respostas por semana e todos os
+  comentários) pronto para **imprimir ou salvar como PDF** pelo próprio
+  navegador (botão "Imprimir / Guardar PDF"). Requer login de admin.
+- **⬇ Exportar CSV** — baixa `encuesta-respuestas-<data>.csv` com **todas**
+  as respostas filtradas, uma coluna por pergunta (múltiplas escolhas
+  separadas por " | "). Separador `;` e BOM UTF-8, prontos para o Excel em
+  espanhol/português; o Google Sheets abre direto. Endpoint:
+  `GET /api/surveys/export.csv` (admin).
+
 ## Controle de respostas duplicadas
 
 A pesquisa é anônima, então não existe garantia absoluta de "1 resposta por

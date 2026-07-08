@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Informe — Encuesta de Satisfacción · Genius Idiomas</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico">
+
+  <style>
+    :root {
+      --navy: #000E38;
+      --gold: #DCAF63;
+      --muted: #606060;
+      --border: #E5E7EB;
+      --bg: #F5F7FA;
+      --det: #DC2626;
+      --pas: #6B7280;
+      --pro: #059669;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Montserrat', -apple-system, sans-serif;
+      color: var(--navy);
+      background: var(--bg);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .sheet { max-width: 860px; margin: 0 auto; padding: 28px 22px 60px; background: #fff; min-height: 100vh; }
+
+    .report-head { border-bottom: 3px solid var(--gold); padding-bottom: 14px; margin-bottom: 18px; }
+    .report-head .brand {
+      font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: 0.18em;
+      font-size: 12px; color: var(--gold); margin-bottom: 6px;
+    }
+    .report-head h1 {
+      font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: 0.05em;
+      font-size: 21px; margin-bottom: 6px;
+    }
+    .report-meta { font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 18px; }
+
+    .toolbar { display: flex; gap: 8px; margin: 14px 0 20px; }
+    .toolbar button {
+      appearance: none; cursor: pointer; font: 700 13px 'Montserrat', sans-serif;
+      color: #fff; background: var(--navy); border: 0; border-radius: 8px; padding: 10px 20px;
+    }
+    .toolbar button:hover { background: #1a2456; }
+
+    .status { color: var(--muted); padding: 30px 0; text-align: center; }
+    .status a { color: var(--navy); }
+
+    h2 {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin: 22px 0 10px; padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    section:first-of-type h2 { border-top: 0; padding-top: 0; }
+
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    .kpi { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+    .kpi .v { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .kpi .l { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .kpi .h { font-size: 10.5px; color: var(--muted); }
+
+    .npsbar { display: flex; gap: 2px; height: 20px; border-radius: 5px; overflow: hidden; margin-bottom: 8px; }
+    .npsbar span { display: block; height: 100%; }
+    .npsbar .det { background: var(--det); border-radius: 4px 0 0 4px; }
+    .npsbar .pas { background: var(--pas); }
+    .npsbar .pro { background: var(--pro); border-radius: 0 4px 4px 0; }
+    .nps-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 11.5px; color: var(--muted); }
+    .nps-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+    .nps-legend b { color: var(--navy); }
+
+    .hb-list { display: flex; flex-direction: column; gap: 7px; }
+    .hb { display: grid; grid-template-columns: 200px 1fr 44px; gap: 10px; align-items: center; }
+    .hb .lbl { font-size: 12px; }
+    .hb .track { display: block; background: var(--bg); height: 12px; border-radius: 4px; overflow: hidden; }
+    .hb .fill { display: block; background: #44599C; height: 100%; border-radius: 0 4px 4px 0; }
+    .hb .fill--gold { background: var(--gold); }
+    .hb .val { font-size: 12px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+    @media (max-width: 540px) { .hb { grid-template-columns: 120px 1fr 40px; } }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .grid-2 h3 { font-size: 12px; margin-bottom: 8px; }
+
+    table { border-collapse: collapse; width: 100%; font-size: 12px; }
+    th { text-align: left; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 5px 8px; border-bottom: 1.5px solid var(--border); }
+    td { padding: 5px 8px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+    td:first-child { font-weight: 600; }
+    .num { text-align: right; }
+
+    .cmt { border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; margin-bottom: 8px; page-break-inside: avoid; }
+    .cmt p { font-size: 12px; margin-bottom: 5px; }
+    .cmt .meta { display: flex; flex-wrap: wrap; gap: 5px; }
+    .cmt .m { font-size: 9.5px; font-weight: 600; color: var(--muted); background: var(--bg); border-radius: 999px; padding: 2px 8px; }
+    .cmt .m.testi { background: #FBF3E4; color: #8a6320; }
+
+    .report-foot { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 10.5px; color: var(--muted); }
+
+    section { page-break-inside: avoid; }
+    @media print {
+      body { background: #fff; font-size: 11.5px; }
+      .sheet { max-width: none; padding: 0; }
+      .toolbar { display: none; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <header class="report-head">
+      <p class="brand">Genius · Academia de Lenguas</p>
+      <h1>Informe — Encuesta de Satisfacción</h1>
+      <div class="report-meta" id="reportMeta">Cargando…</div>
+    </header>
+
+    <div class="toolbar">
+      <button type="button" onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
+    </div>
+
+    <div class="status" id="statusBox">Cargando datos…</div>
+    <div id="report" hidden>
+      <section><h2>Resumen</h2><div class="kpis" id="kpis"></div></section>
+      <section><h2>Composición del NPS</h2><div id="npsBlock"></div></section>
+      <section><h2>Promedios por pregunta (1–5)</h2><div class="hb-list" id="averages"></div></section>
+      <section><h2>Distribuciones</h2><div class="grid-2" id="distributions"></div></section>
+      <section><h2>Lo que piden los alumnos</h2><div class="grid-2" id="multi"></div></section>
+      <section><h2>Visión por profesor/a</h2><div id="professors"></div></section>
+      <section><h2>Respuestas por semana</h2><div class="hb-list" id="weekly"></div></section>
+      <section><h2>Comentarios</h2><div id="comments"></div></section>
+      <footer class="report-foot" id="reportFoot"></footer>
+    </div>
+  </div>
+
+  <script src="/dashboard/informe.js"></script>
+</body>
+</html>

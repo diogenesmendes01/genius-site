@@ -87,6 +87,61 @@ export class SurveysService {
     return { success: true };
   }
 
+  /**
+   * Admin: all responses as a spreadsheet-friendly CSV. Separator is ';'
+   * (LATAM/Spanish Excel default) with a UTF-8 BOM so acentos render;
+   * Google Sheets auto-detects both. One column per config question, in
+   * questionnaire order.
+   */
+  async exportCsv(filters: SurveyFilters): Promise<string> {
+    const rows = await this.responses.find({
+      where: this.buildWhere(filters),
+      order: { createdAt: 'DESC' },
+    });
+    const answerRows = rows.length
+      ? await this.answers.find({ where: { responseId: In(rows.map((r) => r.id)) } })
+      : [];
+    const byResponse = groupBy(answerRows, (a) => a.responseId);
+    const hashCounts = countByIpHash(rows);
+    const questionIds = [...ANSWER_QUESTIONS.keys()];
+
+    const header = [
+      'fecha', 'canal', 'nivel', 'tiempo', 'nps', 'csat', 'profesor',
+      'acepta_contacto', 'nombre', 'contacto', 'testimonio_ok', 'posible_duplicado',
+      ...questionIds,
+    ];
+    const lines = [header.map(csvCell).join(';')];
+
+    for (const r of rows) {
+      const answers = new Map(
+        (byResponse.get(r.id) ?? []).map((a) => [a.questionId, answerValue(a)]),
+      );
+      const base = [
+        r.createdAt.toISOString(),
+        r.canal ?? '',
+        r.nivel ?? '',
+        r.tiempo ?? '',
+        String(r.nps),
+        String(r.csat),
+        r.profesor ?? '',
+        r.contactoOk ? 'sí' : 'no',
+        r.nombre ?? '',
+        r.contacto ?? '',
+        r.testimonioOk ? 'sí' : 'no',
+        r.ipHash && (hashCounts.get(r.ipHash) ?? 0) > 1 ? 'sí' : 'no',
+      ];
+      const answerCells = questionIds.map((qid) => {
+        const v = answers.get(qid);
+        if (v == null) return '';
+        return Array.isArray(v) ? v.join(' | ') : String(v);
+      });
+      lines.push([...base, ...answerCells].map(csvCell).join(';'));
+    }
+
+    // BOM so Excel opens the acentos correctly.
+    return '\uFEFF' + lines.join('\r\n');
+  }
+
   /** Admin: raw list of responses (with answers) for the dashboard drill-down. */
   async list(filters: SurveyFilters) {
     const rows = await this.responses.find({
@@ -311,6 +366,14 @@ function countByIpHash(rows: SurveyResponseEntity[]): Map<string, number> {
     counts.set(r.ipHash, (counts.get(r.ipHash) ?? 0) + 1);
   }
   return counts;
+}
+
+/** Escape one CSV cell for the ';'-separated export. */
+function csvCell(value: string): string {
+  if (/[";\n\r,]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
 }
 
 /** The hash itself never leaves the API — only the derived duplicate flag. */

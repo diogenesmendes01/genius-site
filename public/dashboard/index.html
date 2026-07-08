@@ -494,7 +494,15 @@
               <label for="encCanal">Canal</label>
               <select id="encCanal"><option value="">Todos</option></select>
             </div>
-            <span class="encuesta-filters__hint">El período de fechas del encabezado también aplica a esta pestaña.</span>
+            <div class="encuesta-actions">
+              <button class="btn btn-secondary" id="encReportBtn" type="button" title="Abre un informe imprimible con los filtros actuales">
+                📄 <span class="btn__label">Generar informe</span>
+              </button>
+              <button class="btn btn-secondary" id="encCsvBtn" type="button" title="Descarga todas las respuestas filtradas en CSV">
+                ⬇ <span class="btn__label">Exportar CSV</span>
+              </button>
+            </div>
+            <span class="encuesta-filters__hint">El período de fechas del encabezado también aplica a esta pestaña, al informe y al CSV.</span>
           </div>
         </section>
 

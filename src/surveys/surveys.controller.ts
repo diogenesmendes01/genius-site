@@ -5,10 +5,11 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateSurveyResponseDto } from './dto/create-survey-response.dto';
 import { SURVEY_STEPS } from './survey-config';
@@ -46,6 +47,27 @@ export class SurveysController {
     @Query('to') to?: string,
   ) {
     return this.surveys.stats({ nivel, profesor, canal, from, to });
+  }
+
+  /** Admin: download every response as CSV (respects the same filters). */
+  @UseGuards(JwtAuthGuard)
+  @Get('export.csv')
+  async exportCsv(
+    @Res() res: Response,
+    @Query('nivel') nivel?: string,
+    @Query('profesor') profesor?: string,
+    @Query('canal') canal?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const csv = await this.surveys.exportCsv({ nivel, profesor, canal, from, to });
+    const today = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="encuesta-respuestas-${today}.csv"`,
+    );
+    res.send(csv);
   }
 
   /** Admin: raw responses (with answers) for drill-down/export. */

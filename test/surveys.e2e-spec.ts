@@ -228,4 +228,40 @@ describe('Surveys — encuesta de satisfacción', () => {
       expect(all.body.canales.directo).toBe(1);
     });
   });
+
+  describe('GET /api/surveys/export.csv', () => {
+    it('requires auth', async () => {
+      await request(app.getHttpServer()).get('/api/surveys/export.csv').expect(401);
+    });
+
+    it('downloads the responses as ;-separated CSV with one column per question', async () => {
+      const resp = await request(app.getHttpServer())
+        .get('/api/surveys/export.csv')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      expect(resp.headers['content-type']).toContain('text/csv');
+      expect(resp.headers['content-disposition']).toContain('attachment');
+
+      const lines = resp.text.replace(/^﻿/, '').split('\r\n');
+      const header = lines[0].split(';');
+      expect(header.slice(0, 6)).toEqual(['fecha', 'canal', 'nivel', 'tiempo', 'nps', 'csat']);
+      expect(header).toContain('prof_claridad');
+      expect(header).toContain('lo_mejor');
+      // One data row per stored response.
+      expect(lines.length - 1).toBeGreaterThanOrEqual(3);
+      expect(resp.text).toContain('whatsapp');
+      expect(resp.text).toContain('Ana Martínez');
+      // Multi-select answers join with " | ".
+      expect(resp.text).toContain('Conversación | Otro');
+    });
+
+    it('respects the same filters as stats', async () => {
+      const resp = await request(app.getHttpServer())
+        .get('/api/surveys/export.csv?nivel=C2')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      const lines = resp.text.replace(/^﻿/, '').split('\r\n');
+      expect(lines.length).toBe(1); // solo el header
+    });
+  });
 });
