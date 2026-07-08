@@ -19,7 +19,11 @@
   async function load() {
     var params = new URLSearchParams(window.location.search);
     try {
-      var resp = await fetch('/api/surveys/stats?' + params.toString(), { credentials: 'include' });
+      // El informe incluye TODOS los comentarios del período (el feed de la
+      // pestaña se queda con los 30 más recientes).
+      var statsParams = new URLSearchParams(params);
+      statsParams.set('commentsLimit', 'all');
+      var resp = await fetch('/api/surveys/stats?' + statsParams.toString(), { credentials: 'include' });
       if (resp.status === 401) {
         el('statusBox').innerHTML =
           'Necesitas iniciar sesión para ver el informe. <a href="/dashboard/">Ir al dashboard</a> y vuelve a generar el informe desde la pestaña Encuesta.';

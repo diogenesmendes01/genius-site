@@ -169,8 +169,12 @@ export class SurveysService {
     };
   }
 
-  /** Admin: everything the "Encuesta" dashboard tab renders, pre-aggregated. */
-  async stats(filters: SurveyFilters) {
+  /**
+   * Admin: everything the "Encuesta" dashboard tab renders, pre-aggregated.
+   * `commentsLimit` caps the comments feed (30 in the dashboard tab); the
+   * printable report passes Number.MAX_SAFE_INTEGER to include them all.
+   */
+  async stats(filters: SurveyFilters, commentsLimit = 30) {
     const rows = await this.responses.find({
       where: this.buildWhere(filters),
       order: { createdAt: 'DESC' },
@@ -296,7 +300,7 @@ export class SurveysService {
         };
       })
       .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
-      .slice(0, 30);
+      .slice(0, commentsLimit);
 
     // ── filter option lists (unfiltered values would be nicer, but the
     //    filtered set keeps the implementation simple and self-consistent) ──
@@ -368,12 +372,19 @@ function countByIpHash(rows: SurveyResponseEntity[]): Map<string, number> {
   return counts;
 }
 
-/** Escape one CSV cell for the ';'-separated export. */
+/**
+ * Escape one CSV cell for the ';'-separated export. Values that start with
+ * a formula trigger (=, +, -, @, tab, CR) get an apostrophe prefix so
+ * Excel/Sheets render them as text instead of executing them — these cells
+ * carry free text submitted through a PUBLIC form (CSV/formula injection).
+ */
 function csvCell(value: string): string {
-  if (/[";\n\r,]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  let v = value;
+  if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
+  if (/[";\n\r,]/.test(v)) {
+    return `"${v.replace(/"/g, '""')}"`;
   }
-  return value;
+  return v;
 }
 
 /** The hash itself never leaves the API — only the derived duplicate flag. */

@@ -36,7 +36,11 @@ export class SurveysController {
     return this.surveys.create(dto, clientIp(req));
   }
 
-  /** Admin: pre-aggregated stats for the "Encuesta" dashboard tab. */
+  /**
+   * Admin: pre-aggregated stats for the "Encuesta" dashboard tab.
+   * `commentsLimit` accepts a number or 'all' (used by the printable
+   * report, which must include every comment, not just the latest 30).
+   */
   @UseGuards(JwtAuthGuard)
   @Get('stats')
   stats(
@@ -45,8 +49,13 @@ export class SurveysController {
     @Query('canal') canal?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
+    @Query('commentsLimit') commentsLimit?: string,
   ) {
-    return this.surveys.stats({ nivel, profesor, canal, from, to });
+    const limit =
+      commentsLimit === 'all'
+        ? Number.MAX_SAFE_INTEGER
+        : Math.max(1, parseInt(commentsLimit ?? '', 10) || 30);
+    return this.surveys.stats({ nivel, profesor, canal, from, to }, limit);
   }
 
   /** Admin: download every response as CSV (respects the same filters). */
