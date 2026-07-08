@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser = require('cookie-parser');
 import { mkdirSync } from 'fs';
 import { dirname } from 'path';
@@ -50,7 +51,14 @@ async function bootstrap() {
   const dbPath = process.env.DATABASE_PATH ?? './data/genius.sqlite';
   mkdirSync(dirname(dbPath), { recursive: true });
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // In production every socket comes from the Coolify/Traefik proxy, so
+  // without this the Throttler buckets ALL visitors under the proxy's IP
+  // (one class of students would share the 5/min survey limit) and req.ip
+  // is useless. Trusting exactly 1 hop makes Express resolve the real
+  // client from X-Forwarded-For while ignoring client-forged entries.
+  app.set('trust proxy', 1);
 
   app.use(cookieParser());
 

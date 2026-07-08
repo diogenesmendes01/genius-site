@@ -12,6 +12,9 @@ import { HealthController } from './health/health.controller';
 import { LeadsModule } from './leads/leads.module';
 import { TrackingEntryEntity } from './q10/tracking-entry.entity';
 import { Q10Module } from './q10/q10.module';
+import { SurveyAnswerEntity } from './surveys/survey-answer.entity';
+import { SurveyResponseEntity } from './surveys/survey-response.entity';
+import { SurveysModule } from './surveys/surveys.module';
 
 const bootstrapLogger = new Logger('AppModule');
 
@@ -44,7 +47,7 @@ const bootstrapLogger = new Logger('AppModule');
         return {
           type: 'better-sqlite3',
           database: cfg.get<string>('DATABASE_PATH') ?? './data/genius.sqlite',
-          entities: [User, TrackingEntryEntity],
+          entities: [User, TrackingEntryEntity, SurveyResponseEntity, SurveyAnswerEntity],
           synchronize: true,
         };
       },
@@ -60,6 +63,7 @@ const bootstrapLogger = new Logger('AppModule');
     Q10Module,
     LeadsModule,
     EmailModule,
+    SurveysModule,
   ],
   controllers: [HealthController],
   providers: [

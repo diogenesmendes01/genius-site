@@ -16,7 +16,7 @@ const CURRENCY_LOCALE = {
 // Date picker state — `preset` controls which KPIs we send from/to for.
 // Only Overview and Financial are date-sensitive; Academic + Turmas +
 // Commercial are period-based on the server and ignore from/to.
-const DATE_PICKER_APPLIES_TO = new Set(['overview', 'financial']);
+const DATE_PICKER_APPLIES_TO = new Set(['overview', 'financial', 'encuesta']);
 const state = {
   user: null,
   charts: {},
@@ -24,7 +24,9 @@ const state = {
   activeTab: 'overview',
   // Cache per tab so switching back and forth doesn't re-hit /api. Invalidated
   // by refreshBtn or the 60s auto-timer.
-  loaded: { overview: false, academic: false, turmas: false, financial: false, commercial: false },
+  loaded: { overview: false, academic: false, turmas: false, financial: false, commercial: false, encuesta: false },
+  // Encuesta tab filters (nivel / profesor / canal) — session-only.
+  encFilters: { nivel: '', profesor: '', canal: '' },
   // Multi-currency state — `displayCurrency` is the user's view choice
   // (persisted in localStorage). `rates` is the USD-base table from
   // /api/dashboard/currency-rates, lazy-loaded on first auth'd render.
@@ -119,6 +121,19 @@ function bindEvents() {
   document.querySelectorAll('.tab').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+
+  // Encuesta tab filters — re-fetch the stats with the new params.
+  [['encNivel', 'nivel'], ['encProfesor', 'profesor'], ['encCanal', 'canal']].forEach(
+    ([id, key]) => {
+      const select = el(id);
+      if (!select) return;
+      select.addEventListener('change', (e) => {
+        state.encFilters[key] = e.target.value;
+        state.loaded.encuesta = false;
+        if (state.activeTab === 'encuesta') loadEncuesta(false);
+      });
+    },
+  );
 }
 
 function syncCustomRangeVisibility() {
@@ -231,6 +246,7 @@ function loadTab(name, force) {
   if (name === 'turmas') return loadTurmas(force);
   if (name === 'financial') return loadFinancial(force);
   if (name === 'commercial') return loadCommercial(force);
+  if (name === 'encuesta') return loadEncuesta(force);
 }
 
 // ─── Auth flow ───
@@ -1046,6 +1062,167 @@ async function loadCommercial(force) {
     : '<tr><td colspan="6" style="text-align:center;color:var(--gray-text)">Sin oportunidades registradas</td></tr>';
 
   applyPartialBanner(data);
+}
+
+// ═════════════════ ENCUESTA TAB ═════════════════
+async function loadEncuesta(force) {
+  const params = new URLSearchParams();
+  const r = computeDateRange();
+  if (r.from && r.to) {
+    params.set('from', r.from);
+    params.set('to', r.to);
+  }
+  for (const [key, value] of Object.entries(state.encFilters)) {
+    if (value) params.set(key, value);
+  }
+  const data = await fetchTab(`${API}/surveys/stats?${params.toString()}`, force);
+  if (!data) return;
+  state.loaded.encuesta = true;
+
+  // KPIs
+  const nps = data.nps || {};
+  const npsValue = nps.score == null ? '—' : (nps.score > 0 ? `+${nps.score}` : String(nps.score));
+  el('encuestaKpis').innerHTML = [
+    { label: 'NPS', value: npsValue, hint: `${nps.promoters ?? 0} promotores · ${nps.detractors ?? 0} detractores`, accent: true, variant: nps.score != null && nps.score < 0 ? 'danger' : '' },
+    { label: 'Satisfacción general', value: data.csatAvg != null ? `${data.csatAvg} / 5` : '—', hint: 'promedio 1–5' },
+    { label: 'Respuestas', value: data.total ?? 0, hint: `${data.identified ?? 0} identificadas` },
+    { label: 'Aceptan contacto', value: data.contactOk ?? 0, hint: 'para seguimiento' },
+    { label: 'Testimonios autorizados', value: data.testimonioOk ?? 0, hint: 'para la landing', variant: 'success' },
+    { label: 'Posibles duplicados', value: data.possibleDuplicates ?? 0, hint: 'misma red/IP (solo aviso)', variant: (data.possibleDuplicates || 0) > 0 ? 'warning' : '' },
+  ].map(kpiCard).join('');
+
+  renderEncNpsBar(nps, data.total ?? 0);
+  renderMonthlyLine(
+    'encWeeklyChart',
+    (data.weekly || []).map((w) => ({ month: w.week.slice(5), value: w.count })),
+    '#DCAF63',
+    false,
+  );
+  renderEncAverages(data.averages || []);
+
+  renderDistributionChart('encProgresoChart', (data.distributions?.progreso?.dist) || {}, '#DCAF63');
+  renderDistributionChart('encCanalChart', data.canales || {}, '#1a2456');
+  renderDistributionChart('encContenidoChart', (data.multi?.contenido_extra?.dist) || {}, '#DCAF63');
+  renderDistributionChart('encHabilidadesChart', (data.multi?.necesita_mejorar?.dist) || {}, '#000E38');
+
+  renderEncProfessors(data.professors || [], data.unidentified ?? 0);
+  renderEncComments(data.comments || []);
+  syncEncFilterOptions(data.filterOptions || {});
+
+  applyPartialBanner(data);
+}
+
+function renderEncNpsBar(nps, total) {
+  const target = el('encNpsBar');
+  if (!target) return;
+  if (!total) {
+    target.innerHTML = '<p class="enc-empty">Sin respuestas todavía.</p>';
+    return;
+  }
+  const pct = (n) => Math.round((n / total) * 100);
+  const seg = (cls, n) =>
+    n > 0 ? `<span class="enc-npsbar__seg enc-npsbar__seg--${cls}" style="width:${pct(n)}%"></span>` : '';
+  target.innerHTML = `
+    <div class="enc-npsbar">
+      ${seg('det', nps.detractors)}${seg('pas', nps.passives)}${seg('pro', nps.promoters)}
+    </div>
+    <div class="enc-npsbar__legend">
+      <span><i class="enc-dot enc-dot--det"></i>Detractores (0–6) <strong>${pct(nps.detractors)}% · ${nps.detractors}</strong></span>
+      <span><i class="enc-dot enc-dot--pas"></i>Pasivos (7–8) <strong>${pct(nps.passives)}% · ${nps.passives}</strong></span>
+      <span><i class="enc-dot enc-dot--pro"></i>Promotores (9–10) <strong>${pct(nps.promoters)}% · ${nps.promoters}</strong></span>
+    </div>`;
+}
+
+function renderEncAverages(averages) {
+  destroyChart('encAveragesChart');
+  const canvas = el('encAveragesChart');
+  if (!canvas) return;
+  const rows = averages.filter((a) => a.avg != null).sort((a, b) => b.avg - a.avg);
+  state.charts.encAveragesChart = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: rows.map((a) => a.label),
+      datasets: [{
+        data: rows.map((a) => a.avg),
+        backgroundColor: '#DCAF63',
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { x: { min: 0, max: 5, ticks: { stepSize: 1 } } },
+    },
+  });
+}
+
+function renderEncProfessors(professors, unidentified) {
+  const tbody = document.querySelector('#encProfTable tbody');
+  if (!tbody) return;
+  if (!professors.length && !unidentified) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray-text)">Sin respuestas con profesor/a identificado</td></tr>';
+    return;
+  }
+  const npsCell = (v) => (v == null ? '—' : v > 0 ? `+${v}` : String(v));
+  const rows = professors.map((p) => `
+    <tr>
+      <td>${escapeHtml(p.profesor || '—')}</td>
+      <td>${escapeHtml(String(p.count))}</td>
+      <td>${escapeHtml(p.avgClaridad != null ? String(p.avgClaridad) : '—')}</td>
+      <td>${escapeHtml(p.avgPaciencia != null ? String(p.avgPaciencia) : '—')}</td>
+      <td>${escapeHtml(npsCell(p.nps))}</td>
+    </tr>`);
+  if (unidentified > 0) {
+    rows.push(`
+    <tr>
+      <td style="color:var(--gray-text)">Sin identificar</td>
+      <td>${escapeHtml(String(unidentified))}</td>
+      <td>—</td><td>—</td><td>—</td>
+    </tr>`);
+  }
+  tbody.innerHTML = rows.join('');
+}
+
+function renderEncComments(comments) {
+  const target = el('encComments');
+  if (!target) return;
+  if (!comments.length) {
+    target.innerHTML = '<p class="enc-empty">Sin comentarios todavía.</p>';
+    return;
+  }
+  target.innerHTML = comments.map((c) => {
+    const chips = [
+      c.question ? `<span class="enc-chip">${escapeHtml(c.question)}</span>` : '',
+      c.nivel ? `<span class="enc-chip">Nivel ${escapeHtml(c.nivel)}</span>` : '',
+      c.profesor ? `<span class="enc-chip">Prof.: ${escapeHtml(c.profesor)}</span>` : '',
+      c.canal ? `<span class="enc-chip">${escapeHtml(c.canal)}</span>` : '',
+      c.createdAt ? `<span class="enc-chip">${escapeHtml(new Date(c.createdAt).toLocaleDateString('es'))}</span>` : '',
+      c.testimonioOk ? '<span class="enc-chip enc-chip--testi">★ Testimonio autorizado</span>' : '',
+    ].filter(Boolean).join('');
+    return `
+      <div class="enc-comment">
+        <p>"${escapeHtml(c.text)}"</p>
+        <div class="enc-comment__meta">${chips}</div>
+      </div>`;
+  }).join('');
+}
+
+function syncEncFilterOptions(options) {
+  const fill = (id, values, current) => {
+    const select = el(id);
+    if (!select) return;
+    const keep = current;
+    select.innerHTML = '<option value="">Todos</option>' + values
+      .map((v) => `<option value="${escapeHtml(v.value)}">${escapeHtml(v.label)}</option>`)
+      .join('');
+    select.value = keep;
+    // If the stored filter no longer exists, reset to "Todos".
+    if (select.value !== keep) select.value = '';
+  };
+  fill('encNivel', (options.niveles || []).map((n) => ({ value: n, label: n })), state.encFilters.nivel);
+  fill('encProfesor', (options.profesores || []).map((p) => ({ value: p.norm, label: p.label })), state.encFilters.profesor);
+  fill('encCanal', (options.canales || []).map((c) => ({ value: c, label: c })), state.encFilters.canal);
 }
 
 // ─── Shared UI helpers for the new tabs ───
