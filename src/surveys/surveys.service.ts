@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { createHash } from 'crypto';
 import { Between, FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateSurveyResponseDto } from './dto/create-survey-response.dto';
 import { SurveyAnswerEntity } from './survey-answer.entity';
@@ -32,7 +33,7 @@ export class SurveysService {
     private readonly answers: Repository<SurveyAnswerEntity>,
   ) {}
 
-  async create(dto: CreateSurveyResponseDto): Promise<{ success: boolean }> {
+  async create(dto: CreateSurveyResponseDto, ip?: string | null): Promise<{ success: boolean }> {
     // Honeypot tripped → pretend success, store nothing. Real students never
     // see (or fill) the hidden field.
     if (dto.website && dto.website.trim() !== '') {
@@ -62,6 +63,7 @@ export class SurveysService {
         testimonioOk: dto.testimonioOk === true,
         nivel: dto.nivel ?? null,
         tiempo: dto.tiempo ?? null,
+        ipHash: ip ? hashIp(ip) : null,
       }),
     );
 
@@ -93,11 +95,15 @@ export class SurveysService {
       ? await this.answers.find({ where: { responseId: In(rows.map((r) => r.id)) } })
       : [];
     const byResponse = groupBy(answerRows, (a) => a.responseId);
+    const hashCounts = countByIpHash(rows);
 
     return {
       count: rows.length,
       entries: rows.map((r) => ({
-        ...r,
+        ...stripIpHash(r),
+        // Same salted IP hash seen more than once in this set → flag it so
+        // the operator can eyeball possible duplicates (never auto-blocked).
+        possibleDuplicate: !!(r.ipHash && (hashCounts.get(r.ipHash) ?? 0) > 1),
         answers: Object.fromEntries(
           (byResponse.get(r.id) ?? []).map((a) => [a.questionId, answerValue(a)]),
         ),
@@ -246,11 +252,18 @@ export class SurveysService {
       canales: uniqueSorted(allRows.map((r) => r.canal)),
     };
 
+    // ── possible duplicates: responses sharing a salted IP hash ──
+    const hashCounts = countByIpHash(rows);
+    const possibleDuplicates = rows.filter(
+      (r) => r.ipHash && (hashCounts.get(r.ipHash) ?? 0) > 1,
+    ).length;
+
     return {
       total,
       identified: rows.filter((r) => r.nombre || r.contacto).length,
       contactOk: rows.filter((r) => r.contactoOk).length,
       testimonioOk: rows.filter((r) => r.testimonioOk).length,
+      possibleDuplicates,
       nps: { score: npsScore, promoters, passives, detractors },
       csatAvg: total ? round1(rows.reduce((s, r) => s + r.csat, 0) / total) : null,
       averages,
@@ -277,6 +290,30 @@ export class SurveysService {
     }
     return where;
   }
+}
+
+/**
+ * Salted hash of the submitter IP. The salt rides on JWT_SECRET (already
+ * mandatory in production) so the raw IP is never stored nor recoverable.
+ */
+function hashIp(ip: string): string {
+  const salt = process.env.JWT_SECRET ?? 'genius-encuesta-salt';
+  return createHash('sha256').update(`${salt}|${ip}`).digest('hex').slice(0, 32);
+}
+
+function countByIpHash(rows: SurveyResponseEntity[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    if (!r.ipHash) continue;
+    counts.set(r.ipHash, (counts.get(r.ipHash) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/** The hash itself never leaves the API — only the derived duplicate flag. */
+function stripIpHash(row: SurveyResponseEntity): Omit<SurveyResponseEntity, 'ipHash'> {
+  const { ipHash: _ipHash, ...rest } = row;
+  return rest;
 }
 
 /** lowercase, no accents, collapsed whitespace — groups "Ana", "ana martínez". */

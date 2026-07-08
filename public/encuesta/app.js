@@ -11,6 +11,9 @@
 
   var API = '/api/surveys';
   var STORAGE_KEY = 'genius:encuesta:v1';
+  var DONE_KEY = 'genius:encuesta:done';
+  var DONE_COOKIE = 'genius_encuesta_done';
+  var DONE_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 días
 
   /* Preguntas cuyo valor va a columna fija del payload (id → campo API). */
   var COLUMN_FIELDS = {
@@ -43,6 +46,14 @@
 
     btnNext.addEventListener('click', onNext);
     btnBack.addEventListener('click', onBack);
+
+    // Ya respondió antes (marca en localStorage o cookie): no reabrimos el
+    // wizard. Evita el doble envío accidental — no es un candado absoluto.
+    if (alreadyDone()) {
+      el('loadingBox').classList.add('hidden');
+      renderDoneScreen();
+      return;
+    }
 
     try {
       var resp = await fetch(API + '/config');
@@ -537,6 +548,7 @@
         throw new Error('Hubo un error al enviar tus respuestas. Por favor inténtalo de nuevo.');
       }
       state.submitted = true;
+      markDone();
       try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* noop */ }
       renderStep();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -546,6 +558,32 @@
       btnNext.disabled = false;
       if (!state.submitted) btnNext.textContent = 'Enviar respuestas';
     }
+  }
+
+  /* ── control de "ya respondiste" ── */
+  function alreadyDone() {
+    try {
+      if (localStorage.getItem(DONE_KEY)) return true;
+    } catch (e) { /* storage bloqueado: nos queda la cookie */ }
+    return new RegExp('(?:^|;\\s*)' + DONE_COOKIE + '=1').test(document.cookie);
+  }
+
+  function markDone() {
+    try { localStorage.setItem(DONE_KEY, new Date().toISOString()); } catch (e) { /* noop */ }
+    document.cookie = DONE_COOKIE + '=1; max-age=' + DONE_COOKIE_MAX_AGE + '; path=/; SameSite=Lax';
+  }
+
+  function renderDoneScreen() {
+    progBar.classList.add('hidden');
+    navRow.classList.add('hidden');
+    host.innerHTML =
+      '<section class="s-card">' +
+      '  <div class="thanks">' +
+      '    <div class="big">✅</div>' +
+      '    <h2>Ya respondiste esta encuesta</h2>' +
+      '    <p>¡Gracias por tu opinión! Solo se puede responder una vez por persona.</p>' +
+      '  </div>' +
+      '</section>';
   }
 
   /* ── helpers ── */

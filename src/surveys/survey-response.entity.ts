@@ -62,6 +62,15 @@ export class SurveyResponseEntity {
   @Column({ type: 'varchar', nullable: true })
   tiempo: string | null;
 
+  /**
+   * Salted SHA-256 of the submitter's IP — never the raw IP. Used only to
+   * FLAG possible duplicate submissions in the dashboard; never to block
+   * (students on the same household/office NAT share an IP).
+   */
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  ipHash: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }

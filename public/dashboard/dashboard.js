@@ -1088,6 +1088,7 @@ async function loadEncuesta(force) {
     { label: 'Respuestas', value: data.total ?? 0, hint: `${data.identified ?? 0} identificadas` },
     { label: 'Aceptan contacto', value: data.contactOk ?? 0, hint: 'para seguimiento' },
     { label: 'Testimonios autorizados', value: data.testimonioOk ?? 0, hint: 'para la landing', variant: 'success' },
+    { label: 'Posibles duplicados', value: data.possibleDuplicates ?? 0, hint: 'misma red/IP (solo aviso)', variant: (data.possibleDuplicates || 0) > 0 ? 'warning' : '' },
   ].map(kpiCard).join('');
 
   renderEncNpsBar(nps, data.total ?? 0);

@@ -67,6 +67,25 @@ O nome do professor é texto livre digitado pelo aluno; o agrupamento usa o
 nome normalizado (minúsculas, sem acentos). Grafias que não se unirem
 sozinhas podem ser corrigidas direto no banco (`survey_responses.profesorNorm`).
 
+## Controle de respostas duplicadas
+
+A pesquisa é anônima, então não existe garantia absoluta de "1 resposta por
+pessoa". As camadas existentes:
+
+1. **Marca no navegador** — após enviar, gravamos uma marca em
+   `localStorage` + cookie (180 dias). Ao reabrir o link no mesmo
+   navegador, o aluno vê "Ya respondiste esta encuesta" em vez do wizard.
+   Barra o reenvio acidental/casual (aba anônima contorna).
+2. **Hash de IP** — cada resposta guarda um hash com salt do IP (nunca o IP
+   em si; o hash não sai da API). Respostas repetidas do mesmo hash aparecem
+   no dashboard como KPI **"Posibles duplicados"** e com a flag
+   `possibleDuplicate` na listagem. É só aviso — nunca bloqueia, porque
+   alunos da mesma casa/rede compartilham IP.
+3. **Throttle** — máx. 5 envios/min por IP + honeypot contra bots.
+
+Se um dia for necessário garantir 1 resposta por aluno de verdade, o caminho
+é link tokenizado individual (abrimos mão disso para manter o anonimato).
+
 ## Editar as perguntas
 
 Tudo vive em `src/surveys/survey-config.ts` — etapas, textos, tipos,

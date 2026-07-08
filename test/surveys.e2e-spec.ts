@@ -183,5 +183,30 @@ describe('Surveys — encuesta de satisfacción', () => {
         .expect(200);
       expect(resp.body.total).toBe(0);
     });
+
+    it('flags possible duplicates from the same IP (never blocks)', async () => {
+      // Second full submission from the same client IP (supertest uses
+      // 127.0.0.1 for every request) — both must save and both get flagged.
+      await request(app.getHttpServer())
+        .post('/api/surveys')
+        .send(validPayload())
+        .expect(201);
+
+      const stats = await request(app.getHttpServer())
+        .get('/api/surveys/stats')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      expect(stats.body.total).toBeGreaterThanOrEqual(2);
+      expect(stats.body.possibleDuplicates).toBeGreaterThanOrEqual(2);
+
+      const list = await request(app.getHttpServer())
+        .get('/api/surveys')
+        .set('Cookie', adminCookie)
+        .expect(200);
+      const flagged = list.body.entries.filter((e: any) => e.possibleDuplicate);
+      expect(flagged.length).toBeGreaterThanOrEqual(2);
+      // The raw hash never leaves the API — only the derived flag.
+      expect(list.body.entries[0]).not.toHaveProperty('ipHash');
+    });
   });
 });

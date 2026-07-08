@@ -4,9 +4,11 @@ import {
   Get,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateSurveyResponseDto } from './dto/create-survey-response.dto';
 import { SURVEY_STEPS } from './survey-config';
@@ -29,8 +31,8 @@ export class SurveysController {
   /** Public submission — throttled like the login endpoint to stop spam. */
   @Throttle({ default: { limit: SUBMIT_LIMIT, ttl: 60_000 } })
   @Post()
-  create(@Body() dto: CreateSurveyResponseDto) {
-    return this.surveys.create(dto);
+  create(@Body() dto: CreateSurveyResponseDto, @Req() req: Request) {
+    return this.surveys.create(dto, clientIp(req));
   }
 
   /** Admin: pre-aggregated stats for the "Encuesta" dashboard tab. */
@@ -58,4 +60,16 @@ export class SurveysController {
   ) {
     return this.surveys.list({ nivel, profesor, canal, from, to });
   }
+}
+
+/**
+ * Best-effort client IP for the duplicate-flagging hash. Behind the Coolify
+ * proxy the socket address is the proxy, so we prefer the first hop of
+ * X-Forwarded-For. Good enough for a dedup *signal* — this value is hashed
+ * and never used as a security control.
+ */
+function clientIp(req: Request): string | null {
+  const fwd = req.headers['x-forwarded-for'];
+  const first = Array.isArray(fwd) ? fwd[0] : fwd?.split(',')[0];
+  return first?.trim() || req.ip || req.socket?.remoteAddress || null;
 }
