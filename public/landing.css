@@ -110,6 +110,7 @@ details[open] > summary .icon { transform: rotate(90deg); }
 .course-details > summary { font-size: 17px; }
 .course > .course-details { margin-top: auto; }
 .course:not(.course-featured) > .course-details > summary { margin-inline: auto; text-decoration: underline; }
+/* The featured course exposes its CTA; alternative courses expose theirs in details. */
 .course > .button { margin-top: 8px; width: 100%; font-size: 18px; }
 .course-footnote { margin-top: 20px; font-size: 11px; line-height: 1.4; text-align: center; }
 .super-course { display: grid; grid-template-columns: 1fr 1.15fr .82fr; align-items: start; gap: 28px; padding: 24px 28px; margin-top: 24px; background: var(--card); border: 1px solid var(--line); border-radius: 4px; }

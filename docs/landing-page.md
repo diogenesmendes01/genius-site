@@ -17,7 +17,7 @@ A home, Metodología e Sobre Nosotros usam a identidade aprovada: navy `#0B1C3A`
 
 Os HTMLs em `public/` são a fonte de produção e podem ser editados diretamente. Não há etapa de geração de frontend nem dependência do servidor usado na exploração do design. O Docker existente copia `public/`, servido pelo Nest na raiz do site.
 
-Os arquivos antigos `styles.css` e `script.js` não são carregados por estas três páginas. Matrícula, pesquisa, dashboard e API continuam usando seus próprios arquivos e rotas.
+Os arquivos antigos `public/styles.css` e `public/script.js` permanecem disponíveis por compatibilidade com versões anteriores de páginas que ainda estejam em cache. A nova home, Metodología e Sobre Nosotros não carregam esses arquivos; nenhum loader de legado foi adicionado. Matrícula, pesquisa, dashboard e API continuam usando seus próprios arquivos e rotas.
 
 ## Contato e conteúdo
 
@@ -27,6 +27,8 @@ Os arquivos antigos `styles.css` e `script.js` não são carregados por estas tr
 - Rodapé: 21 países; a prova histórica do hero permanece “Más de 10,000 estudiantes · 7 países”. A lista geográfica não altera esse dado.
 - FAQ: cinco perguntas, sem a pergunta de preparação para Celpe-Bras. Os demais conteúdos aprovados da prévia foram preservados.
 - Preços e horários são consultados com a academia; nenhum valor ou avaliação foi inventado para esta atualização.
+
+A rota `/api/leads` e os templates em `src/leads/email` são mantidos por compatibilidade com o fluxo anterior. A nova landing direciona o contato ao WhatsApp e não chama essa rota nem utiliza esses templates de email.
 
 O CTA fixo mobile aparece após 40% de leitura quando nenhum CTA primário está visível. A FAQ abre um item por vez; depoimentos têm navegação por teclado. Animações respeitam `prefers-reduced-motion` e não bloqueiam a renderização do conteúdo principal.
 
@@ -46,7 +48,7 @@ python -m http.server 4181 --bind 127.0.0.1 --directory public
 
 O servidor Python permite revisar apenas os arquivos estáticos. Para executar também a API, use o fluxo Nest e a configuração de ambiente do projeto.
 
-Validação desta alteração: build aprovado; 16 suítes e 184 testes existentes aprovados; revisão das referências locais, IDs, ARIA, metadados e destinos; conferência visual em desktop e mobile. O detalhamento do conteúdo e o visual correspondem à prévia aprovada das três páginas.
+Validação após a revisão: build aprovado; 17 suítes e 196 testes aprovados, incluindo 12 casos de regressão de teclado, animação, âncoras e CTA fixo; revisão das referências locais, IDs, ARIA, metadados e destinos; conferência visual em desktop e mobile. O detalhamento do conteúdo e o visual correspondem à prévia aprovada das três páginas. As decisões e correções do review estão em [landing-review.md](landing-review.md).
 
 ## Recursos visuais
 

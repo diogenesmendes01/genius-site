@@ -9,7 +9,9 @@ Sitemap: https://www.geniusidiomas.com/sitemap.xml
 # Bloquear arquivos desnecessários
 Disallow: /api/
 Disallow: /*.json$
-Disallow: /manifest.json
+
+# Manifest público usado pelas páginas
+Allow: /manifest.json
 
 # Crawl-delay (opcional)
 Crawl-delay: 0

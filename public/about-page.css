@@ -1,4 +1,4 @@
-/* Complements reference.css and the shared internal-page styles. */
+/* Complements landing.css and inner-pages.css. */
 .about-lead {
   max-width: 20ch;
   font-family: var(--display);

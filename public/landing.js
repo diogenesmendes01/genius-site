@@ -9,15 +9,30 @@
     animation.onfinish = animation.oncancel = () => entryAnimations.delete(animation);
   };
   let keyboardNavigation = false;
-  document.addEventListener('keydown', () => { keyboardNavigation = true; });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Tab') return;
+    keyboardNavigation = true;
+    entryAnimations.forEach((animation) => animation.cancel());
+  });
   document.addEventListener('pointerdown', () => { keyboardNavigation = false; }, { passive: true });
 
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     link.addEventListener('click', (event) => {
       const target = document.getElementById(link.hash.slice(1));
       if (!target) return;
+      const immediate = reducedMotion.matches || event.detail === 0;
+      const rootStyle = document.documentElement.style;
+      const previousBehavior = rootStyle.scrollBehavior;
+      if (immediate) rootStyle.scrollBehavior = 'auto';
+      try {
+        target.scrollIntoView({ behavior: immediate ? 'auto' : 'smooth' });
+      } catch {
+        // Preserve the native anchor when a browser cannot perform the custom scroll.
+        return;
+      } finally {
+        if (immediate) rootStyle.scrollBehavior = previousBehavior;
+      }
       event.preventDefault();
-      target.scrollIntoView({ behavior: reducedMotion.matches || event.detail === 0 ? 'instant' : 'smooth' });
       if (event.detail === 0) {
         target.setAttribute('tabindex', '-1');
         target.focus({ preventScroll: true });
@@ -95,7 +110,10 @@
     });
   });
   reducedMotion.addEventListener('change', () => {
-    if (!reducedMotion.matches) return;
+    if (!reducedMotion.matches) {
+      faqTriggers.forEach((trigger) => trigger.removeAttribute('data-instant'));
+      return;
+    }
     entryAnimations.forEach((animation) => animation.cancel());
     faqTriggers.forEach((trigger) => setFaq(trigger, trigger.getAttribute('aria-expanded') === 'true', true));
   });
@@ -127,24 +145,37 @@
 
   const sticky = document.querySelector('.mobile-cta');
   const visiblePrimary = new Set();
+  let stickyFrame = 0;
   const updateSticky = () => {
+    stickyFrame = 0;
+    if (innerWidth > 767 || visiblePrimary.size > 0) {
+      if (!sticky.hidden) sticky.hidden = true;
+      return;
+    }
     const length = document.documentElement.scrollHeight - innerHeight;
     const pastThreshold = length > 0 && scrollY / length >= .4;
-    sticky.hidden = !pastThreshold || innerWidth > 767 || visiblePrimary.size > 0;
+    const hidden = !pastThreshold;
+    if (sticky.hidden !== hidden) sticky.hidden = hidden;
+  };
+  const scheduleSticky = () => {
+    if (!stickyFrame) stickyFrame = requestAnimationFrame(updateSticky);
   };
   const primaryObserver = new IntersectionObserver((entries) => {
     entries.forEach(({ target, isIntersecting }) => {
       if (isIntersecting) visiblePrimary.add(target);
       else visiblePrimary.delete(target);
     });
-    updateSticky();
+    scheduleSticky();
   });
   document.querySelectorAll('main [data-primary]').forEach((button) => primaryObserver.observe(button));
-  addEventListener('scroll', updateSticky, { passive: true });
-  addEventListener('resize', updateSticky, { passive: true });
+  addEventListener('scroll', scheduleSticky, { passive: true });
+  addEventListener('resize', scheduleSticky, { passive: true });
+  document.addEventListener('toggle', scheduleSticky, true);
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(scheduleSticky).observe(document.body);
+  }
   updateSticky();
 
-  if (reducedMotion.matches) return;
   const heroCopy = document.querySelector('.hero-copy');
   const heroElements = getComputedStyle(heroCopy).display === 'contents'
     ? [...heroCopy.children, document.querySelector('.class-visual')]
@@ -154,17 +185,22 @@
     { opacity: 1, transform: 'translateY(0)' },
   ], { duration: 500 }));
 
-  const stagger = new WeakMap();
-  document.querySelectorAll('.steps-grid, .course-grid, .feature-grid').forEach((group) => {
-    [...group.children].forEach((element, index) => stagger.set(element, index * 100));
-  });
   const reveal = new IntersectionObserver((entries) => {
-    entries.forEach(({ target, isIntersecting }) => {
-      if (!isIntersecting) return;
+    const rows = new Map();
+    const entering = entries.filter(({ isIntersecting }) => isIntersecting)
+      .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top || a.boundingClientRect.left - b.boundingClientRect.left);
+    entering.forEach(({ target, boundingClientRect }) => {
       reveal.unobserve(target);
       if (keyboardNavigation || reducedMotion.matches || !target.animate) return;
-      animateEntry(target, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: stagger.get(target) || 0 });
+      // Start below the viewport; never fade out content the visitor can already read.
+      if (boundingClientRect.top < innerHeight) return;
+      const parent = target.parentElement;
+      const previous = rows.get(parent);
+      const column = previous && Math.abs(previous.top - boundingClientRect.top) < 8 ? previous.column + 1 : 0;
+      rows.set(parent, { top: boundingClientRect.top, column });
+      const delay = innerWidth > 767 ? Math.min(column * 100, 200) : 0;
+      animateEntry(target, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay });
     });
-  }, { threshold: .12 });
+  }, { threshold: 0, rootMargin: '0px 0px 80px 0px' });
   document.querySelectorAll('.steps-grid > li, .course, .private-layout, .method-grid > div, .inner-reveal').forEach((element) => reveal.observe(element));
 })();
