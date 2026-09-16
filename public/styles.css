@@ -1763,6 +1763,7 @@ textarea {
 }
 
 .hero--internal .hero__subtitle {
+  color: var(--color-white);
   font-size: var(--font-size-body-large);
   opacity: 0.9;
 }
@@ -2287,7 +2288,7 @@ textarea {
   }
 
   .hero--internal .hero__title {
-    font-size: var(--font-size-h1);
+    font-size: 2rem;
   }
 
   .hero--internal .hero__subtitle {

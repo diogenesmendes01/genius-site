@@ -7,7 +7,21 @@
     <!-- Primary Meta Tags -->
     <title>Metodología - GENIUS Academia de Lenguas</title>
     <meta name="title" content="Metodología - GENIUS Academia de Lenguas">
-    <meta name="description" content="Descubre cómo enseñamos portugués brasileño con profesores nativos. Conversación real desde el primer día.">
+    <meta name="description" content="Conoce las clases de portugués 100% online: cuatro modalidades en grupo con sesiones de 2 horas y clases particulares con profesores brasileños nativos.">
+
+    <link rel="canonical" href="https://www.geniusidiomas.com/metodologia.html">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.geniusidiomas.com/metodologia.html">
+    <meta property="og:title" content="Metodología - GENIUS Academia de Lenguas">
+    <meta property="og:description" content="Clases online en vivo, cuatro modalidades en grupo y clases particulares con profesores brasileños nativos.">
+    <meta property="og:image" content="https://www.geniusidiomas.com/assets/social/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Metodología - GENIUS Academia de Lenguas">
+    <meta property="twitter:description" content="Conoce las modalidades de portugués y elige según tu objetivo, disponibilidad y ritmo de estudio.">
+    <meta property="twitter:image" content="https://www.geniusidiomas.com/assets/social/og-image.png">
+    <meta name="theme-color" content="#000E38">
 
     <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -68,7 +82,7 @@
 
         .hero-badges {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
             gap: 1.5rem;
             margin-top: 3rem;
         }
@@ -89,13 +103,6 @@
             transform: translateY(-5px);
         }
 
-        .badge-card__icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 1rem;
-            color: var(--color-primary-gold);
-        }
-
         .badge-card__title {
             font-size: 1.5rem;
             font-weight: 700;
@@ -106,12 +113,6 @@
         .badge-card__text {
             font-size: 0.875rem;
             color: rgba(255, 255, 255, 0.8);
-        }
-
-        /* Seção Professores */
-        .teachers-section {
-            padding: 5rem 0;
-            background: var(--color-white);
         }
 
         .section-header-center {
@@ -133,55 +134,6 @@
             line-height: 1.6;
         }
 
-        .teachers-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-        }
-
-        .teacher-card {
-            background: var(--color-white);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-        }
-
-        .teacher-card:hover {
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            transform: translateY(-5px);
-        }
-
-        .teacher-card__image {
-            width: 100%;
-            height: 280px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-text-secondary);
-            font-size: 0.875rem;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .teacher-card__content {
-            padding: 1.5rem;
-        }
-
-        .teacher-card__name {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--color-primary-navy);
-            margin-bottom: 0.5rem;
-        }
-
-        .teacher-card__bio {
-            font-size: 0.9375rem;
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-        }
-
         /* Como Funciona */
         .how-it-works {
             padding: 5rem 0;
@@ -190,7 +142,7 @@
 
         .steps-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
             gap: 2.5rem;
             margin-top: 3rem;
         }
@@ -236,7 +188,7 @@
 
         .class-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
             gap: 3rem;
             margin-top: 3rem;
         }
@@ -263,19 +215,6 @@
             font-size: 0.875rem;
             font-weight: 700;
             border-radius: 50px;
-        }
-
-        .class-type-card__image {
-            width: 100%;
-            height: 300px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.875rem;
-            padding: 2rem;
-            text-align: center;
         }
 
         .class-type-card__content {
@@ -366,6 +305,26 @@
             border-radius: 50%;
         }
 
+        @supports (grid-template-rows: subgrid) {
+            @media (min-width: 769px) {
+                .class-grid > .class-type-card {
+                    display: grid;
+                    grid-row: span 4;
+                    grid-template-rows: subgrid;
+                    row-gap: 0;
+                }
+                .class-type-card__badge { justify-self: start; align-self: start; }
+                .class-type-card__content {
+                    display: grid;
+                    grid-row: span 3;
+                    grid-template-rows: subgrid;
+                    row-gap: 1rem;
+                }
+                .class-type-card__title,
+                .class-type-card__description { margin-bottom: 0; }
+            }
+        }
+
         @media (max-width: 768px) {
             .hero-interno__title {
                 font-size: 2rem;
@@ -400,7 +359,7 @@
 
                 <nav class="header__nav" role="navigation" aria-label="Navegación principal">
                     <a href="/sobre-nos.html" class="nav-link">Sobre Nosotros</a>
-                    <a href="/metodologia.html" class="nav-link">Metodología</a>
+                    <a href="/metodologia.html" class="nav-link active" aria-current="page">Metodología</a>
                     <a href="https://geniusidiomas.q10.com" class="btn btn--primary btn--header" target="_blank" rel="noopener noreferrer">Entrar</a>
                 </nav>
             </div>
@@ -414,102 +373,17 @@
     <section class="hero-interno">
         <div class="container">
             <div class="hero-interno__content">
-                <h1 class="hero-interno__title">Conversación en Portugués</h1>
+                <h1 class="hero-interno__title">Cómo Aprendes en GENIUS</h1>
                 <p class="hero-interno__subtitle">
-                    Aprende portugués brasileño con profesores nativos en un ambiente acogedor.
+                    Aprende portugués brasileño en clases 100% online y en vivo, con profesores nativos.
                     Desde el primer día, hablas, escuchas y practicas en situaciones reales.
                 </p>
 
                 <div class="hero-badges">
-                    <div class="badge-card">
-                        <div class="badge-card__icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                        </div>
-                        <div class="badge-card__title">4.9</div>
-                        <div class="badge-card__text">Evaluación Promedio</div>
-                    </div>
-
-                    <div class="badge-card">
-                        <div class="badge-card__icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                            </svg>
-                        </div>
-                        <div class="badge-card__title">10,000+</div>
-                        <div class="badge-card__text">Alumnos Activos</div>
-                    </div>
-
-                    <div class="badge-card">
-                        <div class="badge-card__icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                            </svg>
-                        </div>
-                        <div class="badge-card__title">200+</div>
-                        <div class="badge-card__text">Profesores Nativos</div>
-                    </div>
-
-                    <div class="badge-card">
-                        <div class="badge-card__icon">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                        </div>
-                        <div class="badge-card__title">2 horas</div>
-                        <div class="badge-card__text">Clases en Grupo</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Profesores Section -->
-    <section class="teachers-section">
-        <div class="container">
-            <div class="section-header-center">
-                <h2>Profesores Brasileños Nativos</h2>
-                <p>Aprende con profesores capacitados específicamente para enseñar a hispanohablantes. Conocen tus desafíos y saben exactamente cómo ayudarte a superarlos.</p>
-            </div>
-
-            <div class="teachers-grid">
-                <div class="teacher-card">
-                    <div class="teacher-card__image">
-                        Imagen del profesor 1<br>
-                        Dimensión sugerida: 400x400px
-                    </div>
-                    <div class="teacher-card__content">
-                        <h3 class="teacher-card__name">Prof. Ana Silva</h3>
-                        <p class="teacher-card__bio">Nativa de São Paulo con 8 años de experiencia enseñando portugués. Especializada en niveles iniciales e intermedios.</p>
-                    </div>
-                </div>
-
-                <div class="teacher-card">
-                    <div class="teacher-card__image">
-                        Imagen del profesor 2<br>
-                        Dimensión sugerida: 400x400px
-                    </div>
-                    <div class="teacher-card__content">
-                        <h3 class="teacher-card__name">Prof. Carlos Mendes</h3>
-                        <p class="teacher-card__bio">De Rio de Janeiro, experto en portugués de negocios y preparación para certificaciones internacionales.</p>
-                    </div>
-                </div>
-
-                <div class="teacher-card">
-                    <div class="teacher-card__image">
-                        Imagen del profesor 3<br>
-                        Dimensión sugerida: 400x400px
-                    </div>
-                    <div class="teacher-card__content">
-                        <h3 class="teacher-card__name">Profa. Juliana Costa</h3>
-                        <p class="teacher-card__bio">Nativa de Brasília con maestría en lingüística. Especializada en conversación y cultura brasileña.</p>
-                    </div>
+                    <div class="badge-card"><div class="badge-card__title">100% online</div><div class="badge-card__text">Clases en vivo</div></div>
+                    <div class="badge-card"><div class="badge-card__title">En grupo</div><div class="badge-card__text">4 modalidades</div></div>
+                    <div class="badge-card"><div class="badge-card__title">A tu ritmo</div><div class="badge-card__text">Clases particulares</div></div>
+                    <div class="badge-card"><div class="badge-card__title">2 horas</div><div class="badge-card__text">Por clase en grupo</div></div>
                 </div>
             </div>
         </div>
@@ -556,11 +430,6 @@
             <div class="class-grid">
                 <div class="class-type-card">
                     <div class="class-type-card__badge">Más Personalizado</div>
-                    <div class="class-type-card__image">
-                        Imagen clase individual<br>
-                        Dimensión sugerida: 600x400px<br>
-                        Mostrar profesor 1:1 con alumno
-                    </div>
                     <div class="class-type-card__content">
                         <h3 class="class-type-card__title">Clases Particulares</h3>
                         <p class="class-type-card__description">
@@ -568,7 +437,7 @@
                         </p>
                         <ul class="class-features">
                             <li>Clase individual de 1 hora o paquetes de 4, 8 y 12 horas en total</li>
-                            <li>Elige la cantidad de horas; coordinamos las sesiones según disponibilidad</li>
+                            <li>Los paquetes indican el total contratado; coordinamos las sesiones según disponibilidad</li>
                             <li>Ritmo, contenido y correcciones personalizados</li>
                             <li>Conversación, gramática, trabajo, reuniones, entrevistas o viajes</li>
                             <li>Metodología adaptada para adultos, niños y adolescentes</li>
@@ -578,11 +447,6 @@
 
                 <div class="class-type-card">
                     <div class="class-type-card__badge">Aprendizaje Compartido</div>
-                    <div class="class-type-card__image">
-                        Imagen clase grupal<br>
-                        Dimensión sugerida: 600x400px<br>
-                        Mostrar grupo pequeño de alumnos
-                    </div>
                     <div class="class-type-card__content">
                         <h3 class="class-type-card__title">Clases en Grupo</h3>
                         <p class="class-type-card__description">
@@ -642,7 +506,7 @@
                     <div class="class-type-card__badge">Enfoque Profesional</div>
                     <div class="class-type-card__content">
                         <h3 class="class-type-card__title">Intensiva</h3>
-                        <p class="class-type-card__description">Para quienes necesitan portugués para el trabajo o colaboran con Brasil. Incluye contenido para el entorno laboral con el material «Português para Empresas».</p>
+                        <p class="class-type-card__description">Para quienes necesitan avanzar rápidamente y usar el portugués en el trabajo o colaborar con equipos brasileños.</p>
                         <ul class="class-features">
                             <li>3 clases por semana · 2 horas por clase</li>
                             <li>6 horas semanales · aproximadamente 24 horas mensuales</li>
@@ -666,6 +530,7 @@
                     </div>
                 </article>
             </div>
+            <p class="courses__highlight"><strong>Incluido en la modalidad Intensiva:</strong> contenido para el entorno laboral con el material «Português para Empresas».</p>
         </div>
     </section>
 
@@ -679,15 +544,15 @@
             </div>
 
             <div class="content-block">
-                <h2>Evaluación Continua</h2>
-                <p>Cada trimestre incluye evaluaciones orales y escritas para medir:</p>
+                <h2>Práctica y Corrección</h2>
+                <p>Durante las clases, trabajas aspectos como:</p>
                 <ul>
                     <li>Claridad al hablar y pronunciación</li>
                     <li>Capacidad de comprender brasileños hablando a velocidad normal</li>
                     <li>Escritura funcional adaptada a tus necesidades</li>
                     <li>Uso correcto de estructuras gramaticales</li>
                 </ul>
-                <p>También utilizamos autoevaluación guiada en niveles intermedios y avanzados para que identifiques tus fortalezas y áreas de mejora.</p>
+                <p>En las clases particulares, el profesor adapta la práctica y las correcciones a tus dificultades y objetivos.</p>
             </div>
 
             <div class="content-block">
@@ -698,18 +563,18 @@
                     <li>Situaciones prácticas: transporte, mercado, consultas médicas, compras</li>
                     <li>Conversaciones de trabajo y negocios en niveles avanzados</li>
                     <li>Discusiones de opinión y análisis crítico de noticias</li>
-                    <li>Preparación para entrevistas laborales y certificaciones</li>
+                    <li>Práctica para entrevistas laborales y presentaciones</li>
                 </ul>
                 <p><strong>El idioma que aprendes aquí es inmediatamente útil.</strong></p>
             </div>
 
             <div class="content-block">
-                <h2>Profesores Nativos Especializados</h2>
-                <p>Las clases son impartidas por profesores nativos de portugués brasileño, capacitados específicamente para enseñar a hispanohablantes.</p>
+                <h2>Profesores Brasileños Nativos</h2>
+                <p>Las clases son impartidas por profesores brasileños nativos. Practicas conversación y comprensión del portugués en vivo.</p>
                 <p><strong>Por qué esto importa:</strong></p>
                 <ul>
                     <li>Explicaciones pensadas para quien habla español</li>
-                    <li>Conocen exactamente dónde los hispanohablantes suelen equivocarse</li>
+                    <li>Correcciones para mejorar tu comunicación en portugués</li>
                     <li>Práctica auditiva con acento real brasileño</li>
                     <li>Inmersión cultural auténtica</li>
                 </ul>
@@ -724,6 +589,14 @@
         </div>
     </section>
 
+    <section class="cta-section">
+        <div class="container">
+            <h2>Encuentra Tu Modalidad</h2>
+            <p>Cuéntanos tu objetivo y disponibilidad. Te presentamos los grupos disponibles o coordinamos tus clases particulares.</p>
+            <a href="/#contact" class="btn btn--primary btn--large">Solicitar Información</a>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -734,7 +607,7 @@
                     </div>
                     <p class="footer__tagline">
                         Academia de Lenguas especializada en portugués brasileño.
-                        Presente en 7 países de América Central.
+                        Clases 100% online para estudiantes de América Central.
                     </p>
                     <div class="footer__social">
                         <a href="#" class="footer__social-link" aria-label="Facebook">
