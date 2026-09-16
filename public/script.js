@@ -80,7 +80,7 @@ if (contactForm) {
           submitButton.style.background = '';
 
           // Show success message
-          alert('¡Gracias! Te contactaremos pronto para tu clase gratuita.');
+          alert('¡Gracias! Te contactaremos pronto con información sobre nuestras clases.');
         }, 2000);
 
         // Send to analytics
@@ -101,7 +101,7 @@ if (contactForm) {
       const submitButton = contactForm.querySelector('button[type="submit"]');
       submitButton.disabled = false;
       submitButton.innerHTML = submitButton.innerHTML.includes('Enviando')
-        ? 'Reservar Clase Gratis'
+        ? 'Solicitar Información'
         : submitButton.innerHTML;
 
       alert('Hubo un error. Por favor intenta de nuevo o contáctanos vía WhatsApp.');

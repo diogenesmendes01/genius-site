@@ -31,16 +31,16 @@
   </text>
 
   <text x="120" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="500" fill="white" opacity="0.9">
-    en 2 Años
+    en 1 Año y 6 Meses
   </text>
 
   <text x="120" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="400" fill="#DCAF63" opacity="0.9">
-    Certificación Internacional Incluida
+    Clases 100% online
   </text>
 
   <!-- Badge -->
   <rect x="120" y="555" width="240" height="50" rx="25" fill="#DCAF63"/>
   <text x="240" y="587" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" fill="#000E38" text-anchor="middle">
-    Primera Clase Gratis
+    Conoce los Cursos
   </text>
 </svg>
