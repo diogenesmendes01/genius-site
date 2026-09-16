@@ -55,13 +55,14 @@
     <!-- Manifest -->
     <link rel="manifest" href="/manifest.json">
 
-    <!-- Google Fonts - Montserrat & Cinzel (alternativa a Trajan Pro) -->
+    <!-- Editorial type for the homepage -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="home-design.css">
 
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
@@ -165,14 +166,14 @@
 }
     </script>
 </head>
-<body>
+<body class="genius-home">
     <!-- Header -->
     <header class="header" role="banner">
         <div class="container">
             <div class="header__content">
                 <div class="header__logo">
                     <a href="/" aria-label="GENIUS Academia de Lenguas - Inicio">
-                        <img src="/assets/LOGO GENIUS POSITIVO.png" alt="GENIUS Academia de Lenguas" class="header__logo-img">
+                        <img src="/assets/LOGO GENIUS NEGATIVO.png" alt="GENIUS Academia de Lenguas" class="header__logo-img" width="1970" height="445">
                     </a>
                 </div>
 
@@ -194,12 +195,14 @@
     <!-- Mobile Menu Overlay -->
     <div class="mobile-menu-overlay"></div>
 
+    <main id="main-content">
     <!-- Hero Section -->
     <section class="hero">
+        <img class="hero__backdrop" src="/assets/genius-hero-background.jpg" alt="" width="1729" height="910" fetchpriority="high">
         <div class="container">
             <div class="hero__content">
                 <div class="hero__text">
-                    <h1 class="hero__title">Habla Português con Fluidez en 1 Año y 6 Meses</h1>
+                    <h1 class="hero__title"><span>Habla Português con</span> <span>Fluidez en</span> <span class="hero__title-accent">1 Año y 6 Meses</span></h1>
                     <p class="hero__subtitle">
                         Aprenda con profesores nativos brasileños.
                         <strong>Clases 100% online</strong> en toda América Central.
@@ -216,33 +219,8 @@
                         </a>
                     </div>
                 </div>
-                <a href="#courses" class="hero__image hero-hidden" aria-label="Conoce las modalidades de portugués">
-                    <img src="/assets/social/og-image.svg" alt="GENIUS: clases 100% online con profesores brasileños nativos. Habla portugués con fluidez en 1 año y 6 meses." class="hero__image-img" width="1200" height="630">
-                </a>
             </div>
 
-            <!-- Hero Indicators -->
-            <div class="hero__indicators">
-                <button class="hero__indicator active" aria-label="Ver texto" data-slide="0"></button>
-                <button class="hero__indicator" aria-label="Ver imagen" data-slide="1"></button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Proof Bar -->
-    <section class="proof-bar">
-        <div class="container">
-            <p class="proof-bar__text">Te preparamos para los certificados internacionales de portugués</p>
-            <div class="proof-bar__logos">
-                <!-- CELPE-BRAS Logo -->
-                <div class="partner-logo">
-                    <img loading="lazy" src="/assets/logos/celpe-bras.png" alt="CELPE-BRAS - Certificado de Proficiência em Língua Portuguesa para Estrangeiros" class="partner-logo__image">
-                </div>
-                <!-- CAPLE Logo -->
-                <div class="partner-logo">
-                    <img loading="lazy" src="/assets/logos/caple.png" alt="CAPLE - Centro de Avaliação de Português Língua Estrangeira" class="partner-logo__image">
-                </div>
-            </div>
         </div>
     </section>
 
@@ -330,74 +308,79 @@
                 <p class="section-subtitle">Clases online en vivo con profesores brasileños nativos. Elige el ritmo que se adapte a tu objetivo y disponibilidad.</p>
             </div>
             <div class="courses__grid">
-                <article class="course-card">
+                <article class="course-card course-card--group">
                     <div class="course-card__image"><img loading="lazy" src="/assets/rapaz-estudando.png" alt="" class="course-card__img"></div>
                     <div class="course-card__content">
-                        <p class="course-card__eyebrow">Progreso constante</p>
-                        <h3 class="course-card__title">Regular</h3>
-                        <p class="course-card__description">Para quienes quieren aprender progresivamente y pueden dedicar un día por semana, sin urgencia.</p>
-                        <ul class="course-card__features">
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>1 clase por semana · 2 horas por clase</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>2 horas semanales · aprox. 8 mensuales</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Aprox. 3 meses por nivel</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Programa de aprox. 1 año y medio</span></li>
-                        </ul>
-
+                        <div class="course-card__heading">
+                            <h3 class="course-card__title">Regular</h3>
+                            <p class="course-card__eyebrow">Progreso constante</p>
+                        </div>
+                        <p class="course-card__description">Aprende progresivamente, sin urgencia, dedicando un día por semana al portugués.</p>
+                        <dl class="course-card__details">
+                            <div><dt>Frecuencia</dt><dd>1 clase por semana<span>2 horas por clase</span></dd></div>
+                            <div><dt>Carga aproximada</dt><dd>2 h/semana · 8 h/mes</dd></div>
+                            <div><dt>Duración por nivel</dt><dd>Aprox. 3 meses</dd></div>
+                            <div><dt>Programa completo</dt><dd>Aprox. 1 año y medio</dd></div>
+                        </dl>
                         <a href="#contact" data-course="regular" class="btn btn--secondary btn--block" aria-label="Consultar horarios de Regular">Consultar Horarios</a>
                     </div>
                 </article>
 
-                <article class="course-card">
+                <article class="course-card course-card--group">
                     <div class="course-card__image"><img loading="lazy" src="/assets/conversa-em-grupo.png" alt="" class="course-card__img"></div>
                     <div class="course-card__content">
-                        <p class="course-card__eyebrow">Más ritmo, más práctica</p>
-                        <h3 class="course-card__title">Semi-intensiva</h3>
-                        <p class="course-card__description">Para quienes pueden estudiar dos días por semana y buscan más contacto con el idioma y un avance a medio plazo.</p>
-                        <ul class="course-card__features">
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>2 clases por semana · 2 horas por clase</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>4 horas semanales · aprox. 16 mensuales</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Aprox. 2 meses por nivel</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Programa de aprox. 1 año</span></li>
-                        </ul>
-
+                        <div class="course-card__heading">
+                            <h3 class="course-card__title">Semi-intensiva</h3>
+                            <p class="course-card__eyebrow">Más ritmo, más práctica</p>
+                        </div>
+                        <p class="course-card__description">Avanza con más contacto con el idioma, estudiando dos días por semana y con una meta a medio plazo.</p>
+                        <dl class="course-card__details">
+                            <div><dt>Frecuencia</dt><dd>2 clases por semana<span>2 horas por clase</span></dd></div>
+                            <div><dt>Carga aproximada</dt><dd>4 h/semana · 16 h/mes</dd></div>
+                            <div><dt>Duración por nivel</dt><dd>Aprox. 2 meses</dd></div>
+                            <div><dt>Programa completo</dt><dd>Aprox. 1 año</dd></div>
+                        </dl>
                         <a href="#contact" data-course="semi-intensive" class="btn btn--secondary btn--block" aria-label="Consultar horarios de Semi-intensiva">Consultar Horarios</a>
                     </div>
                 </article>
 
-                <article class="course-card">
+                <article class="course-card course-card--group">
                     <div class="course-card__image"><img loading="lazy" src="/assets/rapaz-negocio.png" alt="" class="course-card__img"></div>
                     <div class="course-card__content">
-                        <p class="course-card__eyebrow">Portugués para tu vida profesional</p>
-                        <h3 class="course-card__title">Intensiva</h3>
-                        <p class="course-card__description">Para quienes necesitan avanzar rápidamente y usar el portugués en el trabajo, en reuniones o con equipos brasileños.</p>
-                        <ul class="course-card__features">
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>3 clases por semana · 2 horas por clase</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>6 horas semanales · aprox. 24 mensuales</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Aprox. 1 mes y medio por nivel</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Programa de aprox. 10 meses</span></li>
-                        </ul>
-                        <p class="course-card__note">Incluye contenido para el entorno laboral con el material «Português para Empresas».</p>
+                        <div class="course-card__heading">
+                            <h3 class="course-card__title">Intensiva</h3>
+                            <p class="course-card__eyebrow">Enfoque profesional</p>
+                        </div>
+                        <p class="course-card__description">Avanza rápidamente para usar el portugués en el trabajo, en reuniones o con equipos brasileños.</p>
+                        <dl class="course-card__details">
+                            <div><dt>Frecuencia</dt><dd>3 clases por semana<span>2 horas por clase</span></dd></div>
+                            <div><dt>Carga aproximada</dt><dd>6 h/semana · 24 h/mes</dd></div>
+                            <div><dt>Duración por nivel</dt><dd>Aprox. 1 mes y medio</dd></div>
+                            <div><dt>Programa completo</dt><dd>Aprox. 10 meses</dd></div>
+                        </dl>
                         <a href="#contact" data-course="intensive" class="btn btn--secondary btn--block" aria-label="Consultar horarios de Intensiva">Consultar Horarios</a>
                     </div>
                 </article>
 
-                <article class="course-card">
+                <article class="course-card course-card--group">
                     <div class="course-card__image"><img loading="lazy" src="/assets/menina-viagem.png" alt="" class="course-card__img"></div>
                     <div class="course-card__content">
-                        <p class="course-card__eyebrow">Máxima dedicación</p>
-                        <h3 class="course-card__title">Súper intensiva</h3>
-                        <p class="course-card__description">Para quienes tienen alta disponibilidad y necesitan avanzar por una oportunidad profesional, un viaje o una mudanza a Brasil.</p>
-                        <ul class="course-card__features">
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>5 clases por semana · 2 horas por clase</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>10 horas semanales · aprox. 40 mensuales</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Aprox. 1 mes por nivel</span></li>
-                            <li><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg><span>Programa de aprox. 6 meses</span></li>
-                        </ul>
-
+                        <div class="course-card__heading">
+                            <h3 class="course-card__title">Súper intensiva</h3>
+                            <p class="course-card__eyebrow">Máxima dedicación</p>
+                        </div>
+                        <p class="course-card__description">Para quienes tienen alta disponibilidad y una meta urgente: trabajo, viaje o mudanza a Brasil.</p>
+                        <dl class="course-card__details">
+                            <div><dt>Frecuencia</dt><dd>5 clases por semana<span>2 horas por clase</span></dd></div>
+                            <div><dt>Carga aproximada</dt><dd>10 h/semana · 40 h/mes</dd></div>
+                            <div><dt>Duración por nivel</dt><dd>Aprox. 1 mes</dd></div>
+                            <div><dt>Programa completo</dt><dd>Aprox. 6 meses</dd></div>
+                        </dl>
                         <a href="#contact" data-course="super-intensive" class="btn btn--secondary btn--block" aria-label="Consultar horarios de Súper intensiva">Consultar Horarios</a>
                     </div>
                 </article>
             </div>
+            <p class="courses__highlight"><strong>Incluido en la modalidad Intensiva:</strong> contenido para el entorno laboral con el material «Português para Empresas».</p>
             <p class="courses__note">Todas las modalidades en grupo tienen clases de 2 horas. Las duraciones del programa y de cada nivel son aproximadas; la carga mensual también es aproximada.</p>
             <article class="course-card course-card--private">
                 <div class="course-card__image"><img loading="lazy" src="/assets/meinina-estudando.png" alt="" class="course-card__img"></div>
@@ -542,17 +525,21 @@
                 <form class="cta__form" id="contactForm">
                     <div class="form-row">
                         <div class="form-group">
-                            <input type="text" id="name" name="name" placeholder="Tu nombre completo" required>
+                            <label for="name">Tu nombre completo</label>
+                            <input type="text" id="name" name="name" placeholder="Tu nombre completo" autocomplete="name" required>
                         </div>
                         <div class="form-group">
-                            <input type="email" id="email" name="email" placeholder="Tu email" required>
+                            <label for="email">Tu email</label>
+                            <input type="email" id="email" name="email" placeholder="Tu email" autocomplete="email" required>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <input type="tel" id="phone" name="phone" placeholder="WhatsApp" required>
+                            <label for="phone">WhatsApp</label>
+                            <input type="tel" id="phone" name="phone" placeholder="WhatsApp" autocomplete="tel" required>
                         </div>
                         <div class="form-group">
+                            <label for="course">Modalidad de interés</label>
                             <select id="course" name="course" aria-label="Modalidad de interés" required>
                                 <option value="">Modalidad de interés</option>
                                 <option value="regular">Regular</option>
@@ -564,6 +551,7 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="country">País</label>
                         <select id="country" name="country" aria-label="País" required>
                             <option value="">Tu país</option>
                             <option value="cr">Costa Rica</option>
@@ -590,6 +578,7 @@
         </div>
     </section>
 
+    </main>
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -681,5 +670,6 @@
 
     <!-- Scripts -->
     <script src="script.js"></script>
+    <script src="home-design.js"></script>
 </body>
 </html>
