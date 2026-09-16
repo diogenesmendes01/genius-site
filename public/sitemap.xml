@@ -6,24 +6,24 @@
 
   <!-- Página Principal -->
   <url>
-    <loc>https://geniusacademia.com/</loc>
-    <lastmod>2025-01-26</lastmod>
+    <loc>https://www.geniusidiomas.com/</loc>
+    <lastmod>2026-09-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- Sobre Nosotros -->
   <url>
-    <loc>https://geniusacademia.com/sobre-nos.html</loc>
-    <lastmod>2025-01-26</lastmod>
+    <loc>https://www.geniusidiomas.com/sobre-nos.html</loc>
+    <lastmod>2026-09-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Metodología -->
   <url>
-    <loc>https://geniusacademia.com/metodologia.html</loc>
-    <lastmod>2025-01-26</lastmod>
+    <loc>https://www.geniusidiomas.com/metodologia.html</loc>
+    <lastmod>2026-09-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

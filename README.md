@@ -1,5 +1,11 @@
 # GENIUS Academia de Lenguas - Landing Page
 
+## Landing atual — setembro de 2026
+
+A home e as páginas `metodologia.html` e `sobre-nos.html` usam o novo visual navy, cream e dourado, com Cormorant Garamond e Manrope. Os arquivos publicados estão em `public/`; o contato da landing é feito pelo WhatsApp, e o Instagram é `@geniusacademiadelenguas`.
+
+Consulte [a documentação da landing atual](docs/landing-page.md) para estrutura, prévia local, recursos e validação. As seções seguintes deste README descrevem a versão anterior do site.
+
 ![GENIUS Academia](https://img.shields.io/badge/GENIUS-Academia%20de%20Lenguas-0EA5E9?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-10B981?style=for-the-badge)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)

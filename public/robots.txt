@@ -4,7 +4,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://geniusacademia.com/sitemap.xml
+Sitemap: https://www.geniusidiomas.com/sitemap.xml
 
 # Bloquear arquivos desnecessários
 Disallow: /api/
