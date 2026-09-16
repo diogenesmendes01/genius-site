@@ -39,7 +39,7 @@ if (contactForm) {
       email: formData.get('email'),
       phone: formData.get('phone'),
       course: formData.get('course'),
-      country: 'central-america'
+      country: formData.get('country')
     };
 
     // Validate
@@ -80,7 +80,7 @@ if (contactForm) {
           submitButton.style.background = '';
 
           // Show success message
-          alert('¡Gracias! Te contactaremos pronto para tu clase gratuita.');
+          alert('¡Gracias! Te contactaremos pronto con información sobre nuestras clases.');
         }, 2000);
 
         // Send to analytics
@@ -101,7 +101,7 @@ if (contactForm) {
       const submitButton = contactForm.querySelector('button[type="submit"]');
       submitButton.disabled = false;
       submitButton.innerHTML = submitButton.innerHTML.includes('Enviando')
-        ? 'Reservar Clase Gratis'
+        ? 'Solicitar Información'
         : submitButton.innerHTML;
 
       alert('Hubo un error. Por favor intenta de nuevo o contáctanos vía WhatsApp.');
@@ -391,6 +391,14 @@ function trackEvent(category, action, label) {
 document.querySelectorAll('.btn--primary').forEach(btn => {
   btn.addEventListener('click', () => {
     trackEvent('engagement', 'cta_click', btn.textContent.trim());
+  });
+});
+
+// Keep the selected modality when opening the contact form.
+document.querySelectorAll('[data-course]').forEach(link => {
+  link.addEventListener('click', () => {
+    const courseSelect = document.getElementById('course');
+    if (courseSelect) courseSelect.value = link.dataset.course;
   });
 });
 

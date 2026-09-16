@@ -36,9 +36,15 @@ export class EmailService {
 
   async sendLeadNotification(lead: CreateLeadDto): Promise<boolean> {
     const courseNames = {
+      regular: 'Regular',
+      'semi-intensive': 'Semi-intensiva',
+      intensive: 'Intensiva',
+      'super-intensive': 'Súper intensiva',
+      private: 'Clases particulares',
       business: 'Portugués para Negocios',
       travel: 'Portugués para Viajes',
       exam: 'Preparación para Exámenes',
+      accelerated: 'Curso Acelerado',
       general: 'Curso General',
     };
 
@@ -83,7 +89,7 @@ export class EmailService {
       </div>
 
       <div class="info-box">
-        <p><span class="label">📚 Curso de Interesse:</span><span class="value">${courseNames[lead.course]}</span></p>
+        <p><span class="label">📚 Modalidade de Interesse:</span><span class="value">${courseNames[lead.course]}</span></p>
         <p><span class="label">🌎 País:</span><span class="value">${countryNames[lead.country]}</span></p>
       </div>
 
@@ -111,7 +117,7 @@ Novo Lead Recebido!
 Nome: ${lead.name}
 Email: ${lead.email}
 Telefone: ${lead.phone}
-Curso: ${courseNames[lead.course]}
+Modalidade: ${courseNames[lead.course]}
 País: ${countryNames[lead.country]}
 Data/Hora: ${new Date().toLocaleString('es-ES', { timeZone: 'America/Costa_Rica' })}
       `,
@@ -131,7 +137,7 @@ Data/Hora: ${new Date().toLocaleString('es-ES', { timeZone: 'America/Costa_Rica'
         this.logger.log(`Nome: ${lead.name}`);
         this.logger.log(`Email: ${lead.email}`);
         this.logger.log(`Telefone: ${lead.phone}`);
-        this.logger.log(`Curso: ${courseNames[lead.course]}`);
+        this.logger.log(`Modalidade: ${courseNames[lead.course]}`);
         this.logger.log(`País: ${countryNames[lead.country]}`);
         this.logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         return true;

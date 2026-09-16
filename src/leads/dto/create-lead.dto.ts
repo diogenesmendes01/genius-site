@@ -15,11 +15,24 @@ export class CreateLeadDto {
   @MinLength(8, { message: 'Telefone deve ter pelo menos 8 dígitos' })
   phone: string;
 
-  @IsNotEmpty({ message: 'Curso é obrigatório' })
+  @IsNotEmpty({ message: 'Modalidade é obrigatória' })
   @IsString()
-  @IsIn(['business', 'travel', 'exam', 'general'], {
-    message: 'Curso inválido',
-  })
+  @IsIn(
+    [
+      'regular',
+      'semi-intensive',
+      'intensive',
+      'super-intensive',
+      'private',
+      // Keep accepting submissions from older, cached versions of the form.
+      'business',
+      'travel',
+      'exam',
+      'accelerated',
+      'general',
+    ],
+    { message: 'Modalidade inválida' },
+  )
   course: string;
 
   @IsNotEmpty({ message: 'País é obrigatório' })
