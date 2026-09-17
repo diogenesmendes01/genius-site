@@ -38,6 +38,8 @@ Nas três páginas, o hero funciona como uma sequência de fundo: as três cenas
 
 A reprodução é suspensa quando a aba fica oculta ou o hero sai da tela. Há uma pausa acessível por Escape ou por um botão que aparece somente ao receber foco pelo teclado. Com movimento reduzido, a galeria usa uma troca mais espaçada (dez segundos) e somente opacidade por 400 ms, sem zoom ou deslocamento.
 
+No mobile, a foto ocupa o fundo inteiro do hero e se integra ao navy por degradês. Título e introdução ficam à esquerda, professor ao lado e CTA na base. O ajuste se aplica também às páginas internas; o desktop conserva sua composição.
+
 A primeira foto continua prioritária e funciona sem JavaScript. As outras só começam a carregar após a primeira; uma foto apenas substitui a atual quando estiver carregada e decodificada. Falhas preservam a foto visível. [Prompts e procedência das novas imagens](hero-gallery-images.md).
 
 ## Metadados e compatibilidade

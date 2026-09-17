@@ -238,22 +238,23 @@ details[open] > summary .icon { transform: rotate(90deg); }
   body { font-size: 16px; }
   .wrap,.catalog-wrap { width: calc(100% - 48px); }
   h2 { font-size: 40px; }
-  .opening { min-height: 0; padding-bottom: 236px; }
+  .opening { min-height: 640px; padding-bottom: 0; }
   .site-header { min-height: 76px; }
   .brand img { width: 200px; }
   .student-link { font-size: 12px; }
-  .class-visual { top: auto; height: 310px; }
-  .class-visual > img { object-position: 85% center; }
-  .class-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg,var(--navy),transparent 30%,transparent 85%,rgb(11 28 58 / 35%)); }
+  .class-visual { inset: 0; height: 100%; }
+  .class-visual > img { object-position: 51% center; }
+  .class-visual > img[src$="hero-class-practice.webp"] { object-position: 57% center; }
+  .class-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg,rgb(11 28 58 / 97%),rgb(11 28 58 / 94%) 35%,rgb(11 28 58 / 78%) 60%,rgb(11 28 58 / 22%) 82%,rgb(11 28 58 / 12%)),linear-gradient(180deg,rgb(11 28 58 / 80%),rgb(11 28 58 / 30%) 18%,transparent 32%,rgb(11 28 58 / 8%) 48%,rgb(11 28 58 / 75%) 79%,var(--navy)); }
   .class-visual figcaption { z-index: 1; right: 20px; bottom: 12px; font-size: 10px; }
   .hero-motion-toggle:focus-visible { right: 16px; bottom: 36px; }
-  .hero { padding-block: 18px 22px; }
-  .hero-copy { width: 100%; max-width: none; }
+  .hero { display: flex; min-height: 564px; padding-block: 34px 44px; }
+  .hero-copy { display: flex; flex-direction: column; flex: 1; width: 100%; max-width: none; }
   .hero-copy > .label { font-size: 11px; margin-bottom: 12px; }
-  .hero h1 { font-size: clamp(48px,14.3vw,70px); line-height: .94; margin-bottom: 16px; }
-  .hero h1 span { display: inline; }
-  .hero-sub { font-size: 16px; line-height: 1.5; margin-bottom: 18px; }
-  .hero .button { width: 100%; min-height: 54px; font-size: 16px; }
+  .hero h1 { font-size: clamp(44px,12.5vw,54px); line-height: .96; margin-bottom: 20px; }
+  .hero h1 span { display: block; }
+  .hero-sub { max-width: 23ch; font-size: 16px; line-height: 1.5; margin-bottom: 24px; }
+  .hero .button { width: 100%; min-height: 54px; margin-top: auto; font-size: 16px; }
   .hero-proof { margin-top: 14px; font-size: 11px; }
   .hero-how { display: none; }
   .steps { padding-block: 36px 24px; }
@@ -328,9 +329,9 @@ details[open] > summary .icon { transform: rotate(90deg); }
 @media (max-width:359px) {
   .wrap,.catalog-wrap { width: calc(100% - 36px); }
   .brand img { width: 180px; }
-  .opening { padding-bottom: 208px; }
-  .class-visual { height: 272px; }
-  .hero h1 { font-size: 48px; }
+  .opening { min-height: 620px; }
+  .hero { min-height: 544px; }
+  .hero h1 { font-size: 44px; }
   .hero-proof { font-size: 10px; }
   .button { padding-inline: 18px; }
 }

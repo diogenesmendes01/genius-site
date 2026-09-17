@@ -14,11 +14,23 @@ A foto inicial continua prioritária; as demais carregam depois dela e só apare
 
 As imagens são representações geradas com a ferramenta embutida. A legenda existente foi preservada. Os [prompts completos e arquivos](hero-gallery-images.md) registram a procedência.
 
+## Composição mobile
+
+A imagem ocupa o fundo inteiro do hero até 767 px, com degradê navy lateral e na base. O título e a introdução ficam à esquerda; o professor aparece ao lado do conteúdo e o CTA ocupa a base. Os recortes compartilham o mesmo enquadramento entre as cenas, com ajuste específico para a terceira foto. As páginas internas seguem a mesma composição. O desktop mantém o layout anterior.
+
+| Before | After | Why |
+| --- | --- | --- |
+| Foto de 310 px abaixo do texto, com espaço reservado no fim do hero | Foto integrada ao fundo inteiro | Eliminar a impressão de duas seções empilhadas |
+| Texto ocupando toda a largura | Título e introdução mais estreitos no mobile | Manter leitura e rosto visíveis ao mesmo tempo |
+| CTA acima da foto separada | CTA na base sobre navy | Integrar a ação à composição e manter contraste |
+
+Os links dos dois estilos incluem versões calculadas a partir do conteúdo para evitar que o navegador misture o layout novo com CSS anterior em cache.
+
 ## Verificação
 
 Validação: 18 suítes e 211 testes aprovados, incluindo 15 casos da galeria; `git diff --check` limpo.
 
-Os testes executam o JavaScript real com temporizadores, aleatoriedade controlada, preferências de movimento, visibilidade e carregamentos atrasados ou com falha. A conferência no navegador cobre alternância automática, ausência dos controles visíveis e recortes no desktop e no mobile.
+Os testes executam o JavaScript real com temporizadores, aleatoriedade controlada, preferências de movimento, visibilidade e carregamentos atrasados ou com falha. A conferência no navegador cobre alternância automática, ausência dos controles visíveis e recortes no desktop e no mobile. O ajuste visual mobile foi conferido em 320, 390 e 430 px nas três páginas, incluindo fotos diferentes durante a reprodução; desktop conferido em 1440 px. Essa alteração de CSS não modifica o JavaScript da galeria.
 
 ![Hero no desktop sem controles visíveis](images/hero-gallery-desktop.jpg)
 
