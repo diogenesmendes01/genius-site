@@ -24,7 +24,7 @@ A imagem ocupa o fundo inteiro do hero até 767 px, com degradê navy lateral e 
 | Texto ocupando toda a largura | Título e introdução mais estreitos no mobile | Manter leitura e rosto visíveis ao mesmo tempo |
 | CTA acima da foto separada | CTA na base sobre navy | Integrar a ação à composição e manter contraste |
 
-Os links dos dois estilos incluem versões calculadas a partir do conteúdo para evitar que o navegador misture o layout novo com CSS anterior em cache. Um teste recalcula o sha256 de cada folha e falha quando a versão do link fica para trás do arquivo. O recorte da terceira cena é aplicado pela classe `hero-slide-practice`, e não pelo nome do arquivo, porque as imagens do hero já foram renomeadas entre revisões.
+Os links dos dois estilos incluem versões calculadas a partir do conteúdo para evitar que o navegador misture o layout novo com CSS anterior em cache. Um teste recalcula o sha256 de cada folha e falha quando a versão do link fica para trás do arquivo. O recorte da terceira cena é aplicado pela classe `hero-slide-practice`, e não pelo nome do arquivo: o hero já carrega sufixo de revisão (`hero-class-v8`), e uma troca de nome perderia o enquadramento em silêncio, sem erro nem teste vermelho.
 
 ## Verificação
 
