@@ -1,24 +1,25 @@
-# Galeria de fotos do hero
+# Sequência de fotos do hero
 
-A pedido do usuário, a home, Metodología e Sobre Nosotros agora alternam três cenas ilustrativas com pessoas diferentes. O conteúdo comercial, a paleta e a estrutura de seções foram preservados.
+A home, Metodología e Sobre Nosotros mostram três cenas ilustrativas com pessoas diferentes em uma sequência automática, parecida com um vídeo de fundo. Título, CTA, paleta e conteúdo das páginas continuam fixos.
 
 | Before | After | Why |
 | --- | --- | --- |
-| Uma única foto no hero | Três fotos, passagem a cada 8 segundos e fade de 600 ms | Mostrar diferentes cenas de aula mantendo a leitura do título e do CTA |
-| Imagem estática sem controles | Seletores 01–03 e controle de pausa | Permitir ao visitante escolher e interromper a alternância |
-| Um recurso prioritário | A foto inicial permanece prioritária; as demais carregam depois | Preservar o primeiro carregamento e evitar troca por imagem incompleta |
-| Nenhuma alternância | Pausas por foco, seleção manual, hover, aba oculta e hero fora da tela; seleção manual com movimento reduzido | Evitar movimento durante navegação e processamento desnecessário |
+| Botão de fotos, pausa e seletores 01–03 visíveis | Nenhum controle de fotos visível no uso comum | Manter o hero limpo, com a aparência de vídeo solicitada |
+| Fotos na sequência 1–2–3 | Ordem embaralhada, sem repetição imediata | Variar as cenas sem cair na mesma imagem duas vezes seguidas |
+| Troca a cada 8 segundos, fade de 600 ms | Troca a cada 6 segundos, fade de 1,2 segundo | Dar continuidade e suavidade à passagem entre cenas |
+| Hover e foco interrompiam a reprodução | Reprodução continua durante a interação com o conteúdo | Evitar que a sequência pare ao apontar para o hero ou o CTA |
+| Movimento reduzido exigia seleção manual | Trocas a cada 10 segundos, apenas opacidade por 400 ms | Manter a sequência automática com um efeito mais discreto e sem movimento espacial |
 
-As imagens novas foram geradas com a ferramenta embutida, mantendo o notebook e o professor como foco, luz quente e uma pequena bandeira brasileira apenas no cenário da chamada. A legenda informa que são representações. Os [prompts completos e arquivos](hero-gallery-images.md) registram a procedência.
+A foto inicial continua prioritária; as demais carregam depois dela e só aparecem após download e decodificação. Uma falha conserva a foto atual e exclui o recurso com erro da sequência. A galeria para quando sai da tela ou a aba fica oculta. Escape pausa; um botão acessível, visível apenas quando recebe foco pelo teclado, permite pausar e retomar.
+
+As imagens são representações geradas com a ferramenta embutida. A legenda existente foi preservada. Os [prompts completos e arquivos](hero-gallery-images.md) registram a procedência.
 
 ## Verificação
 
-- Testes de regressão executam o JavaScript real da galeria e simulam temporizadores, preferência de movimento, foco, visibilidade e downloads atrasados ou com falha.
-- A revisão independente corrigiu dois casos: uma seleção manual não é descartada ao sair do hero durante o download; o controle de próxima foto ignora recursos que falharam.
-- Conferência visual e de controles em desktop e mobile, mantendo rosto, botão de contato e seleção de fotos visíveis.
-- `npm run build` aprovado; `npm test -- --runInBand`: 18 suítes e 209 testes aprovados, incluindo 13 testes da galeria; `git diff --check` limpo.
-- Navegador conferido em 1440, 390 e 320 pixels de largura, sem overflow horizontal nem erros de console. A preferência de movimento reduzido estava ativa no navegador: seleção e ausência de animação verificadas nele; cadência automática, pausas e mudanças de preferência verificadas nos testes de regressão.
+Validação: 18 suítes e 211 testes aprovados, incluindo 15 casos da galeria; `git diff --check` limpo.
 
-![Hero com a segunda cena no desktop](images/hero-gallery-desktop.jpg)
+Os testes executam o JavaScript real com temporizadores, aleatoriedade controlada, preferências de movimento, visibilidade e carregamentos atrasados ou com falha. A conferência no navegador cobre alternância automática, ausência dos controles visíveis e recortes no desktop e no mobile.
 
-![Hero com a terceira cena no mobile](images/hero-gallery-mobile.jpg)
+![Hero no desktop sem controles visíveis](images/hero-gallery-desktop.jpg)
+
+![Hero no mobile sem controles visíveis](images/hero-gallery-mobile.jpg)

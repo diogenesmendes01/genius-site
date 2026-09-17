@@ -3,23 +3,19 @@
 
   document.querySelectorAll('[data-hero-gallery]').forEach((gallery) => {
     const slides = [...gallery.querySelectorAll('[data-hero-slide]')];
-    const controls = gallery.querySelector('[data-hero-controls]');
     const toggle = gallery.querySelector('[data-hero-toggle]');
     const label = gallery.querySelector('[data-hero-toggle-label]');
-    const selectors = [...gallery.querySelectorAll('[data-hero-select]')];
-    const status = gallery.querySelector('[data-hero-status]');
-    if (slides.length < 2 || !controls || !toggle || !label) return;
+    if (slides.length < 2 || !toggle || !label) return;
 
     const loads = new Map();
     const failed = new Set();
     let active = Math.max(0, slides.findIndex((slide) => slide.hasAttribute('data-active')));
     let paused = false;
-    let hovering = false;
+    let ready = false;
     let visible = typeof IntersectionObserver === 'undefined';
     let timer;
     let revision = 0;
-    let pendingManual = false;
-    let pointerAction;
+    let remaining = [];
 
     const loadSlide = (index) => {
       if (loads.has(index)) return loads.get(index);
@@ -34,10 +30,7 @@
           if (loaded && image.decode) {
             try { await image.decode(); } catch { loaded = false; }
           }
-          if (!loaded) {
-            failed.add(index);
-            if (selectors[index]) selectors[index].disabled = true;
-          }
+          if (!loaded) failed.add(index);
           resolve(loaded);
         };
         const onLoad = () => finish(image.naturalWidth > 0);
@@ -55,100 +48,65 @@
       return promise;
     };
 
-    // The original image remains the LCP resource. Extra requests wait for it.
-    const initialReady = loadSlide(active);
-    const canPlay = () => !paused && !hovering && visible && !document.hidden && !reducedMotion.matches;
-    const updateLabel = () => {
-      label.textContent = reducedMotion.matches ? 'Ver fotos' : paused ? 'Reanudar' : 'Pausar';
-      toggle.setAttribute('aria-label', reducedMotion.matches
-        ? 'Ver la siguiente foto' : paused ? 'Reanudar las fotos' : 'Pausar las fotos');
-    };
+    const canPlay = () => ready && !paused && visible && !document.hidden;
     const schedule = () => {
       clearTimeout(timer);
       if (canPlay() && slides.some((_, index) => index !== active && !failed.has(index))) {
-        timer = setTimeout(() => changePhoto((active + 1) % slides.length, false), 8000);
+        timer = setTimeout(changePhoto, reducedMotion.matches ? 10000 : 6000);
       }
-      updateLabel();
+      label.textContent = paused ? 'Reanudar animación' : 'Pausar animación';
+      toggle.setAttribute('aria-label', `${label.textContent} de las fotos`);
     };
-    const interrupt = (cancelManual = false) => {
-      if (!pendingManual || cancelManual) {
-        revision += 1;
-        pendingManual = false;
-      }
+    const interrupt = () => {
+      revision += 1;
       schedule();
     };
-    const changePhoto = async (index, manual) => {
-      clearTimeout(timer);
+    const nextPhoto = () => {
+      remaining = remaining.filter((index) => index !== active && !failed.has(index));
+      if (!remaining.length) {
+        remaining = slides.map((_, index) => index).filter((index) => index !== active && !failed.has(index));
+        // Shuffle the remaining photos; show each before choosing a fresh order.
+        for (let i = remaining.length - 1; i > 0; i -= 1) {
+          const other = Math.floor(Math.random() * (i + 1));
+          [remaining[i], remaining[other]] = [remaining[other], remaining[i]];
+        }
+      }
+      return remaining[remaining.length - 1];
+    };
+    const changePhoto = async () => {
       const request = ++revision;
-      pendingManual = manual;
-      await initialReady;
-      for (let offset = 0; offset < (manual ? 1 : slides.length - 1); offset += 1) {
-        const next = (index + offset) % slides.length;
-        if (next === active) break;
+      let next = nextPhoto();
+      while (next !== undefined && canPlay()) {
         const loaded = await loadSlide(next);
-        // A late download must not undo a newer selection or a pause.
-        if (request !== revision || (!manual && !canPlay())) return;
-        if (!loaded) continue;
-        gallery.toggleAttribute('data-instant', manual || reducedMotion.matches);
-        slides.forEach((slide, position) => {
-          const selected = position === next;
-          slide.toggleAttribute('data-active', selected);
-          if (selected) slide.removeAttribute('aria-hidden');
-          else slide.setAttribute('aria-hidden', 'true');
-        });
-        selectors.forEach((button, position) => button.setAttribute('aria-pressed', String(position === next)));
-        active = next;
-        pendingManual = false;
-        if (status) status.textContent = manual ? `Foto ${next + 1} de ${slides.length}. ${slides[next].alt}` : '';
-        schedule();
-        return;
+        // Downloads may finish while the page is hidden or the loop is paused.
+        if (request !== revision || !canPlay()) return;
+        remaining = remaining.filter((index) => index !== next);
+        if (loaded) {
+          slides.forEach((slide, index) => {
+            slide.toggleAttribute('data-active', index === next);
+            if (index === next) slide.removeAttribute('aria-hidden');
+            else slide.setAttribute('aria-hidden', 'true');
+          });
+          active = next;
+          schedule();
+          return;
+        }
+        next = nextPhoto();
       }
-      if (request !== revision) return;
-      pendingManual = false;
-      if (manual && status) status.textContent = 'No se pudo cargar esta foto. Puedes elegir otra.';
       schedule();
-    };
-    const selectManually = (index) => {
-      paused = true;
-      interrupt(true);
-      if (index !== active) changePhoto(index, true);
     };
 
-    selectors.forEach((button, index) => button.addEventListener('click', () => selectManually(index)));
-    gallery.addEventListener('focusin', () => {
+    toggle.addEventListener('click', () => {
+      paused = !paused;
+      interrupt();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
       paused = true;
-      gallery.setAttribute('data-instant', '');
       interrupt();
     });
-    gallery.addEventListener('pointerenter', (event) => {
-      if (event.pointerType !== 'mouse') return;
-      hovering = true;
-      interrupt();
-    });
-    gallery.addEventListener('pointerleave', (event) => {
-      if (event.pointerType !== 'mouse') return;
-      hovering = false;
-      interrupt();
-    });
-    // Preserve the requested action when a pointer click first focuses Pause.
-    toggle.addEventListener('pointerdown', () => { pointerAction = !paused; });
-    toggle.addEventListener('pointercancel', () => { pointerAction = undefined; });
-    toggle.addEventListener('click', (event) => {
-      if (reducedMotion.matches) {
-        const next = slides.map((_, offset) => (active + offset + 1) % slides.length)
-          .find((index) => index !== active && !failed.has(index));
-        if (next !== undefined) selectManually(next);
-      } else {
-        paused = event.detail > 0 && pointerAction !== undefined ? pointerAction : !paused;
-        interrupt(true);
-      }
-      pointerAction = undefined;
-    });
-    document.addEventListener('visibilitychange', () => interrupt());
-    reducedMotion.addEventListener('change', () => {
-      gallery.toggleAttribute('data-instant', reducedMotion.matches);
-      interrupt();
-    });
+    document.addEventListener('visibilitychange', interrupt);
+    reducedMotion.addEventListener('change', interrupt);
     if (typeof IntersectionObserver !== 'undefined') {
       new IntersectionObserver((entries) => {
         visible = entries.some((entry) => entry.isIntersecting);
@@ -156,10 +114,11 @@
       }, { threshold: 0 }).observe(gallery);
     }
 
-    gallery.toggleAttribute('data-instant', reducedMotion.matches);
-    controls.hidden = false;
-    updateLabel();
-    initialReady.then(() => {
+    toggle.hidden = false;
+    schedule();
+    // The original image keeps LCP priority; other requests start afterwards.
+    loadSlide(active).then(() => {
+      ready = true;
       slides.forEach((_, index) => { if (index !== active) loadSlide(index); });
       schedule();
     });

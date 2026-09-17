@@ -21,7 +21,6 @@ class Events {
 class Element extends Events {
   attributes = new Map<string, string>();
   hidden = false;
-  disabled = false;
   textContent = '';
   setAttribute(name: string, value: string) { this.attributes.set(name, value); }
   getAttribute(name: string) { return this.attributes.get(name) ?? null; }
@@ -37,7 +36,6 @@ type LoadMode = 'loaded' | 'pending' | 'failed';
 class Photo extends Element {
   complete = false;
   naturalWidth = 0;
-  alt = 'Una clase de portugués en vivo.';
   decode = jest.fn(() => Promise.resolve());
   constructor(public mode: LoadMode, source: string, initial = false) {
     super();
@@ -55,25 +53,18 @@ class Photo extends Element {
   }
 }
 
-function setup({ reduced = false, initial = 'loaded' as LoadMode, extras = ['loaded', 'loaded'] as LoadMode[] } = {}) {
+function setup({ reduced = false, initial = 'loaded' as LoadMode, extras = ['loaded', 'loaded'] as LoadMode[], random = (): number => 0 } = {}) {
   const gallery = new Element();
-  const controls = new Element();
-  controls.hidden = true;
   const toggle = new Element();
+  toggle.hidden = true;
   const label = new Element();
-  const status = new Element();
   const slides = [new Photo(initial, 'first.webp', true), ...extras.map((mode, index) => new Photo(mode, `extra-${index}.webp`))];
-  const buttons = slides.map(() => new Element());
   slides[0].setAttribute('data-active', '');
-  buttons[0].setAttribute('aria-pressed', 'true');
   slides.slice(1).forEach((slide) => slide.setAttribute('aria-hidden', 'true'));
   const selectors: Record<string, Element[]> = {
     '[data-hero-slide]': slides,
-    '[data-hero-controls]': [controls],
     '[data-hero-toggle]': [toggle],
     '[data-hero-toggle-label]': [label],
-    '[data-hero-select]': buttons,
-    '[data-hero-status]': [status],
   };
   Object.assign(gallery, {
     querySelector: (selector: string) => selectors[selector]?.[0] ?? null,
@@ -88,6 +79,7 @@ function setup({ reduced = false, initial = 'loaded' as LoadMode, extras = ['loa
   runInNewContext(galleryScript, {
     document,
     window: { matchMedia: () => media },
+    Math: Object.assign(Object.create(Math), { random }),
     setTimeout,
     clearTimeout,
     IntersectionObserver: class {
@@ -97,137 +89,118 @@ function setup({ reduced = false, initial = 'loaded' as LoadMode, extras = ['loa
   }, { filename: 'public/hero-gallery.js' });
   intersection!([{ isIntersecting: true }]);
   return {
-    gallery, controls, toggle, label, status, slides, buttons, document,
+    gallery, toggle, label, slides, document,
     active: () => slides.findIndex((slide) => slide.hasAttribute('data-active')),
     motion(matches: boolean) { media.matches = matches; media.emit('change'); },
     visibility(hidden: boolean) { document.hidden = hidden; document.emit('visibilitychange'); },
     inView(isIntersecting: boolean) { intersection([{ isIntersecting }]); },
-    hover(enter: boolean, pointerType = 'mouse') { gallery.emit(enter ? 'pointerenter' : 'pointerleave', { pointerType }); },
-    choose(index: number) { buttons[index].emit('click', { detail: 1 }); },
-    keyboardToggle() { toggle.emit('click', { detail: 0 }); },
-    pointerToggle() {
-      toggle.emit('pointerdown');
-      gallery.emit('focusin');
-      toggle.emit('click', { detail: 1 });
-    },
+    escape() { document.emit('keydown', { key: 'Escape' }); },
+    activateToggle() { toggle.emit('click'); },
   };
 }
 
-describe('hero photo gallery', () => {
+describe('ambient hero photos', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  it('waits for the first image before fetching extras, then changes only photos every eight seconds', async () => {
+  it('prioritizes the initial image, then changes photos after a full six-second interval', async () => {
     const page = setup({ initial: 'pending' });
-    expect(page.controls.hidden).toBe(false);
+    expect(page.toggle.hidden).toBe(false);
     expect(page.slides[1].getAttribute('src')).toBeNull();
+    await jest.advanceTimersByTimeAsync(9000);
+    expect(page.active()).toBe(0);
     page.slides[0].finish();
     await jest.advanceTimersByTimeAsync(0);
     expect(page.slides[1].getAttribute('src')).toBe('extra-0.webp');
-    await jest.advanceTimersByTimeAsync(7999);
+    await jest.advanceTimersByTimeAsync(5999);
     expect(page.active()).toBe(0);
     await jest.advanceTimersByTimeAsync(1);
     expect(page.active()).toBe(1);
-    expect(page.status.textContent).toBe('');
     expect(page.slides[0].getAttribute('aria-hidden')).toBe('true');
     expect(page.slides[1].getAttribute('aria-hidden')).toBeNull();
-    expect(page.buttons[1].getAttribute('aria-pressed')).toBe('true');
-    await jest.advanceTimersByTimeAsync(8000);
-    expect(page.active()).toBe(2);
   });
 
-  it('pauses on mouse hover and restarts a full interval on leave, without treating touch as hover', async () => {
-    const page = setup();
-    await jest.advanceTimersByTimeAsync(3000);
-    page.hover(true);
-    await jest.advanceTimersByTimeAsync(16000);
-    expect(page.active()).toBe(0);
-    page.hover(false);
-    page.hover(true, 'touch');
-    await jest.advanceTimersByTimeAsync(8000);
-    expect(page.active()).toBe(1);
+  it.each([0, 0.99])('randomizes the order without repeats and shows each remaining photo (random=%s)', async (randomValue) => {
+    const page = setup({ random: () => randomValue });
+    const seen = [page.active()];
+    for (let i = 0; i < 8; i += 1) {
+      await jest.advanceTimersByTimeAsync(6000);
+      seen.push(page.active());
+    }
+    expect(seen[1]).toBe(randomValue === 0 ? 1 : 2);
+    for (let index = 1; index < seen.length; index += 1) expect(seen[index]).not.toBe(seen[index - 1]);
+    for (let index = 0; index < seen.length - 2; index += 2) {
+      expect(new Set(seen.slice(index, index + 3)).size).toBe(3);
+    }
   });
 
-  it('keeps keyboard focus and manual selections paused until an explicit resume', async () => {
+  it('keeps playing while hovering or focusing a hero link', async () => {
     const page = setup();
+    page.gallery.emit('pointerenter', { pointerType: 'mouse' });
     page.gallery.emit('focusin');
-    await jest.advanceTimersByTimeAsync(16000);
-    expect(page.active()).toBe(0);
-    expect(page.label.textContent).toBe('Reanudar');
-    page.choose(2);
-    await jest.advanceTimersByTimeAsync(0);
+    await jest.advanceTimersByTimeAsync(6000);
+    expect(page.active()).toBe(1);
+    page.gallery.emit('pointerleave', { pointerType: 'mouse' });
+    await jest.advanceTimersByTimeAsync(6000);
     expect(page.active()).toBe(2);
-    expect(page.gallery.hasAttribute('data-instant')).toBe(true);
-    expect(page.status.textContent).toContain('Foto 3 de 3');
-    await jest.advanceTimersByTimeAsync(16000);
-    expect(page.active()).toBe(2);
-    page.keyboardToggle();
-    await jest.advanceTimersByTimeAsync(8000);
-    expect(page.active()).toBe(0);
-    expect(page.gallery.hasAttribute('data-instant')).toBe(false);
   });
 
-  it('does not accidentally resume when clicking Pause also focuses the control', async () => {
+  it('pauses through Escape and the keyboard control, and resumes only on explicit activation', async () => {
     const page = setup();
-    page.pointerToggle();
-    expect(page.label.textContent).toBe('Reanudar');
-    await jest.advanceTimersByTimeAsync(16000);
-    expect(page.active()).toBe(0);
-    page.pointerToggle();
-    await jest.advanceTimersByTimeAsync(8000);
-    expect(page.active()).toBe(1);
-  });
-
-  it.each(['visibility', 'inView'])('suspends the timer while %s is inactive and preserves a manual pause', async (condition) => {
-    const page = setup();
-    await jest.advanceTimersByTimeAsync(4000);
-    if (condition === 'visibility') page.visibility(true);
-    else page.inView(false);
-    await jest.advanceTimersByTimeAsync(20000);
-    expect(page.active()).toBe(0);
-    if (condition === 'visibility') page.visibility(false);
-    else page.inView(true);
-    await jest.advanceTimersByTimeAsync(7999);
-    expect(page.active()).toBe(0);
-    await jest.advanceTimersByTimeAsync(1);
-    expect(page.active()).toBe(1);
-    page.choose(2);
-    await jest.advanceTimersByTimeAsync(0);
+    page.escape();
+    expect(page.label.textContent).toBe('Reanudar animación');
+    expect(page.toggle.getAttribute('aria-label')).toBe('Reanudar animación de las fotos');
     page.visibility(true);
     page.visibility(false);
     page.inView(false);
     page.inView(true);
     await jest.advanceTimersByTimeAsync(16000);
-    expect(page.active()).toBe(2);
-  });
-
-  it('honors reduced motion at startup and after live preference changes', async () => {
-    const page = setup({ reduced: true });
-    expect(page.label.textContent).toBe('Ver fotos');
-    expect(page.gallery.hasAttribute('data-instant')).toBe(true);
-    await jest.advanceTimersByTimeAsync(20000);
     expect(page.active()).toBe(0);
-    page.motion(false);
-    await jest.advanceTimersByTimeAsync(8000);
+    page.activateToggle();
+    expect(page.label.textContent).toBe('Pausar animación');
+    await jest.advanceTimersByTimeAsync(6000);
     expect(page.active()).toBe(1);
-    expect(page.gallery.hasAttribute('data-instant')).toBe(false);
-    page.motion(true);
+    page.activateToggle();
     await jest.advanceTimersByTimeAsync(16000);
     expect(page.active()).toBe(1);
-    page.keyboardToggle();
-    await jest.advanceTimersByTimeAsync(0);
-    expect(page.active()).toBe(2);
-    expect(page.gallery.hasAttribute('data-instant')).toBe(true);
-    page.motion(false);
-    await jest.advanceTimersByTimeAsync(16000);
-    expect(page.active()).toBe(2); // Manual choices remain paused after preference changes.
   });
 
-  it('leaves the current photo visible until the next image has loaded and decoded', async () => {
+  it.each(['hidden', 'offscreen'])('suspends playback while %s and restarts a full interval on return', async (condition) => {
+    const page = setup();
+    await jest.advanceTimersByTimeAsync(3000);
+    if (condition === 'hidden') page.visibility(true);
+    else page.inView(false);
+    await jest.advanceTimersByTimeAsync(16000);
+    expect(page.active()).toBe(0);
+    if (condition === 'hidden') page.visibility(false);
+    else page.inView(true);
+    await jest.advanceTimersByTimeAsync(5999);
+    expect(page.active()).toBe(0);
+    await jest.advanceTimersByTimeAsync(1);
+    expect(page.active()).toBe(1);
+  });
+
+  it('uses a slower reduced-motion cadence and responds to live preference changes', async () => {
+    const page = setup({ reduced: true });
+    await jest.advanceTimersByTimeAsync(9999);
+    expect(page.active()).toBe(0);
+    await jest.advanceTimersByTimeAsync(1);
+    expect(page.active()).toBe(1);
+    page.motion(false);
+    await jest.advanceTimersByTimeAsync(6000);
+    expect(page.active()).toBe(2);
+    page.motion(true);
+    await jest.advanceTimersByTimeAsync(6000);
+    expect(page.active()).toBe(2);
+    await jest.advanceTimersByTimeAsync(4000);
+    expect(page.active()).toBe(0);
+  });
+
+  it('keeps the current image visible until the next photo has both loaded and decoded', async () => {
     const page = setup({ extras: ['pending', 'loaded'] });
     let finishDecode!: () => void;
     page.slides[1].decode.mockImplementation(() => new Promise<void>((resolve) => { finishDecode = resolve; }));
-    await jest.advanceTimersByTimeAsync(10000);
+    await jest.advanceTimersByTimeAsync(9000);
     expect(page.active()).toBe(0);
     page.slides[1].finish();
     await jest.advanceTimersByTimeAsync(0);
@@ -235,74 +208,45 @@ describe('hero photo gallery', () => {
     finishDecode();
     await jest.advanceTimersByTimeAsync(0);
     expect(page.active()).toBe(1);
-    await jest.advanceTimersByTimeAsync(7999);
+    await jest.advanceTimersByTimeAsync(5999);
     expect(page.active()).toBe(1);
     await jest.advanceTimersByTimeAsync(1);
     expect(page.active()).toBe(2);
   });
 
-  it('skips failed photos without blanking the hero or selecting their controls', async () => {
-    const page = setup({ extras: ['failed', 'loaded'] });
-    await jest.advanceTimersByTimeAsync(8000);
+  it.each(['load', 'decode'])('skips a photo after a %s failure without blanking the image', async (failure) => {
+    const page = setup({ extras: ['pending', 'loaded'] });
+    await jest.advanceTimersByTimeAsync(6000);
+    if (failure === 'decode') page.slides[1].decode.mockRejectedValueOnce(new Error('Invalid image'));
+    page.slides[1].finish(failure !== 'load');
+    await jest.advanceTimersByTimeAsync(0);
     expect(page.active()).toBe(2);
-    expect(page.buttons[1].disabled).toBe(true);
-    expect(page.buttons[1].getAttribute('aria-pressed')).not.toBe('true');
-    await jest.advanceTimersByTimeAsync(8000);
+    await jest.advanceTimersByTimeAsync(6000);
     expect(page.active()).toBe(0);
   });
 
-  it('ignores an obsolete slow download after a newer manual selection', async () => {
-    const page = setup({ extras: ['pending', 'loaded'] });
-    await jest.advanceTimersByTimeAsync(0);
-    page.choose(1);
-    await jest.advanceTimersByTimeAsync(0);
-    page.choose(2);
-    await jest.advanceTimersByTimeAsync(0);
-    expect(page.active()).toBe(2);
-    page.slides[1].finish();
-    await jest.advanceTimersByTimeAsync(0);
-    expect(page.active()).toBe(2);
-    expect(page.status.textContent).toContain('Foto 3 de 3');
-  });
-
-  it('preserves a manual selection through hover, offscreen, and tab visibility changes while downloading', async () => {
-    const page = setup({ extras: ['pending', 'loaded'] });
-    await jest.advanceTimersByTimeAsync(0);
-    page.choose(1);
-    await jest.advanceTimersByTimeAsync(0);
-    page.hover(true);
-    page.hover(false);
-    page.visibility(true);
-    page.inView(false);
-    page.slides[1].finish();
-    await jest.advanceTimersByTimeAsync(0);
-    expect(page.active()).toBe(1);
-    page.visibility(false);
-    page.inView(true);
-    await jest.advanceTimersByTimeAsync(16000);
-    expect(page.active()).toBe(1);
-  });
-
-  it('lets reduced-motion visitors advance past a failed photo', async () => {
-    const page = setup({ reduced: true, extras: ['failed', 'loaded'] });
-    await jest.advanceTimersByTimeAsync(0);
-    page.keyboardToggle();
-    await jest.advanceTimersByTimeAsync(0);
-    expect(page.active()).toBe(2);
-    page.keyboardToggle();
-    await jest.advanceTimersByTimeAsync(0);
+  it('retains the initial photo and stops scheduling when every additional image fails', async () => {
+    const page = setup({ extras: ['failed', 'failed'] });
+    await jest.advanceTimersByTimeAsync(18000);
     expect(page.active()).toBe(0);
+    expect(jest.getTimerCount()).toBe(0);
   });
 
-  it('does not complete a pending automatic transition after being paused', async () => {
+  it.each(['pause', 'hidden', 'offscreen'])('ignores a late download after %s, retaining that photo for the next cycle', async (condition) => {
     const page = setup({ extras: ['pending', 'loaded'] });
-    await jest.advanceTimersByTimeAsync(8000);
-    page.gallery.emit('focusin');
+    await jest.advanceTimersByTimeAsync(6000);
+    if (condition === 'pause') page.escape();
+    if (condition === 'hidden') page.visibility(true);
+    if (condition === 'offscreen') page.inView(false);
     page.slides[1].finish();
     await jest.advanceTimersByTimeAsync(0);
     expect(page.active()).toBe(0);
-    page.keyboardToggle();
-    await jest.advanceTimersByTimeAsync(8000);
+    if (condition === 'pause') page.activateToggle();
+    if (condition === 'hidden') page.visibility(false);
+    if (condition === 'offscreen') page.inView(true);
+    await jest.advanceTimersByTimeAsync(6000);
     expect(page.active()).toBe(1);
+    await jest.advanceTimersByTimeAsync(6000);
+    expect(page.active()).toBe(2);
   });
 });
