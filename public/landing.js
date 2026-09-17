@@ -101,6 +101,9 @@
     animation.onfinish = finish;
   };
   faqTriggers.forEach((trigger) => {
+    // Answers are readable in the HTML when JavaScript is unavailable.
+    // Collapse only after the accordion behavior has been initialized.
+    setFaq(trigger, false, true);
     trigger.addEventListener('click', (event) => {
       const expanded = trigger.getAttribute('aria-expanded') !== 'true';
       faqTriggers.forEach((other) => {

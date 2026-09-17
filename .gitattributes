@@ -1,0 +1,2 @@
+# Stylesheet URL versions use content hashes; keep bytes stable on Windows/CI.
+public/*.css text eol=lf

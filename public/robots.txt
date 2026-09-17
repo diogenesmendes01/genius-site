@@ -12,6 +12,3 @@ Disallow: /*.json$
 
 # Manifest público usado pelas páginas
 Allow: /manifest.json
-
-# Crawl-delay (opcional)
-Crawl-delay: 0

@@ -5,6 +5,7 @@ import cookieParser = require('cookie-parser');
 import { mkdirSync } from 'fs';
 import { dirname } from 'path';
 import { AppModule } from './app.module';
+import { httpSeo } from './seo/http-seo.middleware';
 
 /**
  * Refuse to start in production with placeholder/missing security secrets.
@@ -60,6 +61,7 @@ async function bootstrap() {
   // client from X-Forwarded-For while ignoring client-forged entries.
   app.set('trust proxy', 1);
 
+  app.use(httpSeo);
   app.use(cookieParser());
 
   const allowed = (process.env.ALLOWED_ORIGINS ?? '')
