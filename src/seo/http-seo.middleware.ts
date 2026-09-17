@@ -11,14 +11,15 @@ const marketingPaths = new Set([
 
 /** Keep operational URLs out of search and consolidate public page aliases. */
 export function httpSeo(req: Request, res: Response, next: NextFunction): void {
-  if (/^\/(?:api|dashboard|encuesta|matricula)(?:\/|$)/i.test(req.path)) {
+  // Normalize for SEO decisions only; never rewrite the URL used by routing.
+  const normalizedPath = req.path.replace(/\/{2,}/g, '/');
+  if (/^\/(?:api|dashboard|encuesta|matricula)(?:\/|$)/i.test(normalizedPath)) {
     res.setHeader('X-Robots-Tag', 'noindex');
   }
 
   // Only consolidate slash aliases of known marketing pages. Other routes
   // retain their original path and normal 404/API/static-file behavior.
-  const marketingPath = req.path.replace(/\/{2,}/g, '/');
-  if ((req.method !== 'GET' && req.method !== 'HEAD') || !marketingPaths.has(marketingPath)) {
+  if ((req.method !== 'GET' && req.method !== 'HEAD') || !marketingPaths.has(normalizedPath)) {
     next();
     return;
   }
@@ -30,7 +31,7 @@ export function httpSeo(req: Request, res: Response, next: NextFunction): void {
   const host = (req.headers.host ?? '').toLowerCase().replace(/:\d+$/, '');
   const isApex = host === 'geniusidiomas.com';
   const isCanonical = host === 'www.geniusidiomas.com';
-  const pathname = marketingPath === '/index.html' ? '/' : marketingPath;
+  const pathname = normalizedPath === '/index.html' ? '/' : normalizedPath;
   if (!isApex && !(isCanonical && req.path !== pathname)) {
     next();
     return;

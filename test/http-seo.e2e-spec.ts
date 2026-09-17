@@ -89,6 +89,33 @@ describe('Public page discovery and operational URL indexing', () => {
     expect(response.headers.location).toBeUndefined();
   });
 
+  it.each([
+    ['get', '//matricula/', 200, /html/],
+    ['head', '///matricula//', 200, /html/],
+    ['get', '//matricula//success.html', 200, /html/],
+    ['head', '///matricula/success.html', 200, /html/],
+    ['get', '//dashboard/', 200, /html/],
+    ['head', '///dashboard//', 200, /html/],
+    ['get', '//dashboard//informe.html', 200, /html/],
+    ['head', '///dashboard/informe.html', 200, /html/],
+    ['get', '///encuesta//', 200, /html/],
+    ['head', '//matricula//app.js', 200, /javascript/],
+    ['get', '//api/health', 404, /json/],
+    ['head', '//api/health', 404, /json/],
+  ] as const)
+  ('keeps noindex and routing behavior for %s %s', async (method, path, status, type) => {
+    const response = await request(app.getHttpServer())[method](path)
+      .set('Host', 'geniusidiomas.com').expect(status);
+    expect(response.type).toMatch(type);
+    expect(response.headers['x-robots-tag']).toBe('noindex');
+    expect(response.headers.location).toBeUndefined();
+    if (method === 'head') {
+      expect(response.text).toBeUndefined();
+    } else if (response.type === 'text/html') {
+      expect(response.text).toMatch(/<meta\s+name="robots"[^>]*noindex/i);
+    }
+  });
+
   it.each(['dashboard', 'encuesta', 'matricula'])
   ('preserves the static directory redirect for /%s', async (directory) => {
     const response = await request(app.getHttpServer()).get(`/${directory}`)
