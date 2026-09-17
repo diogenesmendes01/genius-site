@@ -1,681 +1,136 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html lang="es"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Metodología — GENIUS Academia de Lenguas</title>
+  <meta name="description" content="Aprende portugués brasileño en clases 100% online y en vivo, con profesores nativos. Desde el primer día, hablas, escuchas y practicas en situaciones reales.">
+  <meta name="author" content="GENIUS Academia de Lenguas">
+  <meta name="robots" content="index, follow">
+  <meta name="google-site-verification" content="Q7iDE3gWwfFN8hIyAJqZIYfkQ2W_R5YOpjz6MgZObig">
+  <link rel="canonical" href="https://www.geniusidiomas.com/metodologia.html">
 
-    <!-- Primary Meta Tags -->
-    <title>Metodología - GENIUS Academia de Lenguas</title>
-    <meta name="title" content="Metodología - GENIUS Academia de Lenguas">
-    <meta name="description" content="Conoce las clases de portugués 100% online: cuatro modalidades en grupo con sesiones de 2 horas y clases particulares con profesores brasileños nativos.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.geniusidiomas.com/metodologia.html">
+  <meta property="og:title" content="Metodología — GENIUS Academia de Lenguas">
+  <meta property="og:description" content="Aprende portugués brasileño en clases 100% online y en vivo, con profesores nativos. Desde el primer día, hablas, escuchas y practicas en situaciones reales.">
+  <meta property="og:image" content="https://www.geniusidiomas.com/assets/social/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="es_CR">
+  <meta property="og:site_name" content="GENIUS Academia de Lenguas">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://www.geniusidiomas.com/metodologia.html">
+  <meta name="twitter:title" content="Metodología — GENIUS Academia de Lenguas">
+  <meta name="twitter:description" content="Aprende portugués brasileño en clases 100% online y en vivo, con profesores nativos. Desde el primer día, hablas, escuchas y practicas en situaciones reales.">
+  <meta name="twitter:image" content="https://www.geniusidiomas.com/assets/social/og-image.png">
 
-    <link rel="canonical" href="https://www.geniusidiomas.com/metodologia.html">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.geniusidiomas.com/metodologia.html">
-    <meta property="og:title" content="Metodología - GENIUS Academia de Lenguas">
-    <meta property="og:description" content="Clases online en vivo, cuatro modalidades en grupo y clases particulares con profesores brasileños nativos.">
-    <meta property="og:image" content="https://www.geniusidiomas.com/assets/social/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="Metodología - GENIUS Academia de Lenguas">
-    <meta property="twitter:description" content="Conoce las modalidades de portugués y elige según tu objetivo, disponibilidad y ritmo de estudio.">
-    <meta property="twitter:image" content="https://www.geniusidiomas.com/assets/social/og-image.png">
-    <meta name="theme-color" content="#000E38">
+  <meta name="theme-color" content="#0B1C3A">
+  <meta name="msapplication-TileColor" content="#0B1C3A">
+  <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+  <meta name="msapplication-config" content="/browserconfig.xml">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
 
-    <!-- Favicon -->
-    <link rel="icon" href="/favicon.ico" sizes="32x32">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="styles.css">
-
-    <style>
-        /* Hero Interno Metodologia */
-        .hero-interno {
-            padding: 6rem 0 4rem;
-            background: linear-gradient(180deg, #000E38 0%, #001a5c 100%);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-interno::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 50%, rgba(220, 175, 99, 0.1) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .hero-interno__content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .hero-interno__title {
-            font-family: var(--font-family-primary);
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--color-white);
-            margin-bottom: 1rem;
-        }
-
-        .hero-interno__subtitle {
-            font-size: 1.125rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 2.5rem;
-            line-height: 1.6;
-        }
-
-        .hero-badges {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-            gap: 1.5rem;
-            margin-top: 3rem;
-        }
-
-        .badge-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(220, 175, 99, 0.2);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .badge-card:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(220, 175, 99, 0.4);
-            transform: translateY(-5px);
-        }
-
-        .badge-card__title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--color-white);
-            margin-bottom: 0.25rem;
-        }
-
-        .badge-card__text {
-            font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .section-header-center {
-            text-align: center;
-            max-width: 700px;
-            margin: 0 auto 3rem;
-        }
-
-        .section-header-center h2 {
-            font-family: var(--font-family-primary);
-            font-size: 2.5rem;
-            color: var(--color-primary-navy);
-            margin-bottom: 1rem;
-        }
-
-        .section-header-center p {
-            font-size: 1.125rem;
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-        }
-
-        /* Como Funciona */
-        .how-it-works {
-            padding: 5rem 0;
-            background: var(--color-background);
-        }
-
-        .steps-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-            gap: 2.5rem;
-            margin-top: 3rem;
-        }
-
-        .step-card {
-            position: relative;
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .step-number {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 1.5rem;
-            background: var(--gradient-gold);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-family-primary);
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--color-primary-navy);
-            box-shadow: 0 4px 15px rgba(220, 175, 99, 0.3);
-        }
-
-        .step-card h3 {
-            font-size: 1.5rem;
-            color: var(--color-primary-navy);
-            margin-bottom: 1rem;
-        }
-
-        .step-card p {
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-        }
-
-        /* Tipos de Aula */
-        .class-types {
-            padding: 5rem 0;
-            background: var(--color-white);
-        }
-
-        .class-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 450px), 1fr));
-            gap: 3rem;
-            margin-top: 3rem;
-        }
-
-        .class-type-card {
-            background: var(--color-white);
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-        }
-
-        .class-type-card:hover {
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-            transform: translateY(-8px);
-        }
-
-        .class-type-card__badge {
-            display: inline-block;
-            margin: 2rem 2rem 0;
-            padding: 0.5rem 1rem;
-            background: var(--gradient-gold);
-            color: var(--color-primary-navy);
-            font-size: 0.875rem;
-            font-weight: 700;
-            border-radius: 50px;
-        }
-
-        .class-type-card__content {
-            padding: 2rem;
-        }
-
-        .class-type-card__title {
-            font-family: var(--font-family-primary);
-            font-size: 1.75rem;
-            color: var(--color-primary-navy);
-            margin-bottom: 1rem;
-        }
-
-        .class-type-card__description {
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        .class-features {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .class-features li {
-            padding: 0.75rem 0;
-            border-top: 1px solid var(--color-border);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .class-features li::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: var(--color-primary-gold);
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        /* Metodologia Content */
-        .methodology-content {
-            padding: 5rem 0;
-            background: var(--color-background);
-        }
-
-        .methodology-content .content-block {
-            max-width: 800px;
-            margin: 0 auto 3rem;
-        }
-
-        .methodology-content h2 {
-            font-family: var(--font-family-primary);
-            font-size: 2rem;
-            color: var(--color-primary-navy);
-            margin-bottom: 1.5rem;
-        }
-
-        .methodology-content p {
-            color: var(--color-text-secondary);
-            line-height: 1.8;
-            margin-bottom: 1rem;
-        }
-
-        .methodology-content ul {
-            list-style: none;
-            padding: 0;
-            margin: 1.5rem 0;
-        }
-
-        .methodology-content ul li {
-            padding: 0.75rem 0 0.75rem 2rem;
-            position: relative;
-            color: var(--color-text-secondary);
-            line-height: 1.6;
-        }
-
-        .methodology-content ul li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 1.25rem;
-            width: 8px;
-            height: 8px;
-            background: var(--color-primary-gold);
-            border-radius: 50%;
-        }
-
-        @supports (grid-template-rows: subgrid) {
-            @media (min-width: 769px) {
-                .class-grid > .class-type-card {
-                    display: grid;
-                    grid-row: span 4;
-                    grid-template-rows: subgrid;
-                    row-gap: 0;
-                }
-                .class-type-card__badge { justify-self: start; align-self: start; }
-                .class-type-card__content {
-                    display: grid;
-                    grid-row: span 3;
-                    grid-template-rows: subgrid;
-                    row-gap: 1rem;
-                }
-                .class-type-card__title,
-                .class-type-card__description { margin-bottom: 0; }
-            }
-        }
-
-        @media (max-width: 768px) {
-            .hero-interno__title {
-                font-size: 2rem;
-            }
-
-            .class-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .class-type-card {
-                min-width: 100%;
-            }
-        }
-    </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing.css">
+  <link rel="stylesheet" href="inner-pages.css">
+  <script src="landing.js" defer></script>
 </head>
-<body>
-    <!-- Header -->
-    <header class="header" role="banner">
-        <div class="container">
-            <div class="header__content">
-                <div class="header__logo">
-                    <a href="/" aria-label="GENIUS Academia de Lenguas - Inicio">
-                        <img src="/assets/LOGO GENIUS POSITIVO.png" alt="GENIUS Academia de Lenguas" class="header__logo-img">
-                    </a>
-                </div>
+<body class="inner-page methodology-page"><a class="skip-link" href="#main">Saltar al contenido</a><header class="inner-header"><div class="wrap inner-header-layout"><a class="brand" href="/" aria-label="GENIUS, inicio"><img src="assets/LOGO GENIUS NEGATIVO.png" alt="GENIUS Academia de Lenguas" width="1970" height="445"></a><nav class="inner-nav" aria-label="Navegación principal"><a href="metodologia.html" aria-current="page">Metodología</a><a href="sobre-nos.html">Sobre Nosotros</a></nav>
+<a class="student-link" href="https://geniusidiomas.q10.com/" target="_blank" rel="noopener noreferrer">Alumnos</a></div></header>
+<main id="main"><section class="inner-hero" aria-labelledby="page-title"><figure class="class-visual"><img src="assets/hero-class-v8.webp" alt="Representación ilustrativa de una clase online con un profesor brasileño" width="1672" height="941" fetchpriority="high"><figcaption>Representación de una clase online</figcaption></figure>
+<div class="wrap inner-hero-layout"><div class="hero-copy"><p class="label">Nuestra metodología</p><h1 id="page-title">Cómo Aprendes en GENIUS</h1><p class="inner-hero-intro">Aprende portugués brasileño en clases 100% online y en vivo, con profesores nativos.
+                    Desde el primer día, hablas, escuchas y practicas en situaciones reales.</p><a class="button button-primary" href="https://wa.me/50671784096?text=Hola%2C%20vi%20el%20curso%20de%20portugu%C3%A9s%20en%20el%20sitio%20de%20GENIUS.%20Me%20interesan%20las%20clases%20de%20portugu%C3%A9s.%20%C2%BFMe%20comparten%20precios%20y%20horarios%20disponibles%3F" target="_blank" rel="noopener noreferrer" data-whatsapp data-primary><img class="icon " src="assets/icons/whatsapp.svg" width="24" height="24" alt=""><span class="button-label"><span class="button-default">Hablar por WhatsApp</span><span class="button-pending" aria-hidden="true">Abriendo WhatsApp…</span></span></a></div></div></section>
 
-                <button class="mobile-menu-toggle" aria-label="Abrir menú" aria-expanded="false">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-
-                <nav class="header__nav" role="navigation" aria-label="Navegación principal">
-                    <a href="/sobre-nos.html" class="nav-link">Sobre Nosotros</a>
-                    <a href="/metodologia.html" class="nav-link active" aria-current="page">Metodología</a>
-                    <a href="https://geniusidiomas.q10.com" class="btn btn--primary btn--header" target="_blank" rel="noopener noreferrer">Entrar</a>
-                </nav>
-            </div>
-        </div>
-    </header>
-
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay"></div>
-
-    <!-- Hero Interno -->
-    <section class="hero-interno">
-        <div class="container">
-            <div class="hero-interno__content">
-                <h1 class="hero-interno__title">Cómo Aprendes en GENIUS</h1>
-                <p class="hero-interno__subtitle">
-                    Aprende portugués brasileño en clases 100% online y en vivo, con profesores nativos.
-                    Desde el primer día, hablas, escuchas y practicas en situaciones reales.
-                </p>
-
-                <div class="hero-badges">
-                    <div class="badge-card"><div class="badge-card__title">100% online</div><div class="badge-card__text">Clases en vivo</div></div>
-                    <div class="badge-card"><div class="badge-card__title">En grupo</div><div class="badge-card__text">4 modalidades</div></div>
-                    <div class="badge-card"><div class="badge-card__title">A tu ritmo</div><div class="badge-card__text">Clases particulares</div></div>
-                    <div class="badge-card"><div class="badge-card__title">2 horas</div><div class="badge-card__text">Por clase en grupo</div></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Como Funciona -->
-    <section class="how-it-works">
-        <div class="container">
-            <div class="section-header-center">
-                <h2>Cómo Funciona</h2>
-                <p>Tres simples pasos para empezar tu viaje hacia la fluidez en portugués</p>
-            </div>
-
-            <div class="steps-container">
-                <div class="step-card">
-                    <div class="step-number">1</div>
-                    <h3>Elige Modalidad y Horario</h3>
-                    <p>Elige clases particulares o una modalidad en grupo: Regular, Semi-intensiva, Intensiva o Súper intensiva. Cuéntanos tu objetivo y disponibilidad.</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">2</div>
-                    <h3>Conoce las Opciones Disponibles</h3>
-                    <p>Con tu modalidad y horario elegidos, te presentamos los grupos disponibles o coordinamos tus clases individuales.</p>
-                </div>
-
-                <div class="step-card">
-                    <div class="step-number">3</div>
-                    <h3>Practica y Avanza</h3>
-                    <p>Practica conversación, recibe orientación de tu profesor y avanza según tu modalidad, nivel y objetivos.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Tipos de Clases -->
-    <section class="class-types">
-        <div class="container">
-            <div class="section-header-center">
-                <h2>Tipos de Clases</h2>
-                <p>Clases online en vivo con profesores brasileños nativos. Elige el formato que mejor se adapte a tu objetivo y disponibilidad.</p>
-            </div>
-
-            <div class="class-grid">
-                <div class="class-type-card">
-                    <div class="class-type-card__badge">Más Personalizado</div>
-                    <div class="class-type-card__content">
-                        <h3 class="class-type-card__title">Clases Particulares</h3>
-                        <p class="class-type-card__description">
-                            Atención 100% individual con un profesor brasileño nativo. Ideal si tienes horarios variables, prefieres estudiar sin grupo o quieres mejorar tu portugués con un enfoque específico.
-                        </p>
-                        <ul class="class-features">
-                            <li>Clase individual de 1 hora o paquetes de 4, 8 y 12 horas en total</li>
-                            <li>Los paquetes indican el total contratado; coordinamos las sesiones según disponibilidad</li>
-                            <li>Ritmo, contenido y correcciones personalizados</li>
-                            <li>Conversación, gramática, trabajo, reuniones, entrevistas o viajes</li>
-                            <li>Metodología adaptada para adultos, niños y adolescentes</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="class-type-card">
-                    <div class="class-type-card__badge">Aprendizaje Compartido</div>
-                    <div class="class-type-card__content">
-                        <h3 class="class-type-card__title">Clases en Grupo</h3>
-                        <p class="class-type-card__description">
-                            Aprende junto a compañeros de tu mismo nivel. Practica conversación con otros estudiantes mientras el profesor guía la clase.
-                        </p>
-                        <ul class="class-features">
-                            <li>Duración: 2 horas por clase</li>
-                            <li>Cuatro modalidades: de 1 a 5 clases por semana</li>
-                            <li>Programa completo con compañeros de tu nivel</li>
-                            <li>Práctica con múltiples interlocutores</li>
-                            <li>Ambiente colaborativo</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Modalidades en Grupo -->
-    <section class="class-types" id="modalidades">
-        <div class="container">
-            <div class="section-header-center">
-                <h2>Modalidades en Grupo</h2>
-                <p>Todas las clases duran 2 horas. Los plazos del programa y de cada nivel son aproximados; las horas mensuales son orientativas.</p>
-            </div>
-
-            <div class="class-grid">
-                <article class="class-type-card">
-                    <div class="class-type-card__badge">Progreso Constante</div>
-                    <div class="class-type-card__content">
-                        <h3 class="class-type-card__title">Regular</h3>
-                        <p class="class-type-card__description">Para aprender progresivamente, sin urgencia, con disponibilidad de un día por semana.</p>
-                        <ul class="class-features">
-                            <li>1 clase por semana · 2 horas por clase</li>
-                            <li>2 horas semanales · aproximadamente 8 horas mensuales</li>
-                            <li>Cada nivel: aproximadamente 3 meses</li>
-                            <li>Programa: aproximadamente 1 año y 6 meses</li>
-                        </ul>
-                    </div>
-                </article>
-
-                <article class="class-type-card">
-                    <div class="class-type-card__badge">Más Ritmo y Práctica</div>
-                    <div class="class-type-card__content">
-                        <h3 class="class-type-card__title">Semi-intensiva</h3>
-                        <p class="class-type-card__description">Para tener más contacto con el idioma y avanzar hacia un objetivo a medio plazo, estudiando dos días por semana.</p>
-                        <ul class="class-features">
-                            <li>2 clases por semana · 2 horas por clase</li>
-                            <li>4 horas semanales · aproximadamente 16 horas mensuales</li>
-                            <li>Cada nivel: aproximadamente 2 meses</li>
-                            <li>Programa: aproximadamente 1 año</li>
-                        </ul>
-                    </div>
-                </article>
-
-                <article class="class-type-card">
-                    <div class="class-type-card__badge">Enfoque Profesional</div>
-                    <div class="class-type-card__content">
-                        <h3 class="class-type-card__title">Intensiva</h3>
-                        <p class="class-type-card__description">Para quienes necesitan avanzar rápidamente y usar el portugués en el trabajo o colaborar con equipos brasileños.</p>
-                        <ul class="class-features">
-                            <li>3 clases por semana · 2 horas por clase</li>
-                            <li>6 horas semanales · aproximadamente 24 horas mensuales</li>
-                            <li>Cada nivel: aproximadamente 1 mes y medio</li>
-                            <li>Programa: aproximadamente 10 meses</li>
-                        </ul>
-                    </div>
-                </article>
-
-                <article class="class-type-card">
-                    <div class="class-type-card__badge">Mayor Dedicación</div>
-                    <div class="class-type-card__content">
-                        <h3 class="class-type-card__title">Súper intensiva</h3>
-                        <p class="class-type-card__description">Para quienes tienen alta disponibilidad y una meta urgente, como viajar, mudarse a Brasil o prepararse para una oportunidad profesional.</p>
-                        <ul class="class-features">
-                            <li>5 clases por semana · 2 horas por clase</li>
-                            <li>10 horas semanales · aproximadamente 40 horas mensuales</li>
-                            <li>Cada nivel: aproximadamente 1 mes</li>
-                            <li>Programa: aproximadamente 6 meses</li>
-                        </ul>
-                    </div>
-                </article>
-            </div>
-            <p class="courses__highlight"><strong>Incluido en la modalidad Intensiva:</strong> contenido para el entorno laboral con el material «Português para Empresas».</p>
-        </div>
-    </section>
-
-    <!-- Metodología Content -->
-    <section class="methodology-content">
-        <div class="container">
-            <div class="content-block">
-                <h2>Nuestra Metodología Comunicativa</h2>
-                <p>En GENIUS Academia de Lenguas, no aprendes solo palabras: aprendes a usar el portugués con seguridad en situaciones reales.</p>
-                <p>Nuestra metodología es comunicativa, práctica y progresiva. Desde el primer contacto, hablas, escuchas, escribes e interactúas en portugués con profesores nativos, siempre en escenarios que tienen sentido para tu vida personal, académica y profesional.</p>
-            </div>
-
-            <div class="content-block">
-                <h2>Práctica y Corrección</h2>
-                <p>Durante las clases, trabajas aspectos como:</p>
-                <ul>
-                    <li>Claridad al hablar y pronunciación</li>
+  <section class="inner-facts" aria-label="Las clases en GENIUS"><div class="wrap"><div><strong>100% online</strong><span>Clases en vivo</span></div><div><strong>4 modalidades</strong><span>Para aprender en grupo</span></div><div><strong>A tu ritmo</strong><span>Clases particulares</span></div><div><strong>2 horas</strong><span>Por clase en grupo</span></div></div></section>
+  <section class="inner-section" id="como-funciona"><div class="wrap"><div class="inner-heading"><h2>Cómo Funciona</h2><p>Tres simples pasos para empezar tu viaje hacia la fluidez en portugués</p></div><ol class="steps-grid inner-steps"><li class="inner-reveal"><div class="step-head"><span class="step-number" aria-hidden="true">01</span><img class="icon " src="assets/icons/calendar-month.svg" width="24" height="24" alt=""><span class="step-line" aria-hidden="true"></span></div><h3>Elige Modalidad y Horario</h3><p>Elige clases particulares o una modalidad en grupo: Regular, Semi-intensiva, Intensiva o Súper intensiva. Cuéntanos tu objetivo y disponibilidad.</p></li>
+<li class="inner-reveal"><div class="step-head"><span class="step-number" aria-hidden="true">02</span><img class="icon " src="assets/icons/users.svg" width="24" height="24" alt=""><span class="step-line" aria-hidden="true"></span></div><h3>Conoce las Opciones Disponibles</h3><p>Con tu modalidad y horario elegidos, te presentamos los grupos disponibles o coordinamos tus clases individuales.</p></li>
+<li class="inner-reveal"><div class="step-head"><span class="step-number" aria-hidden="true">03</span><img class="icon " src="assets/icons/message-circle.svg" width="24" height="24" alt=""><span class="step-line" aria-hidden="true"></span></div><h3>Practica y Avanza</h3><p>Practica conversación, recibe orientación de tu profesor y avanza según tu modalidad, nivel y objetivos.</p></li>
+</ol>
+</div></section>
+  <section class="inner-section inner-section-soft" id="tipos-de-clases"><div class="wrap"><div class="inner-heading"><h2>Tipos de Clases</h2><p>Clases online en vivo con profesores brasileños nativos. Elige el formato que mejor se adapte a tu objetivo y disponibilidad.</p></div><div class="feature-grid"><article class="feature-card inner-reveal">
+      <p class="label">Más Personalizado</p><h3>Clases Particulares</h3>
+      <p>Atención 100% individual con un profesor brasileño nativo. Ideal si tienes horarios variables, prefieres estudiar sin grupo o quieres mejorar tu portugués con un enfoque específico.</p><ul class="audience-list"><li>Clase individual de 1 hora o paquetes de 4, 8 y 12 horas en total</li>
+<li>Los paquetes indican el total contratado; coordinamos las sesiones según disponibilidad</li>
+<li>Ritmo, contenido y correcciones personalizados</li>
+<li>Conversación, gramática, trabajo, reuniones, entrevistas o viajes</li>
+<li>Metodología adaptada para adultos, niños y adolescentes</li>
+</ul>
+    </article>
+<article class="feature-card inner-reveal">
+      <p class="label">Aprendizaje Compartido</p><h3>Clases en Grupo</h3>
+      <p>Aprende junto a compañeros de tu mismo nivel. Practica conversación con otros estudiantes mientras el profesor guía la clase.</p><ul class="audience-list"><li>Duración: 2 horas por clase</li>
+<li>Cuatro modalidades: de 1 a 5 clases por semana</li>
+<li>Programa completo con compañeros de tu nivel</li>
+<li>Práctica con múltiples interlocutores</li>
+<li>Ambiente colaborativo</li>
+</ul>
+    </article>
+</div></div></section>
+  <section class="quote-band"><div class="wrap editorial-split"><h2>Nuestra Metodología Comunicativa</h2><div class="reading-column"><p>En GENIUS Academia de Lenguas, no aprendes solo palabras: aprendes a usar el portugués con seguridad en situaciones reales.</p><p>Nuestra metodología es comunicativa, práctica y progresiva. Desde el primer contacto, hablas, escuchas, escribes e interactúas en portugués con profesores nativos, siempre en escenarios que tienen sentido para tu vida personal, académica y profesional.</p></div></div></section>
+  <section class="inner-section" id="modalidades"><div class="wrap"><div class="inner-heading"><h2>Modalidades en Grupo</h2><p>Todas las clases duran 2 horas. Los plazos del programa y de cada nivel son aproximados; las horas mensuales son orientativas.</p></div><div class="feature-grid"><article class="feature-card inner-reveal">
+      <p class="label">Progreso Constante</p><h3>Regular</h3>
+      <p>Para aprender progresivamente, sin urgencia, con disponibilidad de un día por semana.</p><ul class="audience-list"><li>1 clase por semana · 2 horas por clase</li>
+<li>2 horas semanales · aproximadamente 8 horas mensuales</li>
+<li>Cada nivel: aproximadamente 3 meses</li>
+<li>Programa: aproximadamente 1 año y 6 meses</li>
+</ul>
+    </article>
+<article class="feature-card inner-reveal feature-card-featured">
+      <p class="label">Más Ritmo y Práctica</p><h3>Semi-intensiva</h3>
+      <p>Para tener más contacto con el idioma y avanzar hacia un objetivo a medio plazo, estudiando dos días por semana.</p><ul class="audience-list"><li>2 clases por semana · 2 horas por clase</li>
+<li>4 horas semanales · aproximadamente 16 horas mensuales</li>
+<li>Cada nivel: aproximadamente 2 meses</li>
+<li>Programa: aproximadamente 1 año</li>
+</ul>
+    </article>
+<article class="feature-card inner-reveal">
+      <p class="label">Enfoque Profesional</p><h3>Intensiva</h3>
+      <p>Para quienes necesitan avanzar rápidamente y usar el portugués en el trabajo o colaborar con equipos brasileños.</p><ul class="audience-list"><li>3 clases por semana · 2 horas por clase</li>
+<li>6 horas semanales · aproximadamente 24 horas mensuales</li>
+<li>Cada nivel: aproximadamente 1 mes y medio</li>
+<li>Programa: aproximadamente 10 meses</li>
+</ul>
+    </article>
+<article class="feature-card inner-reveal">
+      <p class="label">Mayor Dedicación</p><h3>Súper intensiva</h3>
+      <p>Para quienes tienen alta disponibilidad y una meta urgente, como viajar, mudarse a Brasil o prepararse para una oportunidad profesional.</p><ul class="audience-list"><li>5 clases por semana · 2 horas por clase</li>
+<li>10 horas semanales · aproximadamente 40 horas mensuales</li>
+<li>Cada nivel: aproximadamente 1 mes</li>
+<li>Programa: aproximadamente 6 meses</li>
+</ul>
+    </article>
+</div><p class="inner-note"><strong>Incluido en la modalidad Intensiva:</strong> contenido para el entorno laboral con el material «Português para Empresas».</p><a class="text-link" href="/#courses">Ver modalidades en la página principal <img class="icon " src="assets/icons/arrow-right.svg" width="24" height="24" alt=""></a></div></section>
+  <section class="inner-section inner-section-soft"><div class="wrap feature-grid practice-grid"><article class="feature-card inner-reveal"><h2>Práctica y Corrección</h2><div class="reading-column"><p>Durante las clases, trabajas aspectos como:</p><ul><li>Claridad al hablar y pronunciación</li>
                     <li>Capacidad de comprender brasileños hablando a velocidad normal</li>
                     <li>Escritura funcional adaptada a tus necesidades</li>
                     <li>Uso correcto de estructuras gramaticales</li>
-                </ul>
-                <p>En las clases particulares, el profesor adapta la práctica y las correcciones a tus dificultades y objetivos.</p>
-            </div>
-
-            <div class="content-block">
-                <h2>Comunicación Real Desde el Inicio</h2>
-                <p>Toda la enseñanza se basa en uso real del idioma, no solo teoría. Practicas:</p>
-                <ul>
-                    <li>Saludos, presentaciones y conversaciones cotidianas desde la primera clase</li>
+</ul>
+<p>En las clases particulares, el profesor adapta la práctica y las correcciones a tus dificultades y objetivos.</p></div></article>
+<article class="feature-card inner-reveal"><h2>Comunicación Real Desde el Inicio</h2><div class="reading-column"><p>Toda la enseñanza se basa en uso real del idioma, no solo teoría. Practicas:</p><ul><li>Saludos, presentaciones y conversaciones cotidianas desde la primera clase</li>
                     <li>Situaciones prácticas: transporte, mercado, consultas médicas, compras</li>
                     <li>Conversaciones de trabajo y negocios en niveles avanzados</li>
                     <li>Discusiones de opinión y análisis crítico de noticias</li>
                     <li>Práctica para entrevistas laborales y presentaciones</li>
-                </ul>
-                <p><strong>El idioma que aprendes aquí es inmediatamente útil.</strong></p>
-            </div>
-
-            <div class="content-block">
-                <h2>Profesores Brasileños Nativos</h2>
-                <p>Las clases son impartidas por profesores brasileños nativos. Practicas conversación y comprensión del portugués en vivo.</p>
-                <p><strong>Por qué esto importa:</strong></p>
-                <ul>
-                    <li>Explicaciones pensadas para quien habla español</li>
+</ul>
+<p><strong>El idioma que aprendes aquí es inmediatamente útil.</strong></p></div></article>
+</div></section>
+  <section class="inner-section"><div class="wrap editorial-split"><h2>Profesores Brasileños Nativos</h2><div class="reading-column"><p>Las clases son impartidas por profesores brasileños nativos. Practicas conversación y comprensión del portugués en vivo.</p><p><strong>Por qué esto importa:</strong></p><ul><li>Explicaciones pensadas para quien habla español</li>
                     <li>Correcciones para mejorar tu comunicación en portugués</li>
                     <li>Práctica auditiva con acento real brasileño</li>
                     <li>Inmersión cultural auténtica</li>
-                </ul>
-                <p>Esto acelera tu confianza y reduce la frustración en el aprendizaje.</p>
-            </div>
+</ul>
+<p>Esto acelera tu confianza y reduce la frustración en el aprendizaje.</p></div></div><div class="wrap editorial-split online-section"><h2>Clases 100% Online</h2><div class="reading-column"><p>Ofrecemos clases 100% online de portugués brasileño para estudiantes de América Latina.</p><p>Elige clases individuales o en grupo y consulta los horarios disponibles.</p></div></div></section>
 
-            <div class="content-block">
-                <h2>Clases 100% Online</h2>
-                <p>Ofrecemos clases 100% online de portugués brasileño para estudiantes de América Central.</p>
-                <p>Elige clases individuales o en grupo y consulta los horarios disponibles.</p>
-            </div>
-        </div>
-    </section>
-
-    <section class="cta-section">
-        <div class="container">
-            <h2>Encuentra Tu Modalidad</h2>
-            <p>Cuéntanos tu objetivo y disponibilidad. Te presentamos los grupos disponibles o coordinamos tus clases particulares.</p>
-            <a href="/#contact" class="btn btn--primary btn--large">Solicitar Información</a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer__content">
-                <div class="footer__brand">
-                    <div class="footer__logo">
-                        <img src="/assets/LOGO GENIUS NEGATIVO.png" alt="GENIUS Academia de Lenguas" class="footer__logo-img">
-                    </div>
-                    <p class="footer__tagline">
-                        Academia de Lenguas especializada en portugués brasileño.
-                        Clases 100% online para estudiantes de América Central.
-                    </p>
-                    <div class="footer__social">
-                        <a href="#" class="footer__social-link" aria-label="Facebook">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                            </svg>
-                        </a>
-                        <a href="#" class="footer__social-link" aria-label="Instagram">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                            </svg>
-                        </a>
-                        <a href="https://wa.me/50671784096" class="footer__social-link" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="footer__links">
-                    <div class="footer__column">
-                        <h4 class="footer__heading">Cursos</h4>
-                        <ul class="footer__list">
-                            <li><a href="/#courses">Regular</a></li>
-                            <li><a href="/#courses">Semi-intensiva</a></li>
-                            <li><a href="/#courses">Intensiva</a></li>
-                            <li><a href="/#courses">Súper intensiva</a></li>
-                            <li><a href="/#courses">Clases Particulares</a></li>
-                        </ul>
-                    </div>
-
-                    <div class="footer__column">
-                        <h4 class="footer__heading">Empresa</h4>
-                        <ul class="footer__list">
-                            <li><a href="/metodologia.html">Metodología</a></li>
-                            <li><a href="/sobre-nos.html">Sobre Nosotros</a></li>
-                            <li><a href="/#contact">Contacto</a></li>
-                        </ul>
-                    </div>
-
-                    <div class="footer__column">
-                        <h4 class="footer__heading">Países</h4>
-                        <ul class="footer__list">
-                            <li><a href="#">Costa Rica</a></li>
-                            <li><a href="#">Panamá</a></li>
-                            <li><a href="#">El Salvador</a></li>
-                            <li><a href="#">Honduras</a></li>
-                            <li><a href="#">Nicaragua</a></li>
-                            <li><a href="#">Guatemala</a></li>
-                            <li><a href="#">Belize</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="footer__bottom">
-                <p class="footer__copyright">
-                    &copy; 2025 GENIUS Academia de Lenguas. Todos los derechos reservados.
-                </p>
-                <p class="footer__credits">
-                    Clases de portugués brasileño 100% online
-                </p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Scripts -->
-    <script src="script.js"></script>
-</body>
-</html>
+<section class="final-cta" id="contact"><div class="wrap final-layout"><h2>Encuentra Tu Modalidad</h2><div><p>Cuéntanos tu objetivo y disponibilidad. Te presentamos los grupos disponibles o coordinamos tus clases particulares.</p><a class="button button-primary" href="https://wa.me/50671784096?text=Hola%2C%20vi%20el%20curso%20de%20portugu%C3%A9s%20en%20el%20sitio%20de%20GENIUS.%20Me%20interesan%20las%20clases%20de%20portugu%C3%A9s.%20%C2%BFMe%20comparten%20precios%20y%20horarios%20disponibles%3F" target="_blank" rel="noopener noreferrer" data-whatsapp data-primary><img class="icon " src="assets/icons/whatsapp.svg" width="24" height="24" alt=""><span class="button-label"><span class="button-default">Hablar por WhatsApp</span><span class="button-pending" aria-hidden="true">Abriendo WhatsApp…</span></span></a><p class="cta-help">Se abrirá una conversación con GENIUS</p></div></div></section>
+</main>
+<footer class="site-footer"><div class="wrap"><div class="footer-top"><a class="brand" href="/" aria-label="GENIUS, inicio"><img src="assets/LOGO GENIUS POSITIVO.png" alt="GENIUS Academia de Lenguas" width="1970" height="445" loading="lazy"></a><nav aria-label="Más información"><a href="metodologia.html">Metodología</a><a href="sobre-nos.html">Sobre Nosotros</a><a href="https://geniusidiomas.q10.com/" target="_blank" rel="noopener noreferrer">Alumnos</a></nav>
+<a class="social-link" href="https://www.instagram.com/geniusacademiadelenguas/" aria-label="GENIUS en Instagram" target="_blank" rel="noopener noreferrer"><img class="icon " src="assets/icons/brand-instagram.svg" width="24" height="24" alt=""></a></div><div class="footer-bottom"><p>© 2026 GENIUS Academia de Lenguas.</p><p>Academia especializada en portugués brasileño.</p></div><p class="footer-countries">Costa Rica · Panamá · El Salvador · Honduras · Nicaragua · Guatemala · Belize · México · Argentina · Bolivia · Brasil · Chile · Colombia · Cuba · Ecuador · Haití · Paraguay · Perú · República Dominicana · Uruguay · Venezuela</p></div></footer>
+<aside class="mobile-cta" aria-label="Contactar con GENIUS" hidden><a class="button button-primary" href="https://wa.me/50671784096?text=Hola%2C%20vi%20el%20curso%20de%20portugu%C3%A9s%20en%20el%20sitio%20de%20GENIUS.%20Me%20interesan%20las%20clases%20de%20portugu%C3%A9s.%20%C2%BFMe%20comparten%20precios%20y%20horarios%20disponibles%3F" target="_blank" rel="noopener noreferrer" data-whatsapp data-primary><img class="icon " src="assets/icons/whatsapp.svg" width="24" height="24" alt=""><span class="button-label"><span class="button-default">Hablar por WhatsApp</span><span class="button-pending" aria-hidden="true">Abriendo WhatsApp…</span></span></a></aside><p class="sr-only" role="status" id="contact-status"></p></body></html>

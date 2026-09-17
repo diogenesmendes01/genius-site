@@ -1,0 +1,30 @@
+/* Complements landing.css and inner-pages.css. */
+.about-lead {
+  max-width: 20ch;
+  font-family: var(--display);
+  font-size: clamp(36px, 3.45vw, 50px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -.02em;
+  text-wrap: pretty;
+}
+
+.about-steps {
+  padding: 0;
+  list-style: none;
+}
+
+.about-steps > :last-child:nth-child(odd),
+.about-features > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.about-note {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.about-note strong {
+  font-weight: 600;
+}

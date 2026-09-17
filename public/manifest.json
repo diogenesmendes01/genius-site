@@ -4,8 +4,8 @@
   "description": "Aprenda português con profesores nativos brasileños",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000E38",
+  "background_color": "#F6EFE3",
+  "theme_color": "#0B1C3A",
   "orientation": "portrait",
   "icons": [
     {
