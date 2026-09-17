@@ -54,12 +54,15 @@ describe.each(pages)('hero gallery markup in %s', (page) => {
     expect(tags(html, 'span').filter((tag) => attr(tag, 'data-hero-toggle-label') !== null)).toHaveLength(1);
   });
 
-  it('keeps every versioned stylesheet link in step with the file on disk', () => {
-    const links = tags(html, 'link').filter((tag) => attr(tag, 'rel') === 'stylesheet' && attr(tag, 'href')?.includes('?v='));
+  it('versions every local stylesheet with the current file hash', () => {
+    const links = tags(html, 'link')
+      .filter((tag) => attr(tag, 'rel') === 'stylesheet')
+      .map((tag) => new URL(attr(tag, 'href')!, 'https://local.test/'))
+      .filter((url) => url.origin === 'https://local.test');
     expect(links.length).toBeGreaterThan(0);
-    links.forEach((tag) => {
-      const [asset, query] = attr(tag, 'href')!.split('?v=');
-      expect(query).toBe(version(asset));
+    links.forEach((url) => {
+      const asset = decodeURIComponent(url.pathname.slice(1));
+      expect(url.searchParams.get('v')).toBe(version(asset));
     });
   });
 });

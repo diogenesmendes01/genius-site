@@ -33,7 +33,32 @@ describe('Public page discovery and operational URL indexing', () => {
     expect(response.headers.location).toBe('https://www.geniusidiomas.com/?from=share');
   });
 
-  it.each(['localhost:4181', '127.0.0.1:4181', 'preview.example', 'geniusidiomas.com.evil.example'])
+  describe.each(['get', 'head'] as const)('%s canonical request variants', (method) => {
+    it.each([
+      ['geniusidiomas.com:443', '/', '/'],
+      ['geniusidiomas.com:80', '/metodologia.html', '/metodologia.html'],
+      ['geniusidiomas.com:8443', '/sobre-nos.html', '/sobre-nos.html'],
+      ['GENIUSIDIOMAS.COM:443', '/', '/'],
+      ['www.geniusidiomas.com:443', '/index.html', '/'],
+      ['www.geniusidiomas.com:8080', '/index.html', '/'],
+      ['www.geniusidiomas.com', '//', '/'],
+      ['geniusidiomas.com:443', '///', '/'],
+      ['www.geniusidiomas.com:443', '//index.html', '/'],
+      ['www.geniusidiomas.com', '///metodologia.html', '/metodologia.html'],
+      ['geniusidiomas.com', '//curso-portugues-online.html', '/curso-portugues-online.html'],
+    ])('consolidates Host %s and path %s to %s', async (host, path, destination) => {
+      const query = '?utm_source=review&ref=curso%2Bonline&next=%2F%2Fexample.com';
+      const response = await request(app.getHttpServer())[method](`${path}${query}`)
+        .set('Host', host).expect(301);
+      expect(response.headers.location).toBe(`https://www.geniusidiomas.com${destination}${query}`);
+    });
+  });
+
+  it.each([
+    'localhost:4181', '127.0.0.1:4181', '[::1]:4181', 'preview.example',
+    'geniusidiomas.com.evil.example', 'geniusidiomas.com.evil.example:443',
+    'geniusidiomas.com:443.evil.example', 'geniusidiomas.com:443:80',
+  ])
   ('leaves previews and unrelated hosts unchanged: %s', async (host) => {
     const response = await request(app.getHttpServer()).get('/index.html')
       .set('Host', host).set('X-Forwarded-Host', 'geniusidiomas.com').expect(200);
@@ -46,7 +71,7 @@ describe('Public page discovery and operational URL indexing', () => {
     expect(response.headers.location).toBeUndefined();
   });
 
-  it.each(['/missing-page', '//missing-page', '/missing.css', '/api/missing', '/api'])
+  it.each(['/missing-page', '//missing-page', '///missing-page', '//evil.example/path', '/missing.css', '/api/missing', '/api'])
   ('returns a real 404, not the homepage or a server error, for %s', async (path) => {
     const response = await request(app.getHttpServer()).get(path)
       .set('Host', 'geniusidiomas.com').expect(404);

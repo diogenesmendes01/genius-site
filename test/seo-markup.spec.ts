@@ -189,6 +189,17 @@ describe('marketing discovery contracts', () => {
       expect(instanceUrl.hash).toBeTruthy();
       const ids = [...guide.matchAll(/<[a-z][^>]*>/gi)].map(([tag]) => attr(tag, 'id'));
       expect(ids).toContain(decodeURIComponent(instanceUrl.hash.slice(1)));
+      // Weekly contact hours are not the total duration of the course.
+      // Keep the machine-readable workload aligned with its visible table row.
+      const rowId = decodeURIComponent(instanceUrl.hash.slice(1));
+      const row = [...guide.matchAll(/<tr\b([^>]*)>([\s\S]*?)<\/tr>/gi)]
+        .find((match) => attr(`<tr ${match[1]}>`, 'id') === rowId);
+      expect(row).toBeDefined();
+      const cells = [...row![2].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)]
+        .map((match) => visibleText(match[1]));
+      const weeklyHours = cells[1].match(/^(\d+) horas$/)?.[1];
+      expect(weeklyHours).toBeDefined();
+      expect(instance.courseWorkload).toBe(`${weeklyHours} horas de clases en vivo por semana`);
     });
     pages.filter((file) => file !== 'curso-portugues-online.html').forEach((file) => {
       expect(graph(read(file)).filter((node) => isType(node, 'Course') || isType(node, 'Service'))).toHaveLength(0);

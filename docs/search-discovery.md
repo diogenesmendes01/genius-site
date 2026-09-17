@@ -9,7 +9,7 @@ Implementação de 17/09/2026. Público: estudantes de toda a América Latina; c
 | Informações do curso distribuídas em cards e disclosures | [Página do curso](https://www.geniusidiomas.com/curso-portugues-online.html) com tabela dos quatro ritmos, particulares e perguntas reais | Dar uma referência clara para comparar dedicação, duração e contratação |
 | Títulos genéricos e uma organização sem identidade estável | Títulos próprios e JSON-LD ligado por `@id` nas quatro páginas | Relacionar escola, site, páginas e curso sem inventar credenciais |
 | Ofertas diretamente em `EducationalOrganization.offers` | Um `Course` com quatro `CourseInstance` e um `Service` para particulares | Representar os formatos reais; não apresentar ritmos como cursos independentes |
-| Home disponível também em `/index.html` e domínio sem www | 301 nas URLs de marketing conhecidas para a origem canônica | Consolidar duplicatas preservando parâmetros de campanha |
+| Home disponível também em `/index.html`, `//` e domínio sem www | 301 nas URLs de marketing conhecidas para a origem canônica, inclusive aliases com barras repetidas e Host com porta | Consolidar duplicatas preservando parâmetros de campanha |
 | Matrícula e confirmação sem instrução de indexação | Meta `noindex` e cabeçalho `X-Robots-Tag` nas áreas operacionais | Manter transações e APIs fora dos resultados, sem alterar acesso e autenticação |
 | Caminho inexistente com duplo slash retornava 500 | Fallback estático restrito à raiz; inexistentes retornam 404 | Evitar erro de servidor e indexação de URLs sem conteúdo |
 | FAQ da home dependia de JS para leitura | Respostas visíveis no HTML; JS inicializa o acordeão | Preservar conteúdo quando o script não estiver disponível |
@@ -25,9 +25,10 @@ A home mantém o hero, os textos de venda e as modalidades aprovadas. A nova pá
 - Durações são aproximadas. Valores, datas de turmas, notas, endereços e credenciais não entram no schema enquanto não houver informação pública confirmada. Os pacotes particulares são totais de horas, não duração de cada aula.
 - A identidade da escola (`/#organization`) e do site (`/#website`) deve permanecer igual nas quatro páginas. O curso é identificado em `/curso-portugues-online.html#course`.
 - `Course` é uma descrição semântica; não há promessa de carrossel ou resultado destacado. A FAQ serve às pessoas: não foi acrescentado `FAQPage` visando um recurso de rich result descontinuado.
+- `courseWorkload` descreve as horas semanais de aula (2, 4, 6 ou 10) em texto explícito, conforme o [vocabulário Schema.org](https://schema.org/courseWorkload). Não usar `PT2H` isolado para uma carga semanal nem calcular um total com base em meses aproximados. `courseMode` aceita [rótulos textuais](https://schema.org/courseMode), não apenas uma enumeração de três valores. O Google [descontinuou Course Info em 2025](https://developers.google.com/search/blog/2025/06/simplifying-search-results); esses dados não tornam o site elegível a esse recurso extinto.
 - O robots permite rastreamento público pela regra `User-agent: *`, inclusive bots de busca com IA. Não criar grupos específicos que acidentalmente ignorem as exclusões comuns. As regras de treinamento não foram alteradas.
 - HTML com `noindex` precisa continuar rastreável para que o buscador leia a instrução. `noindex` não substitui autenticação. O bloqueio de `/api/` já existente foi preservado; seu cabeçalho funciona como instrução adicional para clientes que possam lê-lo.
-- Redirecionamentos do middleware afetam somente GET/HEAD de caminhos públicos conhecidos, em hosts exatos da marca. API, formulários POST, matrícula e prévias locais conservam seu comportamento. A borda de produção já redireciona HTTP para HTTPS.
+- Redirecionamentos do middleware afetam somente GET/HEAD de caminhos públicos conhecidos, em hosts exatos da marca após remover uma porta numérica opcional. Aliases como `//`, `///` e `//index.html` vão para `/`; `//missing-page` continua sendo 404. A normalização não altera os caminhos enviados à API ou aos arquivos estáticos. Formulários POST e prévias locais conservam seu comportamento. A borda de produção já redireciona HTTP para HTTPS.
 - CSS com hash na URL usa LF via `.gitattributes`, para manter os mesmos bytes no Windows e no CI. Ao editar um CSS, atualizar seu SHA-256 abreviado (10 caracteres) nos HTMLs que o importam.
 
 ## Depois da publicação
@@ -36,7 +37,7 @@ Estas ações dependem do deploy e das contas da escola; não foram executadas p
 
 1. No Search Console já utilizado pela escola, reenviar `https://www.geniusidiomas.com/sitemap.xml`. Inspecionar as quatro páginas, verificar a canonical selecionada pelo Google e solicitar indexação das páginas alteradas. Conferir também a remoção das páginas transacionais ao longo dos próximos rastreamentos.
 2. Em **Configurações → Search generative AI**, conferir se a propriedade está incluída. O Google lançou esse controle em agosto de 2026; uma exclusão pode ser herdada de uma propriedade pai. Não alterar preferências de conta sem revisar seu efeito.
-3. Conferir em produção os redirects de `/index.html` e do domínio sem www, o 404 de caminhos inexistentes e os `noindex`. A configuração do proxy pode afetar o cabeçalho Host observado pela aplicação.
+3. Conferir em produção os redirects de `/index.html`, dos aliases de raiz com barras repetidas e do domínio sem www, o 404 de caminhos inexistentes e os `noindex`. Host com porta explícita é aceito; confirmar que o proxy preserva o hostname público real, pois `X-Forwarded-Host` não é usado para decidir redirects.
 4. Validar a página do curso no [Schema Markup Validator](https://validator.schema.org/) para vocabulário e inspecionar o HTML recebido pelo Google no Search Console. Validade semântica não equivale a elegibilidade para um recurso específico de busca.
 5. Usar o Bing Webmaster Tools, caso já esteja conectado ou seja configurado pela escola, para sitemap/indexação no ecossistema Bing. IndexNow pode ser avaliado depois; não foi criado token nem cadastro nesta mudança.
 6. Verificar no CDN/WAF que Googlebot, OAI-SearchBot, PerplexityBot e Claude-SearchBot reais não recebam bloqueios. As requisições de diagnóstico com esses nomes de User-Agent retornaram HTML 200 em 17/09/2026; isso não comprova acesso de todos os IPs oficiais nem indexação.
@@ -49,9 +50,9 @@ O objetivo é acompanhar toda a América Latina e identificar onde há demanda, 
 
 ## Verificação de código
 
-`npm test -- --runInBand`: **21 suítes e 277 testes aprovados**, cobrindo rotas HTTP reais, metadata/canonical, referências JSON-LD, links e fragmentos, sitemap, FAQ e comportamento existente. `npm run build`: aprovado.
+`npm test -- --runInBand`: **21 suítes e 305 testes aprovados**, cobrindo rotas HTTP reais, metadata/canonical, referências JSON-LD, links e fragmentos, sitemap, FAQ e comportamento existente. `npm run build`: aprovado. A cobertura inclui Host com porta, aliases com barras repetidas, preservação das queries e carga semanal do schema coerente com a tabela pública.
 
-O JSON-LD completo da página do curso foi enviado como snippet ao Schema Markup Validator em 17/09/2026: **0 erros e 0 avisos**, incluindo as entidades ligadas de escola, site, curso, modalidades, particulares e breadcrumbs. Isso valida o vocabulário; a indexação da URL publicada ainda depende dos buscadores.
+O JSON-LD inicial da página do curso (commit `860cc72`) foi enviado como snippet ao Schema Markup Validator em 17/09/2026: **0 erros e 0 avisos**, incluindo as entidades ligadas de escola, site, curso, modalidades, particulares e breadcrumbs. A adição posterior de `courseWorkload` segue a definição oficial citada acima e tem teste de consistência com a tabela. Validação de vocabulário não garante a indexação da URL publicada.
 
 O helper de testes fornece o ExpressAdapter antes de compilar o módulo; assim o ServeStatic usa seu loader real, em vez de ignorar arquivos estáticos nos testes. A inspeção visual incluiu desktop e celular, abertura exclusiva da FAQ e rolagem da tabela por teclado.
 
