@@ -64,9 +64,9 @@ function setup({ width = 1280, reduced = false } = {}) {
   const destination = new Element();
   const faq = new Element();
   faq.setAttribute('aria-controls', 'answer');
-  faq.setAttribute('aria-expanded', 'false');
+  faq.setAttribute('aria-expanded', 'true');
   const answer = new Element();
-  answer.hidden = true;
+  answer.hidden = false;
   const group = new Element();
   const cards = Array.from({ length: 4 }, () => new Element());
   group.children = cards;
@@ -146,6 +146,18 @@ function setup({ width = 1280, reduced = false } = {}) {
 }
 
 describe('landing page browser behavior', () => {
+  it('enhances initially readable FAQ answers into a collapsed, interactive accordion', () => {
+    const page = setup();
+    expect(page.faq.getAttribute('aria-expanded')).toBe('false');
+    expect(page.answer.hidden).toBe(true);
+    expect(page.answer.inert).toBe(true);
+    expect(page.answer.animate).not.toHaveBeenCalled();
+    page.faq.emit('click', { detail: 0 });
+    expect(page.faq.getAttribute('aria-expanded')).toBe('true');
+    expect(page.answer.hidden).toBe(false);
+    expect(page.answer.inert).toBe(false);
+  });
+
   it.each(['PageDown', ' '])('%s keeps future scroll entries available', (key) => {
     const page = setup();
     page.document.emit('keydown', { key });

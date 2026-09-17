@@ -1,14 +1,23 @@
 import { ValidationPipe, INestApplication } from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import cookieParser = require('cookie-parser');
 import { AppModule } from '../../src/app.module';
+import { httpSeo } from '../../src/seo/http-seo.middleware';
 
 export async function createTestApp(): Promise<INestApplication> {
+  // ServeStatic chooses its loader during compile(), before createNestApplication.
+  // Supply the adapter now so HTTP tests exercise real static routes as production does.
+  const adapter = new ExpressAdapter();
+  const adapterHost = new HttpAdapterHost();
+  adapterHost.httpAdapter = adapter;
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  }).overrideProvider(HttpAdapterHost).useValue(adapterHost).compile();
 
-  const app = moduleRef.createNestApplication();
+  const app = moduleRef.createNestApplication(adapter);
+  app.use(httpSeo);
   app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
