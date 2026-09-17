@@ -12,7 +12,9 @@ A home, Metodología e Sobre Nosotros usam a identidade aprovada: navy `#0B1C3A`
 | `public/landing.css` | Tokens, componentes compartilhados e layout da home. |
 | `public/inner-pages.css` / `about-page.css` | Layout e complementos das páginas internas. |
 | `public/landing.js` | FAQ, depoimentos, contato, CTA fixo e animações. |
+| `public/hero-gallery.js` | Alternância das três fotos do hero, seleção manual, pausa e carregamento progressivo. |
 | `public/assets/hero-class-v8.webp` | Imagem do hero, 1672 × 941 pixels, 178.958 bytes. |
+| `public/assets/hero-class-conversation.webp` / `hero-class-practice.webp` | Duas cenas ilustrativas adicionais, 1672 × 941 pixels; 86.846 e 97.408 bytes. |
 | `public/assets/icons/` | Ícones locais e licença do Tabler. |
 
 Os HTMLs em `public/` são a fonte de produção e podem ser editados diretamente. Não há etapa de geração de frontend nem dependência do servidor usado na exploração do design. O Docker existente copia `public/`, servido pelo Nest na raiz do site.
@@ -31,6 +33,10 @@ Os arquivos antigos `public/styles.css` e `public/script.js` permanecem disponí
 A rota `/api/leads` e os templates em `src/leads/email` são mantidos por compatibilidade com o fluxo anterior. A nova landing direciona o contato ao WhatsApp e não chama essa rota nem utiliza esses templates de email.
 
 O CTA fixo mobile aparece após 40% de leitura quando nenhum CTA primário está visível. A FAQ abre um item por vez; depoimentos têm navegação por teclado. Animações respeitam `prefers-reduced-motion` e não bloqueiam a renderização do conteúdo principal.
+
+Nas três páginas, o hero alterna três cenas com pessoas diferentes a cada oito segundos, mantendo título, CTA e enquadramento fixos. A passagem usa apenas opacidade por 600 ms. Os controles permitem selecionar uma foto e pausar; foco pelo teclado ou seleção manual interrompem a reprodução até uma retomada explícita. A galeria também suspende a troca quando está fora da tela, a aba fica oculta ou o mouse está sobre o hero. Com movimento reduzido, a seleção é manual e sem transição.
+
+A primeira foto continua prioritária e funciona sem JavaScript. As outras só começam a carregar após a primeira; uma foto apenas substitui a atual quando estiver carregada e decodificada. Falhas preservam a foto visível. [Prompts e procedência das novas imagens](hero-gallery-images.md).
 
 ## Metadados e compatibilidade
 

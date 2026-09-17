@@ -42,6 +42,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="landing.css">
   <script src="landing.js" defer></script>
+  <script src="hero-gallery.js" defer></script>
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -181,8 +182,22 @@
   <a class="skip-link" href="#main">Saltar al contenido</a>
   <main id="main">
     <div id="main-content" aria-hidden="true"></div>
-    <div class="opening">
-      <figure class="class-visual"><img src="assets/hero-class-v8.webp" alt="Representación ilustrativa de una clase online con un profesor brasileño en la pantalla de un notebook" width="1672" height="941" fetchpriority="high"><figcaption>Representación de una clase online</figcaption></figure>
+    <div class="opening" data-hero-gallery>
+      <figure class="class-visual">
+        <img class="hero-slide" data-hero-slide data-active src="assets/hero-class-v8.webp" alt="Representación ilustrativa de una clase online con un profesor brasileño en la pantalla de un notebook" width="1672" height="941" fetchpriority="high">
+        <img class="hero-slide" data-hero-slide data-src="assets/hero-class-conversation.webp" alt="Representación ilustrativa de una conversación online con una profesora brasileña" width="1672" height="941" fetchpriority="low" decoding="async" aria-hidden="true">
+        <img class="hero-slide" data-hero-slide data-src="assets/hero-class-practice.webp" alt="Representación ilustrativa de una clase de práctica con otro profesor brasileño" width="1672" height="941" fetchpriority="low" decoding="async" aria-hidden="true">
+        <figcaption>Representación de una clase online</figcaption>
+      </figure>
+      <div class="hero-gallery-controls" data-hero-controls role="group" aria-label="Controles de las fotos de clase" hidden>
+        <button class="hero-gallery-toggle" type="button" data-hero-toggle><span data-hero-toggle-label>Pausar</span></button>
+        <div class="hero-gallery-selectors">
+          <button type="button" data-hero-select="0" aria-label="Mostrar foto 1" aria-pressed="true">01</button>
+          <button type="button" data-hero-select="1" aria-label="Mostrar foto 2" aria-pressed="false">02</button>
+          <button type="button" data-hero-select="2" aria-label="Mostrar foto 3" aria-pressed="false">03</button>
+        </div>
+      </div>
+      <span class="sr-only" data-hero-status aria-live="polite" aria-atomic="true"></span>
       <header class="site-header wrap"><a class="brand" href="/" aria-label="GENIUS, inicio"><img src="assets/LOGO GENIUS NEGATIVO.png" alt="GENIUS Academia de Lenguas" width="1970" height="445"></a><a class="student-link" href="https://geniusidiomas.q10.com/" target="_blank" rel="noopener noreferrer">Alumnos</a></header>
       <section class="hero wrap" aria-labelledby="hero-title"><div class="hero-copy">
         <p class="label">Portugués online · En vivo</p>
