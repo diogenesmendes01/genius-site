@@ -107,14 +107,14 @@
   .inner-header .student-link { grid-row: 1; grid-column: 2; border: 0; padding-left: 0; }
   .inner-nav { grid-row: 2; grid-column: 1/-1; gap: 24px; }
   .inner-nav a { min-height: 40px; font-size: 13px; }
-  .inner-hero { min-height: 0; padding-bottom: 236px; }
-  .inner-hero-layout { padding-block: 26px 28px; }
+  .inner-hero { min-height: 580px; padding-bottom: 0; }
+  .inner-hero-layout { display: flex; min-height: 580px; padding-block: 36px 56px; }
   .inner-hero .hero-copy { width: 100%; max-width: none; }
-  .inner-hero h1 { font-size: 48px; line-height: 1; margin-bottom: 18px; }
+  .inner-hero h1 { max-width: 10ch; font-size: 48px; line-height: 1; margin-bottom: 18px; }
   .inner-hero .hero-copy > .label { font-size: 10px; margin-bottom: 14px; }
-  .inner-hero-intro { font-size: 16px; line-height: 1.5; margin-bottom: 22px; }
-  .inner-hero .button { min-height: 54px; width: 100%; font-size: 16px; }
-  .inner-hero .class-visual::after { background: linear-gradient(180deg,var(--navy),transparent 30%,transparent 85%,rgb(11 28 58 / 35%)); }
+  .inner-hero-intro { max-width: 20ch; font-size: 16px; line-height: 1.5; margin-bottom: 28px; }
+  .inner-hero .button { min-height: 54px; width: 100%; margin-top: auto; font-size: 16px; }
+  .inner-hero .class-visual::after { background: linear-gradient(90deg,rgb(11 28 58 / 97%),rgb(11 28 58 / 94%) 35%,rgb(11 28 58 / 78%) 60%,rgb(11 28 58 / 22%) 82%,rgb(11 28 58 / 12%)),linear-gradient(180deg,rgb(11 28 58 / 80%),rgb(11 28 58 / 30%) 18%,transparent 32%,rgb(11 28 58 / 8%) 48%,rgb(11 28 58 / 75%) 79%,var(--navy)); }
   .inner-facts > .wrap { grid-template-columns: repeat(2,1fr); gap: 24px 16px; padding-block: 28px; }
   .inner-facts .wrap > div,.inner-facts .wrap > div:first-child { padding: 0; border: 0; }
   .inner-facts strong { font-size: 28px; }
@@ -143,7 +143,7 @@
 }
 @media (max-width:359px) {
   .inner-header .brand img { width: 175px; }
-  .inner-hero { padding-bottom: 208px; }
+  .inner-hero,.inner-hero-layout { min-height: 560px; }
   .inner-hero h1 { font-size: 42px; }
 }
 @media (prefers-reduced-motion:reduce) { .feature-card:hover { transform: none; } }
