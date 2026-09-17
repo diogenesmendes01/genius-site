@@ -24,13 +24,15 @@ A imagem ocupa o fundo inteiro do hero até 767 px, com degradê navy lateral e 
 | Texto ocupando toda a largura | Título e introdução mais estreitos no mobile | Manter leitura e rosto visíveis ao mesmo tempo |
 | CTA acima da foto separada | CTA na base sobre navy | Integrar a ação à composição e manter contraste |
 
-Os links dos dois estilos incluem versões calculadas a partir do conteúdo para evitar que o navegador misture o layout novo com CSS anterior em cache.
+Os links dos dois estilos incluem versões calculadas a partir do conteúdo para evitar que o navegador misture o layout novo com CSS anterior em cache. Um teste recalcula o sha256 de cada folha e falha quando a versão do link fica para trás do arquivo. O recorte da terceira cena é aplicado pela classe `hero-slide-practice`, e não pelo nome do arquivo, porque as imagens do hero já foram renomeadas entre revisões.
 
 ## Verificação
 
-Validação: 18 suítes e 211 testes aprovados, incluindo 15 casos da galeria; `git diff --check` limpo.
+Validação: 19 suítes e 227 testes aprovados, incluindo 15 casos de comportamento da galeria e 16 de marcação; `npm run build` e `git diff --check` limpos.
 
 Os testes executam o JavaScript real com temporizadores, aleatoriedade controlada, preferências de movimento, visibilidade e carregamentos atrasados ou com falha. A conferência no navegador cobre alternância automática, ausência dos controles visíveis e recortes no desktop e no mobile. O ajuste visual mobile foi conferido em 320, 390 e 430 px nas três páginas, incluindo fotos diferentes durante a reprodução; desktop conferido em 1440 px. Essa alteração de CSS não modifica o JavaScript da galeria.
+
+Os casos de marcação leem as três páginas publicadas e cobrem o outro lado do contrato, que o teste de comportamento não alcança: a inclusão do script, a raiz da galeria, uma única foto ativa com prioridade de carregamento, as demais atrás de `data-src` e com `aria-hidden`, a existência dos arquivos citados, o botão de pausa iniciando oculto e as versões dos estilos.
 
 ![Hero no desktop sem controles visíveis](images/hero-gallery-desktop.jpg)
 

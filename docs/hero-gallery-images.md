@@ -60,4 +60,3 @@ Natural editorial photography with a high quality full-frame DSLR and 50mm lens,
 
 Avoid entirely: any letters or typography, book spine text, call UI, logos, watermarks, landmarks, Rio city views, beaches, tourism, maps, waving large flag, giant bright window, staged stock smile, waxy skin, fake 3D rendering, blur on the teacher, or anatomy defects. The laptop live lesson, not the room or student, is the unmistakable focal point.
 ```
-
