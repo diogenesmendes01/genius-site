@@ -86,20 +86,18 @@ export const PAIS_OPTIONS = [
  * "Celia Falcao" became three different rows.
  */
 export const PROFESOR_OPTIONS = [
+  // Active roster confirmed by the school on 2026-10-26.
+  'Adriana Loureiro',
   'Alice Barbosa',
-  'Celia Falcao Avila',
-  'Erbesson De Lima',
-  'Henrique Avila',
-  'Isabelle Cerqueira',
-  'Kessia Morais',
-  'Larissa Pereira Avila',
+  'Célia Avila',
+  'Giovani Machado',
+  'Karen Machado',
+  'Kessia Gomes',
   'Leticia Moraes',
-  'Licia',
-  'Luisa Pereira',
-  'Matheus',
-  'Patricia Falcao',
-  'Suzana Carvalho',
-  'Vitor Avila',
+  'Licia Omena',
+  'Luisa Araujo',
+  'Matheus Joseph',
+  'Suzana Barreto',
 ];
 
 /** Select values that mean "no single teacher to attribute this to". */
