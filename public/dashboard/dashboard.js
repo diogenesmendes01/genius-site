@@ -26,7 +26,7 @@ const state = {
   // by refreshBtn or the 60s auto-timer.
   loaded: { overview: false, academic: false, turmas: false, financial: false, commercial: false, encuesta: false },
   // Encuesta tab filters (nivel / profesor / canal) — session-only.
-  encFilters: { nivel: '', profesor: '', canal: '' },
+  encFilters: { nivel: '', profesor: '', canal: '', modalidad: '' },
   // Multi-currency state — `displayCurrency` is the user's view choice
   // (persisted in localStorage). `rates` is the USD-base table from
   // /api/dashboard/currency-rates, lazy-loaded on first auth'd render.
@@ -123,7 +123,7 @@ function bindEvents() {
   });
 
   // Encuesta tab filters — re-fetch the stats with the new params.
-  [['encNivel', 'nivel'], ['encProfesor', 'profesor'], ['encCanal', 'canal']].forEach(
+  [['encNivel', 'nivel'], ['encProfesor', 'profesor'], ['encCanal', 'canal'], ['encModalidad', 'modalidad']].forEach(
     ([id, key]) => {
       const select = el(id);
       if (!select) return;
@@ -1104,10 +1104,13 @@ async function loadEncuesta(force) {
 
   // KPIs
   const nps = data.nps || {};
+  const continuar = data.continuar || {};
   const npsValue = nps.score == null ? '—' : (nps.score > 0 ? `+${nps.score}` : String(nps.score));
   el('encuestaKpis').innerHTML = [
     { label: 'NPS', value: npsValue, hint: `${nps.promoters ?? 0} promotores · ${nps.detractors ?? 0} detractores`, accent: true, variant: nps.score != null && nps.score < 0 ? 'danger' : '' },
     { label: 'Satisfacción general', value: data.csatAvg != null ? `${data.csatAvg} / 5` : '—', hint: 'promedio 1–5' },
+    { label: 'Piensan continuar', value: continuar.pctPositivo != null ? `${continuar.pctPositivo}%` : '—', hint: `${continuar.enRiesgo ?? 0} en riesgo de ${continuar.respondieron ?? 0}`, variant: (continuar.enRiesgo || 0) > 0 ? 'warning' : 'success' },
+    { label: 'No saben su nivel', value: data.nivelDesconocido ?? 0, hint: 'eligieron "No sé mi nivel"', variant: (data.nivelDesconocido || 0) > 0 ? 'warning' : '' },
     { label: 'Respuestas', value: data.total ?? 0, hint: `${data.identified ?? 0} identificadas` },
     { label: 'Aceptan contacto', value: data.contactOk ?? 0, hint: 'para seguimiento' },
     { label: 'Testimonios autorizados', value: data.testimonioOk ?? 0, hint: 'para la landing', variant: 'success' },
@@ -1123,6 +1126,8 @@ async function loadEncuesta(force) {
   );
   renderEncAverages(data.averages || []);
 
+  renderDistributionChart('encContinuarChart', (data.distributions?.continuar?.dist) || {}, '#059669');
+  renderDistributionChart('encSoporteChart', (data.distributions?.soporte_tiempo?.dist) || {}, '#1a2456');
   renderDistributionChart('encProgresoChart', (data.distributions?.progreso?.dist) || {}, '#DCAF63');
   renderDistributionChart('encCanalChart', data.canales || {}, '#1a2456');
   renderDistributionChart('encContenidoChart', (data.multi?.contenido_extra?.dist) || {}, '#DCAF63');
@@ -1188,12 +1193,21 @@ function renderEncProfessors(professors, unidentified) {
     return;
   }
   const npsCell = (v) => (v == null ? '—' : v > 0 ? `+${v}` : String(v));
-  const rows = professors.map((p) => `
+  // Teachers with fewer than `minN` responses show the count but not the
+  // numbers: with n=1 they are noise and identify the student.
+  const rows = professors.map((p) => p.insufficient
+    ? `
+    <tr>
+      <td>${escapeHtml(p.profesor || '—')}</td>
+      <td>${escapeHtml(String(p.count))}</td>
+      <td colspan="3" style="color:var(--gray-text)">Menos de ${escapeHtml(String(p.minN ?? 3))} respuestas · sin promedios</td>
+    </tr>`
+    : `
     <tr>
       <td>${escapeHtml(p.profesor || '—')}</td>
       <td>${escapeHtml(String(p.count))}</td>
       <td>${escapeHtml(p.avgClaridad != null ? String(p.avgClaridad) : '—')}</td>
-      <td>${escapeHtml(p.avgPaciencia != null ? String(p.avgPaciencia) : '—')}</td>
+      <td>${escapeHtml(p.avgFeedback != null ? String(p.avgFeedback) : '—')}</td>
       <td>${escapeHtml(npsCell(p.nps))}</td>
     </tr>`);
   if (unidentified > 0) {
@@ -1218,6 +1232,7 @@ function renderEncComments(comments) {
     const chips = [
       c.question ? `<span class="enc-chip">${escapeHtml(c.question)}</span>` : '',
       c.nivel ? `<span class="enc-chip">Nivel ${escapeHtml(c.nivel)}</span>` : '',
+      c.modalidad ? `<span class="enc-chip">${escapeHtml(c.modalidad)}</span>` : '',
       c.profesor ? `<span class="enc-chip">Prof.: ${escapeHtml(c.profesor)}</span>` : '',
       c.canal ? `<span class="enc-chip">${escapeHtml(c.canal)}</span>` : '',
       c.createdAt ? `<span class="enc-chip">${escapeHtml(new Date(c.createdAt).toLocaleDateString('es'))}</span>` : '',
@@ -1246,6 +1261,7 @@ function syncEncFilterOptions(options) {
   fill('encNivel', (options.niveles || []).map((n) => ({ value: n, label: n })), state.encFilters.nivel);
   fill('encProfesor', (options.profesores || []).map((p) => ({ value: p.norm, label: p.label })), state.encFilters.profesor);
   fill('encCanal', (options.canales || []).map((c) => ({ value: c, label: c })), state.encFilters.canal);
+  fill('encModalidad', (options.modalidades || []).map((m) => ({ value: m, label: m })), state.encFilters.modalidad);
 }
 
 // ─── Shared UI helpers for the new tabs ───

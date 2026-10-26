@@ -45,6 +45,7 @@
     if (params.get('nivel')) filtros.push('Nivel: ' + params.get('nivel'));
     if (params.get('profesor')) filtros.push('Profesor/a: ' + params.get('profesor'));
     if (params.get('canal')) filtros.push('Canal: ' + params.get('canal'));
+    if (params.get('modalidad')) filtros.push('Modalidad: ' + params.get('modalidad'));
     var periodo = params.get('from') && params.get('to')
       ? params.get('from') + ' → ' + params.get('to')
       : 'Todo el histórico';
@@ -56,10 +57,13 @@
 
     /* ── KPIs ── */
     var nps = data.nps || {};
+    var cont = data.continuar || {};
     var npsTxt = nps.score == null ? '—' : (nps.score > 0 ? '+' + nps.score : String(nps.score));
     el('kpis').innerHTML = [
       { l: 'NPS', v: npsTxt, h: (nps.promoters || 0) + ' promotores · ' + (nps.detractors || 0) + ' detractores' },
       { l: 'Satisfacción', v: data.csatAvg != null ? data.csatAvg + ' / 5' : '—', h: 'promedio general' },
+      { l: 'Piensan continuar', v: cont.pctPositivo != null ? cont.pctPositivo + '%' : '—', h: (cont.enRiesgo || 0) + ' en riesgo de ' + (cont.respondieron || 0) },
+      { l: 'No saben su nivel', v: data.nivelDesconocido || 0, h: 'eligieron "No sé mi nivel"' },
       { l: 'Respuestas', v: data.total || 0, h: (data.identified || 0) + ' identificadas' },
       { l: 'Aceptan contacto', v: data.contactOk || 0, h: 'para seguimiento' },
       { l: 'Testimonios', v: data.testimonioOk || 0, h: 'autorizados' },
@@ -108,17 +112,22 @@
     /* ── profesores ── */
     var profs = data.professors || [];
     var rows = profs.map(function (p) {
+      if (p.insufficient) {
+        return '<tr><td>' + esc(p.profesor || '—') + '</td>' +
+          '<td class="num">' + esc(p.count) + '</td>' +
+          '<td colspan="3" style="color:#606060">Menos de ' + esc(p.minN || 3) + ' respuestas · sin promedios</td></tr>';
+      }
       return '<tr><td>' + esc(p.profesor || '—') + '</td>' +
         '<td class="num">' + esc(p.count) + '</td>' +
         '<td class="num">' + esc(p.avgClaridad != null ? p.avgClaridad : '—') + '</td>' +
-        '<td class="num">' + esc(p.avgPaciencia != null ? p.avgPaciencia : '—') + '</td>' +
-        '<td class="num">' + esc(p.nps > 0 ? '+' + p.nps : p.nps) + '</td></tr>';
+        '<td class="num">' + esc(p.avgFeedback != null ? p.avgFeedback : '—') + '</td>' +
+        '<td class="num">' + esc(p.nps == null ? '—' : (p.nps > 0 ? '+' + p.nps : p.nps)) + '</td></tr>';
     });
     if (data.unidentified > 0) {
       rows.push('<tr><td style="color:#606060">Sin identificar</td><td class="num">' + esc(data.unidentified) + '</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>');
     }
     el('professors').innerHTML = rows.length
-      ? '<table><thead><tr><th>Profesor/a</th><th class="num">Respuestas</th><th class="num">Prom. claridad</th><th class="num">Prom. paciencia</th><th class="num">NPS</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>'
+      ? '<table><thead><tr><th>Profesor/a</th><th class="num">Respuestas</th><th class="num">Prom. claridad</th><th class="num">Prom. feedback</th><th class="num">NPS</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>'
       : '<p style="color:#606060">Sin respuestas con profesor/a identificado.</p>';
 
     /* ── semanal ── */
@@ -133,7 +142,7 @@
     el('comments').innerHTML = comments.length
       ? comments.map(function (c) {
           var chips = [
-            c.question, c.nivel ? 'Nivel ' + c.nivel : null,
+            c.question, c.nivel ? 'Nivel ' + c.nivel : null, c.modalidad,
             c.profesor ? 'Prof.: ' + c.profesor : null, c.canal,
             c.createdAt ? new Date(c.createdAt).toLocaleDateString('es') : null,
           ].filter(Boolean).map(function (m) { return '<span class="m">' + esc(m) + '</span>'; });
@@ -144,7 +153,8 @@
 
     el('reportFoot').textContent =
       'Informe generado desde el dashboard de Genius Idiomas · Encuesta de Satisfacción de Alumnos. ' +
-      'Los promedios usan escala 1–5; el NPS va de −100 a +100. "Posibles duplicados" es solo un aviso (misma red/IP).';
+      'Los promedios usan escala 1–5; el NPS va de −100 a +100. "Posibles duplicados" es solo un aviso (misma red/IP). ' +
+      'Los profesores con menos de 3 respuestas aparecen sin promedios para proteger el anonimato.';
   }
 
   function hbar(label, value, max, valueText, gold) {

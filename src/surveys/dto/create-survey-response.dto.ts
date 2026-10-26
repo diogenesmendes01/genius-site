@@ -9,7 +9,12 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { NIVEL_OPTIONS, TIEMPO_OPTIONS } from '../survey-config';
+import {
+  MODALIDAD_OPTIONS,
+  NIVEL_ALLOWED,
+  PAIS_OPTIONS,
+  TIEMPO_OPTIONS,
+} from '../survey-config';
 
 export class CreateSurveyResponseDto {
   @IsInt({ message: 'nps debe ser un número entero' })
@@ -51,12 +56,21 @@ export class CreateSurveyResponseDto {
   testimonioOk?: boolean;
 
   @IsOptional()
-  @IsIn(NIVEL_OPTIONS, { message: 'nivel inválido' })
+  @IsIn(NIVEL_ALLOWED, { message: 'nivel inválido' })
   nivel?: string;
 
   @IsOptional()
   @IsIn(TIEMPO_OPTIONS, { message: 'tiempo inválido' })
   tiempo?: string;
+
+  /** v2 — required in the wizard; optional here so older clients still post. */
+  @IsOptional()
+  @IsIn(MODALIDAD_OPTIONS, { message: 'modalidad inválida' })
+  modalidad?: string;
+
+  @IsOptional()
+  @IsIn(PAIS_OPTIONS, { message: 'país inválido' })
+  pais?: string;
 
   /**
    * All configurable answers, keyed by question id. Validated dynamically

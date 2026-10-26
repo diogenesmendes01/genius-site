@@ -4,6 +4,53 @@ Pesquisa anônima em espanhol, em formato wizard de 6 etapas, com resultados
 numa aba dedicada do dashboard admin. Nenhum dado vem do Q10 — tudo é
 auto-declarado pelo aluno e fica no SQLite local.
 
+## O que mudou na v2 (outubro/2026)
+
+Revisão feita a partir do informe de julho/2026 (10 respostas, médias de
+professor todas no teto, e comentários pedindo clareza sobre o nível,
+acesso ao material e resposta mais rápida do suporte).
+
+- **Mais curta**: 15 perguntas obrigatórias (eram 22). Saíram as que mediam a
+  mesma coisa (3 de aulas online, 4 de professor, `comunicacion`,
+  `lo_mejor`/`a_mejorar`).
+- **Professor em lista fechada** (`PROFESOR_OPTIONS` em `survey-config.ts`)
+  com "Tengo más de un profesor/a" e "Prefiero no decir". Acaba com
+  "Celia" / "Celia Avila" / "Celia Falcao" virando três linhas. **Mantenha a
+  lista em dia** quando um professor entra ou sai.
+- **Segmentação nova**: `modalidad` (obrigatória: grupo regular /
+  semi-intensivo / intensivo / particulares) e `pais` (opcional). Ambas viram
+  coluna, filtro no dashboard e coluna no CSV. O nível ganhou a opção
+  **"No sé mi nivel"**, que aparece como KPI.
+- **Perguntas novas, ligadas aos comentários de julho**: razão da nota do NPS
+  (`nps_motivo`), intenção de continuar nos próximos 6 meses (`continuar`,
+  com "¿qué te haría quedarte?" para quem está em dúvida), clareza sobre o
+  próprio nível (`progreso_claridad`), acesso ao material fora da aula
+  (`materiales_acceso`) e tempo de resposta do suporte (`soporte_tiempo`).
+  `soporte` ganhou a saída "No he necesitado ayuda", que não entra na média.
+- **Anonimato por professor**: com menos de 3 respostas
+  (`MIN_PROFESSOR_N`) a linha mostra só a contagem, sem médias nem NPS.
+- **Histórico preservado**: os ids mantidos (`csat`, `nps`, `progreso`,
+  `prof_claridad`, …) significam o mesmo; os ids removidos estão em
+  `LEGACY_ANSWER_IDS` e continuam saindo no CSV quando há respostas antigas.
+  Novos envios com esses ids são rejeitados.
+- O rascunho salvo no navegador mudou de chave (`genius:encuesta:v2`), então
+  um aluno que tinha a v1 pela metade começa do zero.
+
+### Como aplicar (plano de coleta)
+
+A taxa de resposta de julho (10 respostas, todas de um único disparo no
+WhatsApp) é o maior problema a resolver. Sugestão:
+
+| Quando | Como | Meta |
+|---|---|---|
+| Pesquisa principal, 2× ao ano (antes das renovações) | Semana 1: professor abre `?src=en-clase` nos últimos 5 min da aula. Semana 2: lembrete no grupo (`?src=whatsapp`). | ≥ 50% dos alunos ativos |
+| Pulso de boas-vindas na 4ª semana | 5 perguntas (`?src=onboarding`) | Pegar problema antes do 1º cancelamento |
+| Pesquisa de saída ao cancelar | 3 perguntas enviadas pela secretaria | 100% dos cancelamentos |
+
+Os dois últimos ainda usam o mesmo questionário; separar em pesquisas
+distintas exige generalizar `survey-config.ts` para múltiplas pesquisas
+(o mesmo passo que permitiria a pesquisa de clima da equipe no site).
+
 ## Como funciona
 
 | Peça | Onde |
@@ -63,9 +110,11 @@ node scripts/generate-qr.mjs https://outro-dominio  # base alternativa
    abertos (com selo "★ Testimonio autorizado" quando o aluno permitiu uso
    no site).
 
-O nome do professor é texto livre digitado pelo aluno; o agrupamento usa o
-nome normalizado (minúsculas, sem acentos). Grafias que não se unirem
-sozinhas podem ser corrigidas direto no banco (`survey_responses.profesorNorm`).
+O professor vem da lista fechada `PROFESOR_OPTIONS`; o agrupamento usa o
+nome normalizado (minúsculas, sem acentos). Respostas antigas (v1) com
+grafias diferentes podem ser unificadas direto no banco
+(`survey_responses.profesorNorm`). Professores com menos de 3 respostas
+aparecem sem médias (só a contagem).
 
 ## Relatórios e exportação
 
@@ -108,8 +157,14 @@ Tudo vive em `src/surveys/survey-config.ts` — etapas, textos, tipos,
 obrigatoriedade e condicionais (`showIf`). Adicionar/remover pergunta é
 editar esse array e fazer deploy; o wizard e a validação do backend se
 ajustam sozinhos, sem migração de banco (respostas configuráveis vão para
-`survey_answers`). Ex.: para cortar a P12, remova o bloco
-`online_efectividad`.
+`survey_answers`). Ex.: para cortar a pergunta de acesso ao material, remova
+o bloco `materiales_acceso`. Ao remover uma pergunta que já tem respostas,
+acrescente o id em `LEGACY_ANSWER_IDS` para ela continuar saindo no CSV.
+
+Tipos de pergunta disponíveis: `nps`, `stars`, `scale5` (com `optOut`
+opcional), `radio` (`variant: 'cards' | 'list'`), `checks`, `text`,
+`textarea`, `selects` (cada select pode ser `required`) e `consent`.
+Condicionais: `showIf: { id, equals | includes | oneOf }`.
 
 ## Deploy
 

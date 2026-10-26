@@ -494,6 +494,10 @@
               <label for="encCanal">Canal</label>
               <select id="encCanal"><option value="">Todos</option></select>
             </div>
+            <div class="picker">
+              <label for="encModalidad">Modalidad</label>
+              <select id="encModalidad"><option value="">Todas</option></select>
+            </div>
             <div class="encuesta-actions">
               <button class="btn btn-secondary" id="encReportBtn" type="button" title="Abre un informe imprimible con los filtros actuales">
                 📄 <span class="btn__label">Generar informe</span>
@@ -526,6 +530,17 @@
 
         <section class="chart-grid">
           <div class="card">
+            <h2 class="card__title">Intención de continuar</h2>
+            <canvas id="encContinuarChart" height="140"></canvas>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Tiempo de respuesta del soporte</h2>
+            <canvas id="encSoporteChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="chart-grid">
+          <div class="card">
             <h2 class="card__title">Progreso percibido</h2>
             <canvas id="encProgresoChart" height="140"></canvas>
           </div>
@@ -551,7 +566,7 @@
           <div class="table-wrapper">
             <table class="data-table" id="encProfTable">
               <thead><tr>
-                <th>Profesor/a</th><th>Respuestas</th><th>Prom. claridad</th><th>Prom. paciencia</th><th>NPS</th>
+                <th>Profesor/a</th><th>Respuestas</th><th>Prom. claridad</th><th>Prom. feedback</th><th>NPS</th>
               </tr></thead>
               <tbody></tbody>
             </table>

@@ -9,8 +9,13 @@ import {
   ANSWER_QUESTIONS,
   AVERAGE_QUESTIONS,
   COMMENT_QUESTIONS,
+  CONTINUAR_POSITIVO,
   DISTRIBUTION_QUESTIONS,
+  LEGACY_ANSWER_IDS,
+  MIN_PROFESSOR_N,
   MULTI_QUESTIONS,
+  NIVEL_DESCONOCIDO,
+  PROFESOR_SIN_IDENTIFICAR,
   validateAnswers,
 } from './survey-config';
 
@@ -18,6 +23,7 @@ export interface SurveyFilters {
   nivel?: string;
   profesor?: string;
   canal?: string;
+  modalidad?: string;
   from?: string;
   to?: string;
 }
@@ -49,7 +55,11 @@ export class SurveysService {
       });
     }
 
-    const profesor = dto.profesor?.trim() || null;
+    // "Tengo más de un profesor/a" / "Prefiero no decir" are not teachers:
+    // they land as "sin identificar" instead of polluting the per-teacher table.
+    const profesorRaw = dto.profesor?.trim() || null;
+    const profesor =
+      profesorRaw && !PROFESOR_SIN_IDENTIFICAR.includes(profesorRaw) ? profesorRaw : null;
     const response = await this.responses.save(
       this.responses.create({
         // No ?src= on the link → store the explicit 'directo' channel, so it
@@ -66,6 +76,8 @@ export class SurveysService {
         testimonioOk: dto.testimonioOk === true,
         nivel: dto.nivel ?? null,
         tiempo: dto.tiempo ?? null,
+        modalidad: dto.modalidad ?? null,
+        pais: dto.pais ?? null,
         ipHash: ip ? hashIp(ip) : null,
       }),
     );
@@ -103,10 +115,16 @@ export class SurveysService {
       : [];
     const byResponse = groupBy(answerRows, (a) => a.responseId);
     const hashCounts = countByIpHash(rows);
-    const questionIds = [...ANSWER_QUESTIONS.keys()];
+    // Current questions first; v1 columns only when the export actually
+    // contains answers to them (no empty legacy columns on fresh data).
+    const present = new Set(answerRows.map((a) => a.questionId));
+    const questionIds = [
+      ...ANSWER_QUESTIONS.keys(),
+      ...LEGACY_ANSWER_IDS.filter((id) => present.has(id)),
+    ];
 
     const header = [
-      'fecha', 'canal', 'nivel', 'tiempo', 'nps', 'csat', 'profesor',
+      'fecha', 'canal', 'modalidad', 'pais', 'nivel', 'tiempo', 'nps', 'csat', 'profesor',
       'acepta_contacto', 'nombre', 'contacto', 'testimonio_ok', 'posible_duplicado',
       ...questionIds,
     ];
@@ -119,6 +137,8 @@ export class SurveysService {
       const base = [
         r.createdAt.toISOString(),
         r.canal ?? '',
+        r.modalidad ?? '',
+        r.pais ?? '',
         r.nivel ?? '',
         r.tiempo ?? '',
         String(r.nps),
@@ -255,7 +275,28 @@ export class SurveysService {
       canales[key] = (canales[key] ?? 0) + 1;
     }
 
+    // ── intención de continuar (v2) ──
+    const continuarRows = answerRows.filter((a) => a.questionId === 'continuar' && a.valueText);
+    const continuarPositivos = continuarRows.filter((a) =>
+      CONTINUAR_POSITIVO.includes(a.valueText as string),
+    ).length;
+    const continuar = {
+      respondieron: continuarRows.length,
+      positivos: continuarPositivos,
+      enRiesgo: continuarRows.length - continuarPositivos,
+      pctPositivo: continuarRows.length
+        ? Math.round((continuarPositivos / continuarRows.length) * 100)
+        : null,
+    };
+
+    // ── "No sé mi nivel" (v2) ──
+    const nivelDesconocido = rows.filter((r) => r.nivel === NIVEL_DESCONOCIDO).length;
+
     // ── per-teacher table (grouped by normalised name) ──
+    // Below MIN_PROFESSOR_N responses the averages/NPS are withheld: the
+    // number would be noise and the answer trivially attributable to one
+    // student. The row (name + count) still shows so the school sees who
+    // still needs responses.
     const teacherGroups = groupBy(
       rows.filter((r) => r.profesorNorm),
       (r) => r.profesorNorm as string,
@@ -271,13 +312,16 @@ export class SurveysService {
         };
         const promo = group.filter((g) => g.nps >= 9).length;
         const detra = group.filter((g) => g.nps <= 6).length;
+        const insufficient = group.length < MIN_PROFESSOR_N;
         return {
           profesor: mostCommonSpelling(group),
           profesorNorm: norm,
           count: group.length,
-          avgClaridad: avgOf('prof_claridad'),
-          avgPaciencia: avgOf('prof_paciencia'),
-          nps: Math.round(((promo - detra) / group.length) * 100),
+          insufficient,
+          minN: MIN_PROFESSOR_N,
+          avgClaridad: insufficient ? null : avgOf('prof_claridad'),
+          avgFeedback: insufficient ? null : avgOf('prof_feedback'),
+          nps: insufficient ? null : Math.round(((promo - detra) / group.length) * 100),
         };
       })
       .sort((a, b) => b.count - a.count);
@@ -293,6 +337,7 @@ export class SurveysService {
           question: COMMENT_QUESTIONS[a.questionId],
           createdAt: r?.createdAt.toISOString() ?? null,
           nivel: r?.nivel ?? null,
+          modalidad: r?.modalidad ?? null,
           profesor: r?.profesor ?? null,
           canal: r?.canal ?? null,
           testimonioOk: r?.testimonioOk ?? false,
@@ -312,6 +357,7 @@ export class SurveysService {
         (r) => r.profesorNorm as string,
       ).entries()].map(([norm, g]) => ({ norm, label: mostCommonSpelling(g) })),
       canales: uniqueSorted(allRows.map((r) => r.canal)),
+      modalidades: uniqueSorted(allRows.map((r) => r.modalidad)),
     };
 
     // ── possible duplicates: responses sharing a salted IP hash ──
@@ -328,6 +374,8 @@ export class SurveysService {
       possibleDuplicates,
       nps: { score: npsScore, promoters, passives, detractors },
       csatAvg: total ? round1(rows.reduce((s, r) => s + r.csat, 0) / total) : null,
+      continuar,
+      nivelDesconocido,
       averages,
       distributions,
       multi,
@@ -345,6 +393,7 @@ export class SurveysService {
     if (filters.nivel) where.nivel = filters.nivel;
     if (filters.profesor) where.profesorNorm = normalizeName(filters.profesor);
     if (filters.canal) where.canal = filters.canal;
+    if (filters.modalidad) where.modalidad = filters.modalidad;
     if (filters.from || filters.to) {
       const from = filters.from ? new Date(`${filters.from}T00:00:00`) : new Date(0);
       const to = filters.to ? new Date(`${filters.to}T23:59:59.999`) : new Date();

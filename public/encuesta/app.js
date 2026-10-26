@@ -10,7 +10,9 @@
   'use strict';
 
   var API = '/api/surveys';
-  var STORAGE_KEY = 'genius:encuesta:v1';
+  // v2 (2026-10): new steps/questions — a v1 draft left in storage would
+  // restore answers to questions that no longer exist, so the key changed.
+  var STORAGE_KEY = 'genius:encuesta:v2';
   var DONE_KEY = 'genius:encuesta:done';
   var DONE_COOKIE = 'genius_encuesta_done';
   var DONE_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 días
@@ -19,6 +21,7 @@
   var COLUMN_FIELDS = {
     csat: 'csat',
     nps: 'nps',
+    modalidad: 'modalidad',
     profesor: 'profesor',
     nombre: 'nombre',
     contacto: 'contacto',
@@ -119,6 +122,7 @@
     if (q.showIf.includes !== undefined) {
       return Array.isArray(v) && v.indexOf(q.showIf.includes) !== -1;
     }
+    if (Array.isArray(q.showIf.oneOf)) return q.showIf.oneOf.indexOf(v) !== -1;
     return true;
   }
 
@@ -239,6 +243,26 @@
         box.appendChild(ends);
       }
       box.appendChild(cap);
+      // "No aplica" escape hatch (e.g. "No he necesitado ayuda"): stored as
+      // text, so it never drags the average down or up.
+      if (q.optOut) {
+        var opt = document.createElement('button');
+        opt.type = 'button';
+        opt.className = 'scale-optout';
+        opt.textContent = q.optOut;
+        if (cur === q.optOut) opt.classList.add('sel');
+        opt.addEventListener('click', function () {
+          grid.querySelectorAll('button').forEach(function (x) { x.classList.remove('sel'); });
+          cap.innerHTML = '&nbsp;';
+          opt.classList.add('sel');
+          setAnswer(q.id, q.optOut);
+          box.classList.remove('missing');
+        });
+        grid.querySelectorAll('button').forEach(function (b) {
+          b.addEventListener('click', function () { opt.classList.remove('sel'); });
+        });
+        box.appendChild(opt);
+      }
     },
 
     radio: function (q, box) {
@@ -322,6 +346,12 @@
         var lab = document.createElement('label');
         lab.className = 'fld-label';
         lab.textContent = s.label;
+        if (s.required) {
+          var star = document.createElement('span');
+          star.className = 'st';
+          star.textContent = ' *';
+          lab.appendChild(star);
+        }
         lab.setAttribute('for', 'sel_' + s.id);
         var sel = document.createElement('select');
         sel.className = 's-select';
@@ -436,7 +466,15 @@
     var step = steps[state.step];
     var missing = [];
     step.questions.forEach(function (q) {
-      if (!q.required || !isVisible(q)) return;
+      if (!isVisible(q)) return;
+      if (q.type === 'selects') {
+        var lacking = (q.selects || []).some(function (s) {
+          return s.required && !state.answers[s.id];
+        });
+        if (lacking) missing.push(q.id);
+        return;
+      }
+      if (!q.required) return;
       if (state.answers[q.id] === undefined) missing.push(q.id);
     });
     host.querySelectorAll('.q').forEach(function (elq) {

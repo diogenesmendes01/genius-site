@@ -47,6 +47,7 @@ export class SurveysController {
     @Query('nivel') nivel?: string,
     @Query('profesor') profesor?: string,
     @Query('canal') canal?: string,
+    @Query('modalidad') modalidad?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('commentsLimit') commentsLimit?: string,
@@ -55,7 +56,7 @@ export class SurveysController {
       commentsLimit === 'all'
         ? Number.MAX_SAFE_INTEGER
         : Math.max(1, parseInt(commentsLimit ?? '', 10) || 30);
-    return this.surveys.stats({ nivel, profesor, canal, from, to }, limit);
+    return this.surveys.stats({ nivel, profesor, canal, modalidad, from, to }, limit);
   }
 
   /** Admin: download every response as CSV (respects the same filters). */
@@ -66,10 +67,11 @@ export class SurveysController {
     @Query('nivel') nivel?: string,
     @Query('profesor') profesor?: string,
     @Query('canal') canal?: string,
+    @Query('modalidad') modalidad?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    const csv = await this.surveys.exportCsv({ nivel, profesor, canal, from, to });
+    const csv = await this.surveys.exportCsv({ nivel, profesor, canal, modalidad, from, to });
     const today = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader(
@@ -86,10 +88,11 @@ export class SurveysController {
     @Query('nivel') nivel?: string,
     @Query('profesor') profesor?: string,
     @Query('canal') canal?: string,
+    @Query('modalidad') modalidad?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.surveys.list({ nivel, profesor, canal, from, to });
+    return this.surveys.list({ nivel, profesor, canal, modalidad, from, to });
   }
 }
 

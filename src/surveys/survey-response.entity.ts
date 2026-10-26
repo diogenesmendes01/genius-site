@@ -54,9 +54,18 @@ export class SurveyResponseEntity {
   @Column({ type: 'boolean', default: false })
   testimonioOk: boolean;
 
-  /** Optional CEFR level (A1..C2) — fixed list, self-reported. */
+  /** Optional CEFR level (A1..C2 or "No sé mi nivel") — fixed list, self-reported. */
   @Column({ type: 'varchar', nullable: true })
   nivel: string | null;
+
+  /** v2 — course format (grupo regular/semi/intensivo, particulares). Fixed list. */
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  modalidad: string | null;
+
+  /** v2 — optional country (one of the 7 served + "Otro"). Fixed list. */
+  @Column({ type: 'varchar', nullable: true })
+  pais: string | null;
 
   /** Optional "¿hace cuánto estudias?" bracket — fixed list. */
   @Column({ type: 'varchar', nullable: true })
