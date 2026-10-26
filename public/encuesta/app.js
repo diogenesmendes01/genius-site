@@ -1,33 +1,58 @@
-/* Encuesta de Satisfacción — wizard config-driven.
+/* Encuesta / pesquisa — wizard config-driven, multi-survey.
  *
- * Las etapas y preguntas NO viven aquí: se cargan de GET /api/surveys/config
- * (fuente única: src/surveys/survey-config.ts). Este archivo solo sabe
- * renderizar cada tipo de pregunta, mantener el estado (con localStorage,
- * para que un refresh no pierda nada) y enviar el payload a POST /api/surveys.
+ * Las etapas, preguntas y textos de interfaz NO viven aquí: se cargan de
+ * GET /api/surveys/config?survey=<key> (fuente única: src/surveys/*.ts).
+ * La página indica qué encuesta es con <body data-survey="alumnos|equipe">.
+ * Este archivo solo sabe renderizar cada tipo de pregunta, mantener el
+ * estado (con localStorage, para que un refresh no pierda nada) y enviar el
+ * payload a POST /api/surveys.
  */
 
 (function () {
   'use strict';
 
   var API = '/api/surveys';
-  // v2 (2026-10): new steps/questions — a v1 draft left in storage would
-  // restore answers to questions that no longer exist, so the key changed.
-  var STORAGE_KEY = 'genius:encuesta:v2';
-  var DONE_KEY = 'genius:encuesta:done';
-  var DONE_COOKIE = 'genius_encuesta_done';
+  var SURVEY_KEY = (document.body.getAttribute('data-survey') || 'alumnos').trim();
+  // v2 (2026-10): new steps/questions — a v1 draft or "done" mark left in
+  // storage would restore answers to questions that no longer exist or block
+  // the new round, so every key carries the survey + version.
+  var STORAGE_KEY = 'genius:survey:' + SURVEY_KEY + ':v2';
+  var DONE_KEY = 'genius:survey:' + SURVEY_KEY + ':done:v2';
+  var DONE_COOKIE = 'genius_survey_' + SURVEY_KEY + '_v2';
   var DONE_COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 días
 
-  /* Preguntas cuyo valor va a columna fija del payload (id → campo API). */
-  var COLUMN_FIELDS = {
-    csat: 'csat',
-    nps: 'nps',
-    modalidad: 'modalidad',
-    profesor: 'profesor',
-    nombre: 'nombre',
-    contacto: 'contacto',
-  };
   var BOOLEAN_RADIOS = { contacto_ok: 'contactoOk' };
   var CONSENT_FIELDS = { testimonio_ok: 'testimonioOk' };
+
+  /* Textos del cascarón; el config de cada encuesta los sobreescribe
+   * (la de alumnos en español, la del equipo en portugués). */
+  var ui = {
+    loading: 'Cargando encuesta…',
+    loadError: 'No pudimos cargar la encuesta. Por favor recarga la página o inténtalo más tarde.',
+    forbidden: 'Este enlace no es válido. Pide a Genius el enlace correcto de la encuesta.',
+    back: '← Atrás',
+    next: 'Continuar →',
+    submit: 'Enviar respuestas',
+    sending: 'Enviando…',
+    requiredAlert: 'Por favor responde las preguntas marcadas con * antes de continuar.',
+    tooMany: 'Demasiados envíos seguidos. Espera un minuto e inténtalo de nuevo.',
+    sendError: 'Hubo un error al enviar tus respuestas. Por favor inténtalo de nuevo.',
+    thanksTitle: '¡Gracias por tu opinión!',
+    thanksBody: 'Tus respuestas fueron enviadas. Cada comentario nos ayuda a hacer de Genius una mejor experiencia para ti.',
+    doneTitle: 'Ya respondiste esta encuesta',
+    doneBody: '¡Gracias por tu opinión! Solo se puede responder una vez por persona.',
+    privacy: 'Tus respuestas se guardan de forma segura y solo el equipo de Genius puede verlas.',
+    charHint: 'máx. {n} caracteres',
+  };
+
+  // A page can pre-set the strings shown BEFORE the config arrives (load
+  // error / invalid link) in its own language: <body data-ui-forbidden="…">.
+  Object.keys(document.body.dataset).forEach(function (k) {
+    if (k.indexOf('ui') === 0 && k.length > 2) {
+      var key = k.charAt(2).toLowerCase() + k.slice(3);
+      ui[key] = document.body.dataset[k];
+    }
+  });
 
   var steps = [];
   var controllers = {};
@@ -59,13 +84,22 @@
     }
 
     try {
-      var resp = await fetch(API + '/config');
+      var cfgUrl = API + '/config?survey=' + encodeURIComponent(SURVEY_KEY);
+      var token = readToken();
+      if (token) cfgUrl += '&t=' + encodeURIComponent(token);
+      var resp = await fetch(cfgUrl);
+      if (resp.status === 403) {
+        el('loadingBox').textContent = ui.forbidden;
+        return;
+      }
       if (!resp.ok) throw new Error('config ' + resp.status);
       var data = await resp.json();
       steps = data.steps || [];
+      if (data.ui) Object.keys(data.ui).forEach(function (k) { ui[k] = data.ui[k]; });
+      if (data.ui && data.ui.lang) document.documentElement.lang = data.ui.lang;
+      btnBack.textContent = ui.back;
     } catch (err) {
-      el('loadingBox').textContent =
-        'No pudimos cargar la encuesta. Por favor recarga la página o inténtalo más tarde.';
+      el('loadingBox').textContent = ui.loadError;
       return;
     }
 
@@ -334,7 +368,7 @@
       box.appendChild(ta);
       var hint = document.createElement('p');
       hint.className = 'char-hint';
-      hint.textContent = 'máx. ' + (q.maxLength || 500) + ' caracteres';
+      hint.textContent = ui.charHint.replace('{n}', String(q.maxLength || 500));
       box.appendChild(hint);
     },
 
@@ -403,9 +437,11 @@
       thanks.innerHTML =
         '<div class="thanks">' +
         '  <div class="big">🎉</div>' +
-        '  <h2>¡Gracias por tu opinión!</h2>' +
-        '  <p>Tus respuestas fueron enviadas. Cada comentario nos ayuda a hacer de Genius una mejor experiencia para ti.</p>' +
+        '  <h2></h2>' +
+        '  <p></p>' +
         '</div>';
+      thanks.querySelector('h2').textContent = ui.thanksTitle;
+      thanks.querySelector('p').textContent = ui.thanksBody;
       host.appendChild(thanks);
       return;
     }
@@ -452,14 +488,12 @@
     if (state.step === steps.length - 1) {
       var priv = document.createElement('p');
       priv.className = 's-privacy';
-      priv.textContent =
-        'Tus respuestas se guardan de forma segura y solo el equipo de Genius puede verlas. ' +
-        'Si dejaste un contacto, te escribiremos en máximo 5 días hábiles.';
+      priv.textContent = ui.privacy;
       host.appendChild(priv);
     }
 
     btnBack.disabled = state.step === 0;
-    btnNext.textContent = state.step === steps.length - 1 ? 'Enviar respuestas' : 'Continuar →';
+    btnNext.textContent = state.step === steps.length - 1 ? ui.submit : ui.next;
   }
 
   function validateStep() {
@@ -481,7 +515,7 @@
       elq.classList.toggle('missing', missing.indexOf(elq.dataset.qid) !== -1);
     });
     if (missing.length) {
-      showAlert('Por favor responde las preguntas marcadas con * antes de continuar.');
+      showAlert(ui.requiredAlert);
       var first = host.querySelector('.q.missing');
       if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else {
@@ -512,7 +546,9 @@
 
   /* ── envío ── */
   function buildPayload() {
-    var payload = { answers: {} };
+    var payload = { survey: SURVEY_KEY, answers: {} };
+    var token = readToken();
+    if (token) payload.token = token;
 
     steps.forEach(function (s) {
       s.questions.forEach(function (q) {
@@ -542,8 +578,9 @@
         if (answered === undefined) return;
 
         if (q.store === 'column') {
-          var field = COLUMN_FIELDS[q.id];
-          if (field) payload[field] = answered;
+          // Column questions are named after the API field (csat, nps,
+          // modalidad, rol, nombre…).
+          payload[q.id] = answered;
         } else {
           payload.answers[q.id] = answered;
         }
@@ -569,32 +606,39 @@
     }
   }
 
+  /* Token de acceso (?t=) para encuestas que lo exigen (p. ej. equipo). */
+  function readToken() {
+    try {
+      var t = new URLSearchParams(window.location.search).get('t') || '';
+      return t.trim().slice(0, 120);
+    } catch (e) {
+      return '';
+    }
+  }
+
   async function submit() {
     btnNext.disabled = true;
-    btnNext.textContent = 'Enviando…';
+    btnNext.textContent = ui.sending;
     try {
       var resp = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildPayload()),
       });
-      if (resp.status === 429) {
-        throw new Error('Demasiados envíos seguidos. Espera un minuto e inténtalo de nuevo.');
-      }
+      if (resp.status === 429) throw new Error(ui.tooMany);
+      if (resp.status === 403) throw new Error(ui.forbidden);
       var result = await resp.json().catch(function () { return {}; });
-      if (!resp.ok || !result.success) {
-        throw new Error('Hubo un error al enviar tus respuestas. Por favor inténtalo de nuevo.');
-      }
+      if (!resp.ok || !result.success) throw new Error(ui.sendError);
       state.submitted = true;
       markDone();
       try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* noop */ }
       renderStep();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      showAlert(err.message || 'Hubo un error al enviar. Inténtalo de nuevo.');
+      showAlert(err.message || ui.sendError);
     } finally {
       btnNext.disabled = false;
-      if (!state.submitted) btnNext.textContent = 'Enviar respuestas';
+      if (!state.submitted) btnNext.textContent = ui.submit;
     }
   }
 
@@ -618,10 +662,12 @@
       '<section class="s-card">' +
       '  <div class="thanks">' +
       '    <div class="big">✅</div>' +
-      '    <h2>Ya respondiste esta encuesta</h2>' +
-      '    <p>¡Gracias por tu opinión! Solo se puede responder una vez por persona.</p>' +
+      '    <h2></h2>' +
+      '    <p></p>' +
       '  </div>' +
       '</section>';
+    host.querySelector('h2').textContent = ui.doneTitle;
+    host.querySelector('p').textContent = ui.doneBody;
   }
 
   /* ── helpers ── */

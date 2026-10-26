@@ -1,23 +1,21 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { createHash } from 'crypto';
 import { Between, FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateSurveyResponseDto } from './dto/create-survey-response.dto';
 import { SurveyAnswerEntity } from './survey-answer.entity';
-import { SurveyResponseEntity } from './survey-response.entity';
 import {
-  ANSWER_QUESTIONS,
-  AVERAGE_QUESTIONS,
-  COMMENT_QUESTIONS,
   CONTINUAR_POSITIVO,
-  DISTRIBUTION_QUESTIONS,
-  LEGACY_ANSWER_IDS,
-  MIN_PROFESSOR_N,
-  MULTI_QUESTIONS,
   NIVEL_DESCONOCIDO,
   PROFESOR_SIN_IDENTIFICAR,
-  validateAnswers,
 } from './survey-config';
+import { SurveyResponseEntity } from './survey-response.entity';
+import { SurveyDefinition, answerQuestions, validateAnswers } from './survey-types';
 
 export interface SurveyFilters {
   nivel?: string;
@@ -27,6 +25,10 @@ export interface SurveyFilters {
   from?: string;
   to?: string;
 }
+
+/** Segment columns a submission may carry (all optional in the DTO). */
+const SEGMENT_COLUMNS = ['nivel', 'tiempo', 'modalidad', 'pais', 'rol'] as const;
+type SegmentColumn = (typeof SEGMENT_COLUMNS)[number];
 
 @Injectable()
 export class SurveysService {
@@ -39,29 +41,64 @@ export class SurveysService {
     private readonly answers: Repository<SurveyAnswerEntity>,
   ) {}
 
-  async create(dto: CreateSurveyResponseDto, ip?: string | null): Promise<{ success: boolean }> {
+  /**
+   * Public: what the wizard needs to render itself. Enforces the link token
+   * for surveys that require one, so a leaked /equipe URL without `?t=`
+   * shows nothing.
+   */
+  config(def: SurveyDefinition, token?: string | null) {
+    this.assertToken(def, token);
+    return { key: def.key, name: def.name, ui: def.ui, steps: def.steps };
+  }
+
+  async create(
+    def: SurveyDefinition,
+    dto: CreateSurveyResponseDto,
+    ip?: string | null,
+  ): Promise<{ success: boolean }> {
+    this.assertToken(def, dto.token);
+
     // Honeypot tripped → pretend success, store nothing. Real students never
     // see (or fill) the hidden field.
     if (dto.website && dto.website.trim() !== '') {
-      this.logger.warn('Honeypot triggered on POST /api/surveys — dropping submission');
+      this.logger.warn(`Honeypot triggered on POST /api/surveys (${def.key}) — dropping submission`);
       return { success: true };
     }
 
-    const { errors, clean } = validateAnswers(dto.answers);
+    const errors: string[] = [];
+    const segments: Partial<Record<SegmentColumn, string | null>> = {};
+    for (const col of SEGMENT_COLUMNS) {
+      const raw = dto[col];
+      if (raw === undefined || raw === null || raw === '') {
+        segments[col] = null;
+        continue;
+      }
+      const seg = def.segments[col];
+      if (!seg) {
+        errors.push(`${col}: no aplica a esta encuesta`);
+      } else if (!seg.options.includes(raw)) {
+        errors.push(`${col} inválido`);
+      } else {
+        segments[col] = raw;
+      }
+    }
+
+    const validated = validateAnswers(def, dto.answers);
+    errors.push(...validated.errors);
     if (errors.length) {
-      throw new BadRequestException({
-        message: 'Respuestas inválidas',
-        details: errors,
-      });
+      throw new BadRequestException({ message: 'Respuestas inválidas', details: errors });
     }
 
     // "Tengo más de un profesor/a" / "Prefiero no decir" are not teachers:
     // they land as "sin identificar" instead of polluting the per-teacher table.
-    const profesorRaw = dto.profesor?.trim() || null;
+    const profesorRaw = def.allowProfesor ? dto.profesor?.trim() || null : null;
     const profesor =
       profesorRaw && !PROFESOR_SIN_IDENTIFICAR.includes(profesorRaw) ? profesorRaw : null;
+    const contactoOk = def.allowContact && dto.contactoOk === true;
+
     const response = await this.responses.save(
       this.responses.create({
+        survey: def.key,
         // No ?src= on the link → store the explicit 'directo' channel, so it
         // shows up in the filter options and `canal=directo` actually matches
         // (a NULL here would chart as "directo" but be unfilterable).
@@ -70,19 +107,20 @@ export class SurveysService {
         csat: dto.csat,
         profesor,
         profesorNorm: profesor ? normalizeName(profesor) : null,
-        nombre: dto.contactoOk ? dto.nombre?.trim() || null : null,
-        contacto: dto.contactoOk ? dto.contacto?.trim() || null : null,
-        contactoOk: dto.contactoOk === true,
-        testimonioOk: dto.testimonioOk === true,
-        nivel: dto.nivel ?? null,
-        tiempo: dto.tiempo ?? null,
-        modalidad: dto.modalidad ?? null,
-        pais: dto.pais ?? null,
+        nombre: contactoOk ? dto.nombre?.trim() || null : null,
+        contacto: contactoOk ? dto.contacto?.trim() || null : null,
+        contactoOk,
+        testimonioOk: def.allowContact && dto.testimonioOk === true,
+        nivel: segments.nivel ?? null,
+        tiempo: segments.tiempo ?? null,
+        modalidad: segments.modalidad ?? null,
+        pais: segments.pais ?? null,
+        rol: segments.rol ?? null,
         ipHash: ip ? hashIp(ip) : null,
       }),
     );
 
-    const rows = Object.entries(clean).map(([questionId, value]) =>
+    const rows = Object.entries(validated.clean).map(([questionId, value]) =>
       this.answers.create({
         responseId: response.id,
         questionId,
@@ -94,7 +132,7 @@ export class SurveysService {
     if (rows.length) await this.answers.save(rows);
 
     this.logger.log(
-      `📊 Nueva respuesta de encuesta (nps=${dto.nps}, csat=${dto.csat}, canal=${dto.canal ?? '—'})`,
+      `📊 Nueva respuesta de encuesta "${def.key}" (nps=${dto.nps}, csat=${dto.csat}, canal=${dto.canal ?? '—'})`,
     );
     return { success: true };
   }
@@ -105,9 +143,9 @@ export class SurveysService {
    * Google Sheets auto-detects both. One column per config question, in
    * questionnaire order.
    */
-  async exportCsv(filters: SurveyFilters): Promise<string> {
+  async exportCsv(def: SurveyDefinition, filters: SurveyFilters): Promise<string> {
     const rows = await this.responses.find({
-      where: this.buildWhere(filters),
+      where: this.buildWhere(def, filters),
       order: { createdAt: 'DESC' },
     });
     const answerRows = rows.length
@@ -115,17 +153,24 @@ export class SurveysService {
       : [];
     const byResponse = groupBy(answerRows, (a) => a.responseId);
     const hashCounts = countByIpHash(rows);
-    // Current questions first; v1 columns only when the export actually
+    // Current questions first; removed columns only when the export actually
     // contains answers to them (no empty legacy columns on fresh data).
     const present = new Set(answerRows.map((a) => a.questionId));
     const questionIds = [
-      ...ANSWER_QUESTIONS.keys(),
-      ...LEGACY_ANSWER_IDS.filter((id) => present.has(id)),
+      ...answerQuestions(def).keys(),
+      ...def.legacyAnswerIds.filter((id) => present.has(id)),
     ];
+    const segmentCols = Object.keys(def.segments) as SegmentColumn[];
 
     const header = [
-      'fecha', 'canal', 'modalidad', 'pais', 'nivel', 'tiempo', 'nps', 'csat', 'profesor',
-      'acepta_contacto', 'nombre', 'contacto', 'testimonio_ok', 'posible_duplicado',
+      'fecha',
+      'canal',
+      ...segmentCols,
+      'nps',
+      'csat',
+      ...(def.allowProfesor ? ['profesor'] : []),
+      ...(def.allowContact ? ['acepta_contacto', 'nombre', 'contacto', 'testimonio_ok'] : []),
+      'posible_duplicado',
       ...questionIds,
     ];
     const lines = [header.map(csvCell).join(';')];
@@ -137,17 +182,13 @@ export class SurveysService {
       const base = [
         r.createdAt.toISOString(),
         r.canal ?? '',
-        r.modalidad ?? '',
-        r.pais ?? '',
-        r.nivel ?? '',
-        r.tiempo ?? '',
+        ...segmentCols.map((c) => r[c] ?? ''),
         String(r.nps),
         String(r.csat),
-        r.profesor ?? '',
-        r.contactoOk ? 'sí' : 'no',
-        r.nombre ?? '',
-        r.contacto ?? '',
-        r.testimonioOk ? 'sí' : 'no',
+        ...(def.allowProfesor ? [r.profesor ?? ''] : []),
+        ...(def.allowContact
+          ? [r.contactoOk ? 'sí' : 'no', r.nombre ?? '', r.contacto ?? '', r.testimonioOk ? 'sí' : 'no']
+          : []),
         r.ipHash && (hashCounts.get(r.ipHash) ?? 0) > 1 ? 'sí' : 'no',
       ];
       const answerCells = questionIds.map((qid) => {
@@ -159,13 +200,13 @@ export class SurveysService {
     }
 
     // BOM so Excel opens the acentos correctly.
-    return '\uFEFF' + lines.join('\r\n');
+    return '﻿' + lines.join('\r\n');
   }
 
   /** Admin: raw list of responses (with answers) for the dashboard drill-down. */
-  async list(filters: SurveyFilters) {
+  async list(def: SurveyDefinition, filters: SurveyFilters) {
     const rows = await this.responses.find({
-      where: this.buildWhere(filters),
+      where: this.buildWhere(def, filters),
       order: { createdAt: 'DESC' },
       take: 200,
     });
@@ -176,6 +217,7 @@ export class SurveysService {
     const hashCounts = countByIpHash(rows);
 
     return {
+      survey: def.key,
       count: rows.length,
       entries: rows.map((r) => ({
         ...stripIpHash(r),
@@ -190,13 +232,13 @@ export class SurveysService {
   }
 
   /**
-   * Admin: everything the "Encuesta" dashboard tab renders, pre-aggregated.
+   * Admin: everything the survey's dashboard tab renders, pre-aggregated.
    * `commentsLimit` caps the comments feed (30 in the dashboard tab); the
    * printable report passes Number.MAX_SAFE_INTEGER to include them all.
    */
-  async stats(filters: SurveyFilters, commentsLimit = 30) {
+  async stats(def: SurveyDefinition, filters: SurveyFilters, commentsLimit = 30) {
     const rows = await this.responses.find({
-      where: this.buildWhere(filters),
+      where: this.buildWhere(def, filters),
       order: { createdAt: 'DESC' },
     });
     const answerRows = rows.length
@@ -204,18 +246,14 @@ export class SurveysService {
       : [];
     const byResponse = groupBy(answerRows, (a) => a.responseId);
     const responseById = new Map(rows.map((r) => [r.id, r]));
+    const questions = answerQuestions(def);
 
     // ── NPS ──
-    const promoters = rows.filter((r) => r.nps >= 9).length;
-    const passives = rows.filter((r) => r.nps >= 7 && r.nps <= 8).length;
-    const detractors = rows.filter((r) => r.nps <= 6).length;
     const total = rows.length;
-    const npsScore = total
-      ? Math.round(((promoters - detractors) / total) * 100)
-      : null;
+    const nps = npsOf(rows);
 
     // ── scale5 averages ──
-    const averages = Object.entries(AVERAGE_QUESTIONS).map(([qid, label]) => {
+    const averages = Object.entries(def.averages).map(([qid, label]) => {
       const values = answerRows
         .filter((a) => a.questionId === qid && a.valueInt != null)
         .map((a) => a.valueInt as number);
@@ -229,8 +267,8 @@ export class SurveysService {
 
     // ── single-choice distributions (option order from the config) ──
     const distributions: Record<string, { label: string; dist: Record<string, number> }> = {};
-    for (const [qid, label] of Object.entries(DISTRIBUTION_QUESTIONS)) {
-      const q = ANSWER_QUESTIONS.get(qid);
+    for (const [qid, label] of Object.entries(def.distributions)) {
+      const q = questions.get(qid);
       const dist: Record<string, number> = {};
       for (const opt of q?.options ?? []) dist[opt] = 0;
       for (const a of answerRows) {
@@ -243,7 +281,7 @@ export class SurveysService {
 
     // ── multi-select tallies ──
     const multi: Record<string, { label: string; dist: Record<string, number> }> = {};
-    for (const [qid, label] of Object.entries(MULTI_QUESTIONS)) {
+    for (const [qid, label] of Object.entries(def.multi)) {
       const dist: Record<string, number> = {};
       for (const a of answerRows) {
         if (a.questionId !== qid || !a.valueJson) continue;
@@ -275,7 +313,7 @@ export class SurveysService {
       canales[key] = (canales[key] ?? 0) + 1;
     }
 
-    // ── intención de continuar (v2) ──
+    // ── intención de continuar (alumnos v2; empty for surveys without it) ──
     const continuarRows = answerRows.filter((a) => a.questionId === 'continuar' && a.valueText);
     const continuarPositivos = continuarRows.filter((a) =>
       CONTINUAR_POSITIVO.includes(a.valueText as string),
@@ -289,73 +327,100 @@ export class SurveysService {
         : null,
     };
 
-    // ── "No sé mi nivel" (v2) ──
+    // ── "No sé mi nivel" (alumnos v2) ──
     const nivelDesconocido = rows.filter((r) => r.nivel === NIVEL_DESCONOCIDO).length;
 
     // ── per-teacher table (grouped by normalised name) ──
-    // Below MIN_PROFESSOR_N responses the averages/NPS are withheld: the
-    // number would be noise and the answer trivially attributable to one
-    // student. The row (name + count) still shows so the school sees who
-    // still needs responses.
-    const teacherGroups = groupBy(
-      rows.filter((r) => r.profesorNorm),
-      (r) => r.profesorNorm as string,
-    );
-    const professors = [...teacherGroups.entries()]
-      .map(([norm, group]) => {
-        const ids = new Set(group.map((g) => g.id));
-        const avgOf = (qid: string) => {
-          const vals = answerRows
-            .filter((a) => ids.has(a.responseId) && a.questionId === qid && a.valueInt != null)
-            .map((a) => a.valueInt as number);
-          return vals.length ? round1(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
-        };
-        const promo = group.filter((g) => g.nps >= 9).length;
-        const detra = group.filter((g) => g.nps <= 6).length;
-        const insufficient = group.length < MIN_PROFESSOR_N;
-        return {
-          profesor: mostCommonSpelling(group),
-          profesorNorm: norm,
-          count: group.length,
-          insufficient,
-          minN: MIN_PROFESSOR_N,
-          avgClaridad: insufficient ? null : avgOf('prof_claridad'),
-          avgFeedback: insufficient ? null : avgOf('prof_feedback'),
-          nps: insufficient ? null : Math.round(((promo - detra) / group.length) * 100),
-        };
-      })
-      .sort((a, b) => b.count - a.count);
-    const unidentified = rows.filter((r) => !r.profesorNorm).length;
+    // Below minGroupN responses the averages/NPS are withheld: the number
+    // would be noise and the answer trivially attributable to one student.
+    // The row (name + count) still shows so the school sees who still needs
+    // responses.
+    const avgFor = (ids: Set<string>, qid: string) => {
+      const vals = answerRows
+        .filter((a) => ids.has(a.responseId) && a.questionId === qid && a.valueInt != null)
+        .map((a) => a.valueInt as number);
+      return vals.length ? round1(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
+    };
+    const professors = def.allowProfesor
+      ? [...groupBy(rows.filter((r) => r.profesorNorm), (r) => r.profesorNorm as string).entries()]
+          .map(([norm, group]) => {
+            const ids = new Set(group.map((g) => g.id));
+            const insufficient = group.length < def.minGroupN;
+            return {
+              profesor: mostCommonSpelling(group),
+              profesorNorm: norm,
+              count: group.length,
+              insufficient,
+              minN: def.minGroupN,
+              avgClaridad: insufficient ? null : avgFor(ids, 'prof_claridad'),
+              avgFeedback: insufficient ? null : avgFor(ids, 'prof_feedback'),
+              nps: insufficient ? null : npsOf(group).score,
+            };
+          })
+          .sort((a, b) => b.count - a.count)
+      : [];
+    const unidentified = def.allowProfesor ? rows.filter((r) => !r.profesorNorm).length : 0;
+
+    // ── breakdown by segment column (modalidad for alumnos; rol/tiempo for
+    //    equipe), masked below minGroupN so a 2-person group never shows ──
+    const breakdowns = def.breakdownBy
+      .filter((col) => def.segments[col])
+      .map((col) => {
+        const column = col as SegmentColumn;
+        const groups = def.segments[col].options
+          .map((value) => {
+            const group = rows.filter((r) => r[column] === value);
+            const insufficient = group.length < def.minGroupN;
+            return {
+              value,
+              count: group.length,
+              insufficient,
+              nps: insufficient ? null : npsOf(group).score,
+              csatAvg: insufficient
+                ? null
+                : round1(group.reduce((s, r) => s + r.csat, 0) / group.length),
+            };
+          })
+          .filter((g) => g.count > 0);
+        const sinDato = rows.filter((r) => !r[column]).length;
+        return { column: col, label: def.segments[col].label, minN: def.minGroupN, groups, sinDato };
+      });
 
     // ── latest open comments ──
     const comments = answerRows
-      .filter((a) => COMMENT_QUESTIONS[a.questionId] && a.valueText)
+      .filter((a) => def.comments[a.questionId] && a.valueText)
       .map((a) => {
         const r = responseById.get(a.responseId);
+        const meta = def.commentMeta
+          ? {
+              nivel: r?.nivel ?? null,
+              modalidad: r?.modalidad ?? null,
+              profesor: r?.profesor ?? null,
+              canal: r?.canal ?? null,
+              testimonioOk: r?.testimonioOk ?? false,
+              nombre: r?.testimonioOk ? r?.nombre ?? null : null,
+            }
+          : { nivel: null, modalidad: null, profesor: null, canal: null, testimonioOk: false, nombre: null };
         return {
           text: a.valueText as string,
-          question: COMMENT_QUESTIONS[a.questionId],
+          question: def.comments[a.questionId],
           createdAt: r?.createdAt.toISOString() ?? null,
-          nivel: r?.nivel ?? null,
-          modalidad: r?.modalidad ?? null,
-          profesor: r?.profesor ?? null,
-          canal: r?.canal ?? null,
-          testimonioOk: r?.testimonioOk ?? false,
-          nombre: r?.testimonioOk ? r?.nombre ?? null : null,
+          ...meta,
         };
       })
       .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
       .slice(0, commentsLimit);
 
-    // ── filter option lists (unfiltered values would be nicer, but the
-    //    filtered set keeps the implementation simple and self-consistent) ──
-    const allRows = await this.responses.find();
+    // ── filter option lists (whole survey, not just the filtered set) ──
+    const allRows = await this.responses.find({ where: { survey: def.key } });
     const filterOptions = {
       niveles: uniqueSorted(allRows.map((r) => r.nivel)),
-      profesores: [...groupBy(
-        allRows.filter((r) => r.profesorNorm),
-        (r) => r.profesorNorm as string,
-      ).entries()].map(([norm, g]) => ({ norm, label: mostCommonSpelling(g) })),
+      profesores: def.allowProfesor
+        ? [...groupBy(
+            allRows.filter((r) => r.profesorNorm),
+            (r) => r.profesorNorm as string,
+          ).entries()].map(([norm, g]) => ({ norm, label: mostCommonSpelling(g) }))
+        : [],
       canales: uniqueSorted(allRows.map((r) => r.canal)),
       modalidades: uniqueSorted(allRows.map((r) => r.modalidad)),
     };
@@ -367,12 +432,20 @@ export class SurveysService {
     ).length;
 
     return {
+      survey: {
+        key: def.key,
+        name: def.name,
+        lang: def.ui.lang,
+        allowProfesor: def.allowProfesor,
+        allowContact: def.allowContact,
+        minGroupN: def.minGroupN,
+      },
       total,
       identified: rows.filter((r) => r.nombre || r.contacto).length,
       contactOk: rows.filter((r) => r.contactoOk).length,
       testimonioOk: rows.filter((r) => r.testimonioOk).length,
       possibleDuplicates,
-      nps: { score: npsScore, promoters, passives, detractors },
+      nps,
       csatAvg: total ? round1(rows.reduce((s, r) => s + r.csat, 0) / total) : null,
       continuar,
       nivelDesconocido,
@@ -383,13 +456,27 @@ export class SurveysService {
       canales,
       professors,
       unidentified,
+      breakdowns,
       comments,
       filterOptions,
     };
   }
 
-  private buildWhere(filters: SurveyFilters): FindOptionsWhere<SurveyResponseEntity> {
-    const where: FindOptionsWhere<SurveyResponseEntity> = {};
+  /** 403 when the survey requires a link token and it is missing/wrong. */
+  private assertToken(def: SurveyDefinition, token?: string | null) {
+    if (!def.accessTokenEnv) return;
+    const expected = (process.env[def.accessTokenEnv] ?? '').trim();
+    if (!expected) return; // not configured → open link
+    if ((token ?? '').trim() !== expected) {
+      throw new ForbiddenException('enlace de encuesta inválido');
+    }
+  }
+
+  private buildWhere(
+    def: SurveyDefinition,
+    filters: SurveyFilters,
+  ): FindOptionsWhere<SurveyResponseEntity> {
+    const where: FindOptionsWhere<SurveyResponseEntity> = { survey: def.key };
     if (filters.nivel) where.nivel = filters.nivel;
     if (filters.profesor) where.profesorNorm = normalizeName(filters.profesor);
     if (filters.canal) where.canal = filters.canal;
@@ -401,6 +488,20 @@ export class SurveysService {
     }
     return where;
   }
+}
+
+/** Promoters/passives/detractors + score (null when empty). */
+function npsOf(rows: SurveyResponseEntity[]) {
+  const promoters = rows.filter((r) => r.nps >= 9).length;
+  const passives = rows.filter((r) => r.nps >= 7 && r.nps <= 8).length;
+  const detractors = rows.filter((r) => r.nps <= 6).length;
+  const total = rows.length;
+  return {
+    score: total ? Math.round(((promoters - detractors) / total) * 100) : null,
+    promoters,
+    passives,
+    detractors,
+  };
 }
 
 /**
@@ -446,7 +547,7 @@ function stripIpHash(row: SurveyResponseEntity): Omit<SurveyResponseEntity, 'ipH
 export function normalizeName(name: string): string {
   return name
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();

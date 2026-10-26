@@ -47,17 +47,84 @@ WhatsApp) é o maior problema a resolver. Sugestão:
 | Pulso de boas-vindas na 4ª semana | 5 perguntas (`?src=onboarding`) | Pegar problema antes do 1º cancelamento |
 | Pesquisa de saída ao cancelar | 3 perguntas enviadas pela secretaria | 100% dos cancelamentos |
 
-Os dois últimos ainda usam o mesmo questionário; separar em pesquisas
-distintas exige generalizar `survey-config.ts` para múltiplas pesquisas
-(o mesmo passo que permitiria a pesquisa de clima da equipe no site).
+Os dois últimos ainda usam o mesmo questionário; para separá-los basta
+registrar novas definições no motor multi-pesquisa (ver abaixo), como foi
+feito com a pesquisa da equipe.
+
+## Motor multi-pesquisa
+
+Desde a v2 o mesmo motor serve mais de uma pesquisa. Cada uma é uma
+`SurveyDefinition` (`src/surveys/survey-types.ts`) registrada em
+`src/surveys/survey-registry.ts`:
+
+| Chave | Definição | Página | Idioma |
+|---|---|---|---|
+| `alumnos` (padrão) | `src/surveys/survey-config.ts` | `/encuesta` | espanhol |
+| `equipe` | `src/surveys/survey-equipe.ts` | `/equipe` | português |
+
+- Todos os endpoints aceitam `?survey=<chave>`; sem ela, é a dos alunos, então
+  links, QR codes e chamadas antigas continuam valendo.
+- A página diz qual pesquisa é com `<body data-survey="equipe">` e reutiliza
+  `/encuesta/app.js` + `/encuesta/encuesta.css`. Os textos do cascarão
+  (botões, erros, agradecimento) vêm do `ui` da definição; os textos exibidos
+  antes de o config chegar vêm de `data-ui-*` no `<body>`.
+- A definição declara quais colunas tipadas a pesquisa pode gravar
+  (`segments`, com a lista de valores aceitos), se aceita professor e
+  contato (`allowProfesor`, `allowContact`), o que o dashboard agrega
+  (`averages`, `distributions`, `multi`, `comments`), por quais colunas
+  quebra os resultados (`breakdownBy`) e o `minGroupN` abaixo do qual nenhum
+  número de grupo é exibido.
+- Rascunho e marca de "já respondeu" no navegador são por pesquisa e versão
+  (`genius:survey:<chave>:v2`), então quem respondeu a v1 em julho pode
+  responder a v2.
+- Banco: `survey_responses.survey` (padrão `alumnos`, preenchido nas linhas
+  antigas) e `rol` (função, só equipe). Criadas pelo `synchronize` no boot.
+
+## Pesquisa de clima da equipe (`/equipe`)
+
+Pesquisa anônima em português com professores e equipe administrativa,
+desenhada em outubro/2026 junto com a v2 dos alunos. ~26 perguntas em 7
+etapas: função e tempo de casa (só para segmentar), satisfação geral + eNPS +
+razão da nota + "me vejo aqui em 12 meses", condições de trabalho, gestão e
+comunicação, desenvolvimento e reconhecimento, um bloco pedagógico (só
+professores, espelhando o que os alunos disseram sobre nivelamento e
+material) ou de processos (só administrativo), e quatro abertas.
+
+**Anonimato, por desenho:**
+
+- Nenhum campo de nome ou contato; mesmo que um cliente envie, o backend
+  descarta.
+- Só dois cortes (função e tempo de casa). Nenhum grupo com menos de **5**
+  respostas mostra eNPS ou média (`MIN_GRUPO_N`), nem no dashboard nem no
+  informe nem no CSV há como cruzar comentário com função: os comentários
+  saem sem chips.
+- O dashboard (aba **Equipo**) não tem filtros por pessoa; só o período de
+  datas do cabeçalho.
+
+**Link com token.** Defina `SURVEY_EQUIPE_TOKEN` no ambiente e divulgue
+`https://geniusidiomas.com/equipe?t=<token>`. Sem o token no link, a página
+mostra "link inválido" e o envio é recusado (403). Com a variável vazia a
+página fica aberta como a dos alunos. Troque o token a cada rodada.
+
+**Como aplicar:** mensagem da direção anunciando a pesquisa, o porquê, o
+anonimato e **a data em que os resultados voltam** para a equipe; janela de
+10 dias com lembrete no dia 5 e no dia 9; meta de ≥ 80% de resposta; leitura
+do eNPS, 3 itens mais baixos, 3 mais altos e cruzamento com os temas dos
+alunos; devolutiva com 3 compromissos e responsável; repetir em 6 meses com
+as mesmas perguntas. Ideal rodar 1–2 semanas depois da pesquisa dos alunos.
+
+Resultados: aba **Equipo** do dashboard, informe imprimível
+(`/dashboard/informe.html?survey=equipe`) e CSV
+(`GET /api/surveys/export.csv?survey=equipe`).
 
 ## Como funciona
 
 | Peça | Onde |
 |---|---|
 | Página do aluno | `public/encuesta/` → **`https://geniusidiomas.com/encuesta`** |
-| Perguntas (config única) | `src/surveys/survey-config.ts` |
-| API | `POST /api/surveys` (público, throttle 5/min + honeypot) · `GET /api/surveys/config` (público) · `GET /api/surveys/stats` e `GET /api/surveys` (admin, JWT) |
+| Página da equipe | `public/equipe/` → **`https://geniusidiomas.com/equipe?t=<token>`** (ver "Pesquisa de clima da equipe") |
+| Perguntas (config única) | `src/surveys/survey-config.ts` (alunos) · `src/surveys/survey-equipe.ts` (equipe) · registro em `src/surveys/survey-registry.ts` |
+| API | `POST /api/surveys` (público, throttle 5/min + honeypot) · `GET /api/surveys/config?survey=` (público) · `GET /api/surveys/stats`, `GET /api/surveys`, `GET /api/surveys/export.csv`, `GET /api/surveys/list` (admin, JWT); todos aceitam `?survey=alumnos\|equipe` |
 | Banco | tabelas `survey_responses` (colunas fixas: nps, csat, professor, contato, nível…) e `survey_answers` (1 linha por resposta configurável) |
 | Resultados | Dashboard admin → aba **"Encuesta"** (`/dashboard`) |
 | QR codes | `public/assets/qr/` → servidos em `/assets/qr/…` |

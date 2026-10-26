@@ -190,6 +190,10 @@
         <svg class="icon" aria-hidden="true"><use href="#icon-survey"/></svg>
         <span>Encuesta</span>
       </button>
+      <button class="tab" data-tab="equipo" role="tab">
+        <svg class="icon" aria-hidden="true"><use href="#icon-survey"/></svg>
+        <span>Equipo</span>
+      </button>
     </nav>
 
     <main class="app-main">
@@ -576,6 +580,55 @@
         <section class="card">
           <h2 class="card__title">Últimos comentarios</h2>
           <div id="encComments" class="enc-comments"></div>
+        </section>
+      </div>
+
+      <!-- ═══ EQUIPO (pesquisa de clima da equipe) ═══ -->
+      <div class="tab-panel hidden" id="tab-equipo" role="tabpanel">
+        <section class="card">
+          <div class="encuesta-filters">
+            <div class="encuesta-actions">
+              <button class="btn btn-secondary" id="eqReportBtn" type="button" title="Abre un informe imprimible con el período actual">
+                📄 <span class="btn__label">Generar informe</span>
+              </button>
+              <button class="btn btn-secondary" id="eqCsvBtn" type="button" title="Descarga todas las respuestas del período en CSV">
+                ⬇ <span class="btn__label">Exportar CSV</span>
+              </button>
+            </div>
+            <span class="encuesta-filters__hint">
+              Encuesta anónima del equipo (<a href="/equipe" target="_blank" rel="noopener">/equipe</a>, en portugués).
+              Sin filtros por persona a propósito: los grupos con menos de 5 respuestas no muestran números.
+              El período de fechas del encabezado aplica a esta pestaña, al informe y al CSV.
+            </span>
+          </div>
+        </section>
+
+        <section class="kpi-grid" id="equipoKpis"></section>
+
+        <section class="chart-grid">
+          <div class="card">
+            <h2 class="card__title">Composición del eNPS</h2>
+            <div id="eqNpsBar" class="enc-npsbar-wrap"></div>
+          </div>
+          <div class="card">
+            <h2 class="card__title">Respuestas por semana</h2>
+            <canvas id="eqWeeklyChart" height="140"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Promedios por afirmación (1 = discordo totalmente · 5 = concordo totalmente)</h2>
+          <canvas id="eqAveragesChart" height="620"></canvas>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Por función y tiempo de casa</h2>
+          <div id="eqBreakdowns"></div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Comentarios</h2>
+          <div id="eqComments" class="enc-comments"></div>
         </section>
       </div>
 

@@ -1,5 +1,6 @@
 /**
- * Single source of truth for the student satisfaction survey (v2).
+ * Single source of truth for the STUDENT satisfaction survey (v2),
+ * registered as `alumnos` in survey-registry.ts.
  *
  * The wizard frontend (public/encuesta) renders itself from this structure
  * via GET /api/surveys/config, and SurveysService validates every submitted
@@ -21,70 +22,23 @@
  * LEGACY_ANSWER_IDS so old answers still show up in the CSV export.
  */
 
-export interface SurveySelectDef {
-  /** Column name on survey_responses this select writes to. */
-  id: string;
-  label: string;
-  /** First option is the empty placeholder. */
-  options: string[];
-  required?: boolean;
-}
+import {
+  SurveyDefinition,
+  SurveyQuestion,
+  SurveyStep,
+  SurveyUiStrings,
+  answerQuestions,
+  validateAnswers as validateAnswersFor,
+} from './survey-types';
 
-export interface SurveyConsentDef {
-  /** Boolean column on survey_responses. */
-  id: string;
-  label: string;
-}
-
-export interface SurveyShowIf {
-  id: string;
-  equals?: string;
-  includes?: string;
-  oneOf?: string[];
-}
-
-export interface SurveyQuestion {
-  id: string;
-  type:
-    | 'nps'
-    | 'stars'
-    | 'scale5'
-    | 'radio'
-    | 'checks'
-    | 'text'
-    | 'textarea'
-    | 'selects'
-    | 'consent';
-  store: 'column' | 'answers' | 'ui';
-  text?: string;
-  required?: boolean;
-  /** scale5 / stars: caption for each value 1..5. */
-  labels?: string[];
-  /**
-   * scale5 only: an "it does not apply to me" escape hatch (e.g. "No he
-   * necesitado ayuda"). Stored as text, excluded from the averages.
-   */
-  optOut?: string;
-  /** radio / checks: allowed options. */
-  options?: string[];
-  /** radio presentation hint for the wizard. */
-  variant?: 'cards' | 'list';
-  placeholder?: string;
-  maxLength?: number;
-  selects?: SurveySelectDef[];
-  checks?: SurveyConsentDef[];
-  showIf?: SurveyShowIf;
-  /** nps: end-of-scale captions. */
-  ends?: [string, string];
-}
-
-export interface SurveyStep {
-  id: string;
-  label: string;
-  title: string;
-  sub?: string;
-  questions: SurveyQuestion[];
-}
+export type {
+  SurveyConsentDef,
+  SurveyDefinition,
+  SurveyQuestion,
+  SurveySelectDef,
+  SurveyShowIf,
+  SurveyStep,
+} from './survey-types';
 
 export const NIVEL_OPTIONS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 /**
@@ -554,12 +508,29 @@ export const SURVEY_STEPS: SurveyStep[] = [
   },
 ];
 
-/** Questions persisted in survey_answers, keyed by question id. */
-export const ANSWER_QUESTIONS: ReadonlyMap<string, SurveyQuestion> = new Map(
-  SURVEY_STEPS.flatMap((s) => s.questions)
-    .filter((q) => q.store === 'answers')
-    .map((q) => [q.id, q]),
-);
+/** Spanish wizard chrome for the student survey. */
+export const ALUMNOS_UI: SurveyUiStrings = {
+  lang: 'es',
+  loading: 'Cargando encuesta…',
+  loadError: 'No pudimos cargar la encuesta. Por favor recarga la página o inténtalo más tarde.',
+  forbidden: 'Este enlace no es válido. Pide a Genius el enlace correcto de la encuesta.',
+  back: '← Atrás',
+  next: 'Continuar →',
+  submit: 'Enviar respuestas',
+  sending: 'Enviando…',
+  requiredAlert: 'Por favor responde las preguntas marcadas con * antes de continuar.',
+  tooMany: 'Demasiados envíos seguidos. Espera un minuto e inténtalo de nuevo.',
+  sendError: 'Hubo un error al enviar tus respuestas. Por favor inténtalo de nuevo.',
+  thanksTitle: '¡Gracias por tu opinión!',
+  thanksBody:
+    'Tus respuestas fueron enviadas. Cada comentario nos ayuda a hacer de Genius una mejor experiencia para ti.',
+  doneTitle: 'Ya respondiste esta encuesta',
+  doneBody: '¡Gracias por tu opinión! Solo se puede responder una vez por persona.',
+  privacy:
+    'Tus respuestas se guardan de forma segura y solo el equipo de Genius puede verlas. ' +
+    'Si dejaste un contacto, te escribiremos en máximo 5 días hábiles.',
+  charHint: 'máx. {n} caracteres',
+};
 
 /**
  * v1 question ids no longer asked. They are rejected on new submissions
@@ -622,96 +593,35 @@ export const MULTI_QUESTIONS: Record<string, string> = {
   necesita_mejorar: 'Habilidades que quieren mejorar',
 };
 
-export interface AnswerValidationResult {
-  errors: string[];
-  /** Sanitised answers: only known questions, values coerced/trimmed. */
-  clean: Record<string, number | string | string[]>;
-}
+/** The student survey, as the engine sees it. */
+export const ALUMNOS_SURVEY: SurveyDefinition = {
+  key: 'alumnos',
+  name: 'Encuesta de Satisfacción de Alumnos',
+  ui: ALUMNOS_UI,
+  steps: SURVEY_STEPS,
+  segments: {
+    modalidad: { label: 'Modalidad', options: MODALIDAD_OPTIONS },
+    pais: { label: 'País', options: PAIS_OPTIONS },
+    nivel: { label: 'Nivel', options: NIVEL_ALLOWED },
+    tiempo: { label: 'Tiempo con Genius', options: TIEMPO_OPTIONS },
+  },
+  breakdownBy: ['modalidad'],
+  allowProfesor: true,
+  allowContact: true,
+  minGroupN: MIN_PROFESSOR_N,
+  commentMeta: true,
+  comments: COMMENT_QUESTIONS,
+  averages: AVERAGE_QUESTIONS,
+  distributions: DISTRIBUTION_QUESTIONS,
+  multi: MULTI_QUESTIONS,
+  legacyAnswerIds: LEGACY_ANSWER_IDS,
+};
 
-/**
- * Validate the free-form `answers` object of a submission against the
- * config. Unknown question ids, wrong types, out-of-range scale values and
- * options outside the whitelist are all rejected — mirrors what the global
- * ValidationPipe does for the typed DTO fields.
- */
-export function validateAnswers(input: unknown): AnswerValidationResult {
-  const errors: string[] = [];
-  const clean: Record<string, number | string | string[]> = {};
-  const answers = (input ?? {}) as Record<string, unknown>;
+/** Questions persisted in survey_answers, keyed by question id. */
+export const ANSWER_QUESTIONS: ReadonlyMap<string, SurveyQuestion> =
+  answerQuestions(ALUMNOS_SURVEY);
 
-  if (typeof answers !== 'object' || Array.isArray(answers)) {
-    return { errors: ['answers debe ser un objeto'], clean };
-  }
-
-  for (const [id, raw] of Object.entries(answers)) {
-    const q = ANSWER_QUESTIONS.get(id);
-    if (!q) {
-      errors.push(`pregunta desconocida: ${id}`);
-      continue;
-    }
-    switch (q.type) {
-      case 'scale5': {
-        if (q.optOut && raw === q.optOut) {
-          clean[id] = raw;
-          break;
-        }
-        const n = Number(raw);
-        if (!Number.isInteger(n) || n < 1 || n > 5) {
-          errors.push(`${id}: valor fuera de la escala 1-5`);
-        } else {
-          clean[id] = n;
-        }
-        break;
-      }
-      case 'radio': {
-        if (typeof raw !== 'string' || !(q.options ?? []).includes(raw)) {
-          errors.push(`${id}: opción inválida`);
-        } else {
-          clean[id] = raw;
-        }
-        break;
-      }
-      case 'checks': {
-        if (!Array.isArray(raw) || raw.some((v) => typeof v !== 'string')) {
-          errors.push(`${id}: se esperaba una lista de opciones`);
-          break;
-        }
-        const allowed = new Set(q.options ?? []);
-        const invalid = (raw as string[]).filter((v) => !allowed.has(v));
-        if (invalid.length) {
-          errors.push(`${id}: opciones inválidas (${invalid.join(', ')})`);
-        } else if (raw.length > 0) {
-          clean[id] = [...new Set(raw as string[])];
-        }
-        break;
-      }
-      case 'text':
-      case 'textarea': {
-        if (typeof raw !== 'string') {
-          errors.push(`${id}: se esperaba texto`);
-          break;
-        }
-        const trimmed = raw.trim();
-        const max = q.maxLength ?? 500;
-        if (trimmed.length > max) {
-          errors.push(`${id}: máximo ${max} caracteres`);
-        } else if (trimmed.length > 0) {
-          clean[id] = trimmed;
-        }
-        break;
-      }
-      default:
-        errors.push(`${id}: tipo no soportado en answers`);
-    }
-  }
-
-  // Required questions (only unconditional ones — conditional questions are
-  // optional by design).
-  for (const q of ANSWER_QUESTIONS.values()) {
-    if (q.required && !q.showIf && clean[q.id] === undefined) {
-      errors.push(`falta responder: ${q.id}`);
-    }
-  }
-
-  return { errors, clean };
+/** Validate a student-survey `answers` object (see survey-types.ts). */
+export function validateAnswers(input: unknown) {
+  return validateAnswersFor(ALUMNOS_SURVEY, input);
 }

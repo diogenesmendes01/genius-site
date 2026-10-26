@@ -1,6 +1,5 @@
 import {
   IsBoolean,
-  IsIn,
   IsInt,
   IsObject,
   IsOptional,
@@ -9,14 +8,25 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import {
-  MODALIDAD_OPTIONS,
-  NIVEL_ALLOWED,
-  PAIS_OPTIONS,
-  TIEMPO_OPTIONS,
-} from '../survey-config';
 
+/**
+ * One survey submission. nps/csat are typed here; every other value is
+ * checked by SurveysService against the survey's definition (segments
+ * whitelist, answers config), because the allowed values differ per survey.
+ */
 export class CreateSurveyResponseDto {
+  /** Survey key ('alumnos' by default, 'equipe'…). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  survey?: string;
+
+  /** Link token for surveys that require one (see SurveyDefinition.accessTokenEnv). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  token?: string;
+
   @IsInt({ message: 'nps debe ser un número entero' })
   @Min(0, { message: 'nps debe estar entre 0 y 10' })
   @Max(10, { message: 'nps debe estar entre 0 y 10' })
@@ -55,26 +65,38 @@ export class CreateSurveyResponseDto {
   @IsBoolean()
   testimonioOk?: boolean;
 
+  // ── segment columns: whitelisted per survey in the service ──
+
   @IsOptional()
-  @IsIn(NIVEL_ALLOWED, { message: 'nivel inválido' })
+  @IsString()
+  @MaxLength(80)
   nivel?: string;
 
   @IsOptional()
-  @IsIn(TIEMPO_OPTIONS, { message: 'tiempo inválido' })
+  @IsString()
+  @MaxLength(80)
   tiempo?: string;
 
-  /** v2 — required in the wizard; optional here so older clients still post. */
+  /** alumnos v2 — required in the wizard; optional here so older clients still post. */
   @IsOptional()
-  @IsIn(MODALIDAD_OPTIONS, { message: 'modalidad inválida' })
+  @IsString()
+  @MaxLength(80)
   modalidad?: string;
 
   @IsOptional()
-  @IsIn(PAIS_OPTIONS, { message: 'país inválido' })
+  @IsString()
+  @MaxLength(80)
   pais?: string;
+
+  /** equipe — função. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  rol?: string;
 
   /**
    * All configurable answers, keyed by question id. Validated dynamically
-   * against survey-config.ts in the service (types, ranges, whitelists).
+   * against the survey definition in the service (types, ranges, whitelists).
    */
   @IsOptional()
   @IsObject({ message: 'answers debe ser un objeto' })
