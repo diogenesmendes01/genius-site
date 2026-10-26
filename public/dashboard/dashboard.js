@@ -1148,6 +1148,8 @@ async function loadEncuesta(force) {
 
   renderDistributionChart('encContinuarChart', (data.distributions?.continuar?.dist) || {}, '#059669');
   renderDistributionChart('encSoporteChart', (data.distributions?.soporte_tiempo?.dist) || {}, '#1a2456');
+  renderDistributionChart('encSalidaChart', (data.distributions?.salida_motivo?.dist) || {}, '#b42318');
+  renderDistributionChart('encNivelChart', (data.distributions?.contenido_nivel?.dist) || {}, '#DCAF63');
   renderDistributionChart('encProgresoChart', (data.distributions?.progreso?.dist) || {}, '#DCAF63');
   renderDistributionChart('encCanalChart', data.canales || {}, '#1a2456');
   renderDistributionChart('encContenidoChart', (data.multi?.contenido_extra?.dist) || {}, '#DCAF63');

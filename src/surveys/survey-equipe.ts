@@ -201,11 +201,14 @@ export const EQUIPE_STEPS: SurveyStep[] = [
     sub: 'As perguntas mudam conforme a sua função.',
     questions: [
       // ── só professores ──
-      item(
-        'ped_material',
-        'O material didático é adequado e os alunos têm acesso a ele fora da aula.',
-        { showIf: { id: 'rol', equals: ROL_PROFESSOR } },
-      ),
+      // Duas perguntas de propósito: material ruim e material inacessível
+      // pedem ações diferentes (revisar conteúdo vs. entregar o PDF).
+      item('ped_material', 'O material didático é adequado ao nível das turmas que dou.', {
+        showIf: { id: 'rol', equals: ROL_PROFESSOR },
+      }),
+      item('ped_material_acesso', 'Meus alunos têm acesso ao material fora da aula.', {
+        showIf: { id: 'rol', equals: ROL_PROFESSOR },
+      }),
       item(
         'ped_nivel_clareza',
         'Consigo dizer com clareza a cada aluno em que nível está e o que falta para avançar.',
@@ -305,7 +308,8 @@ const EQUIPE_AVERAGES: Record<string, string> = {
   reconhecimento: 'Trabalho reconhecido',
   autonomia: 'Autonomia dentro do método',
   orgulho: 'Orgulho de trabalhar aqui',
-  ped_material: 'Prof: material adequado e acessível',
+  ped_material: 'Prof: material adequado',
+  ped_material_acesso: 'Prof: alunos têm acesso ao material',
   ped_nivel_clareza: 'Prof: clareza do nível do aluno',
   ped_nivelamento: 'Prof: nivelamento funciona',
   ped_turmas: 'Prof: tamanho das turmas',
@@ -331,6 +335,10 @@ export const EQUIPE_SURVEY: SurveyDefinition = {
   allowContact: false,
   minGroupN: MIN_GRUPO_N,
   commentMeta: false,
+  // Função + tempo de casa + um comentário identificam uma pessoa numa
+  // equipe pequena: a listagem e o CSV saem sem essas colunas; os cortes
+  // por função/tempo existem só agregados e mascarados (breakdowns).
+  strictAnonymity: true,
   comments: {
     nps_motivo: 'Razão da nota',
     manter: 'O que manter',

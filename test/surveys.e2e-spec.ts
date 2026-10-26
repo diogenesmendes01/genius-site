@@ -21,7 +21,8 @@ function validPayload() {
       nps_motivo: 'Las clases son muy dinámicas.',
       continuar: 'Sí, seguro',
       progreso: 'Sí, mucho',
-      progreso_claridad: 4,
+      nivel_claridad: 4,
+      avance_claridad: 3,
       contenido_nivel: 'Sí, está adecuado a mi nivel',
       materiales: 4,
       materiales_acceso: 'Sí, siempre',
@@ -65,7 +66,9 @@ describe('Surveys — encuesta de satisfacción', () => {
       // v2 additions
       expect(ids).toContain('modalidad');
       expect(ids).toContain('continuar');
-      expect(ids).toContain('progreso_claridad');
+      expect(ids).toContain('nivel_claridad');
+      expect(ids).toContain('avance_claridad');
+      expect(ids).toContain('salida_motivo');
       expect(ids).toContain('soporte_tiempo');
       // v1 questions removed in v2
       expect(ids).not.toContain('prof_paciencia');
@@ -202,7 +205,7 @@ describe('Surveys — encuesta de satisfacción', () => {
       expect(entry.profesorNorm).toBe('ana martinez');
       expect(entry.modalidad).toBe('Grupo regular');
       expect(entry.pais).toBe('Guatemala');
-      expect(entry.answers.progreso_claridad).toBe(4);
+      expect(entry.answers.nivel_claridad).toBe(4);
       expect(entry.answers.contenido_extra).toEqual(['Conversación', 'Otro']);
     });
 
@@ -280,6 +283,7 @@ describe('Surveys — encuesta de satisfacción', () => {
       const body = validPayload();
       body.nivel = 'No sé mi nivel';
       (body.answers as any).continuar = 'Probablemente no';
+      (body.answers as any).salida_motivo = 'Los horarios';
       (body.answers as any).continuar_motivo = 'Horarios más flexibles.';
       await request(app.getHttpServer()).post('/api/surveys').send(body).expect(201);
 
@@ -290,6 +294,7 @@ describe('Surveys — encuesta de satisfacción', () => {
       expect(resp.body.nivelDesconocido).toBe(1);
       expect(resp.body.continuar.enRiesgo).toBe(1);
       expect(resp.body.distributions.continuar.dist['Probablemente no']).toBe(1);
+      expect(resp.body.distributions.salida_motivo.dist['Los horarios']).toBe(1);
       const motivo = resp.body.comments.find((c: any) => c.text.includes('flexibles'));
       expect(motivo.question).toBe('Qué le haría quedarse');
     });
