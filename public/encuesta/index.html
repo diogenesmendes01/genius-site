@@ -15,15 +15,28 @@
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/encuesta/encuesta.css">
 </head>
-<body>
+<body data-survey="alumnos">
+  <a class="skip-link" href="#main">Saltar al contenido</a>
 
-  <header class="hero">
-    <p class="hero__brand">Genius · Academia de Lenguas</p>
-    <h1 class="hero__title">Tu opinión nos ayuda a mejorar</h1>
-    <p class="hero__subtitle">La encuesta es anónima. Puedes avanzar y regresar sin perder tus respuestas.</p>
-  </header>
+  <!-- Misma apertura que la home: foto de clase, logo y enlace Alumnos. -->
+  <section class="opening">
+    <figure class="class-visual" aria-hidden="true">
+      <img src="/assets/hero-class-v8.webp" alt="" width="1672" height="941" fetchpriority="high">
+    </figure>
+    <header class="site-header wrap">
+      <a class="brand" href="/" aria-label="GENIUS, inicio"><img src="/assets/LOGO GENIUS NEGATIVO.png" alt="GENIUS Academia de Lenguas" width="1970" height="445"></a>
+      <a class="student-link" href="https://geniusidiomas.q10.com/" target="_blank" rel="noopener noreferrer">Alumnos</a>
+    </header>
+    <div class="hero wrap">
+      <div class="hero-copy">
+        <p class="label">Encuesta de satisfacción · 4 minutos</p>
+        <h1>Tu opinión nos ayuda a mejorar.</h1>
+        <p class="hero-sub">La encuesta es anónima. Puedes avanzar y regresar sin perder tus respuestas.</p>
+      </div>
+    </div>
+  </section>
 
-  <main class="container">
+  <main id="main" class="container">
     <div class="prog" id="progBar" aria-label="Progreso de la encuesta"></div>
 
     <div class="loading" id="loadingBox">Cargando encuesta…</div>
@@ -42,11 +55,27 @@
       <label for="website">Website</label>
       <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
     </div>
-
-    <footer class="page-footer">
-      © <span id="year"></span> Genius Idiomas · <a href="/">geniusidiomas.com</a>
-    </footer>
   </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-top">
+        <a class="brand" href="/" aria-label="GENIUS, inicio"><img src="/assets/LOGO GENIUS POSITIVO.png" alt="GENIUS Academia de Lenguas" width="1970" height="445" loading="lazy"></a>
+        <nav aria-label="Más información">
+          <a href="/curso-portugues-online.html">Curso de portugués</a>
+          <a href="/metodologia.html">Metodología</a>
+          <a href="/sobre-nos.html">Sobre Nosotros</a>
+          <a href="https://geniusidiomas.q10.com/" target="_blank" rel="noopener noreferrer">Alumnos</a>
+        </nav>
+        <a class="social-link" href="https://www.instagram.com/geniusacademiadelenguas/" aria-label="GENIUS en Instagram" target="_blank" rel="noopener noreferrer"><img class="icon" src="/assets/icons/brand-instagram.svg" width="24" height="24" alt=""></a>
+      </div>
+      <div class="footer-bottom">
+        <p>© <span id="year"></span> GENIUS Academia de Lenguas.</p>
+        <p>Academia especializada en portugués brasileño. <a href="https://wa.me/50671784096" target="_blank" rel="noopener noreferrer">WhatsApp: +506 7178-4096</a></p>
+      </div>
+      <p class="footer-countries">Clases online para América Latina: Costa Rica · Panamá · El Salvador · Honduras · Nicaragua · Guatemala · Belize · México · Argentina · Bolivia · Brasil · Chile · Colombia · Cuba · Ecuador · Haití · Paraguay · Perú · República Dominicana · Uruguay · Venezuela</p>
+    </div>
+  </footer>
 
   <script src="/encuesta/app.js"></script>
 </body>
