@@ -55,8 +55,11 @@ const bootstrapLogger = new Logger('AppModule');
 
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
-      serveRoot: '/',
-      exclude: ['/api/(.*)'],
+      // This is a multi-page site: unknown URLs must remain real 404s.
+      // A wildcard renderPath would return the homepage for missing files.
+      serveRoot: '',
+      renderPath: '/',
+      exclude: ['/api{/*path}'],
     }),
 
     AuthModule,

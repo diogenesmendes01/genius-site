@@ -38,6 +38,7 @@ jobs:
           fi
 
       - name: QA Analysis
+        id: qa_analysis
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -112,23 +113,34 @@ jobs:
               }
           )
 
+          failed = False
           try:
               with urllib.request.urlopen(req, timeout=120) as resp:
                   data = json.load(resp)
-                  review = "\n".join(b["text"] for b in data["content"] if b["type"] == "text")
+                  review = "\n".join(b["text"] for b in data["content"] if b["type"] == "text").strip()
+                  if not review:
+                      raise ValueError("Anthropic API returned no review text")
           except Exception as e:
+              failed = True
               review = f"❌ QA Analysis failed: {e}"
 
           with open("/tmp/qa_review.md", "w") as f:
               f.write(review)
           
           print(review[:500])
+          if failed:
+              raise SystemExit(1)
           PYEOF
 
       - name: Post PR Comment
+        if: ${{ !cancelled() && (steps.qa_analysis.outcome == 'success' || steps.qa_analysis.outcome == 'failure') }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ ! -s /tmp/qa_review.md ]; then
+            printf '%s\n' '❌ QA Analysis failed before producing a review. Check the workflow logs.' > /tmp/qa_review.md
+          fi
+
           BODY="## 🔍 QA Review — PR #${{ github.event.pull_request.number }}
 
           $(cat /tmp/qa_review.md)
@@ -150,7 +162,13 @@ jobs:
           python3 << 'PYEOF'
           import json, os, urllib.request
 
-          review = open("/tmp/qa_review.md").read()[:3500]
+          try:
+              review = open("/tmp/qa_review.md").read().strip()
+          except OSError:
+              review = ""
+          if not review:
+              review = "❌ QA Analysis did not run or produced no report. Check the workflow logs."
+          review = review[:3500]
           
           msg = f"""🔍 QA Review — PR #{os.environ['PR_NUM']}
           📦 {os.environ['REPO']}
