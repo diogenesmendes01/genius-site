@@ -17,6 +17,14 @@ export class SurveyResponseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  /**
+   * Which survey this answers ('alumnos', 'equipe'…; see survey-registry.ts).
+   * Rows written before the engine became multi-survey get the default.
+   */
+  @Index()
+  @Column({ type: 'varchar', default: 'alumnos' })
+  survey: string;
+
   /** Distribution channel from the link (?src=whatsapp|en-clase|instagram…). */
   @Column({ type: 'varchar', nullable: true })
   canal: string | null;
@@ -54,9 +62,22 @@ export class SurveyResponseEntity {
   @Column({ type: 'boolean', default: false })
   testimonioOk: boolean;
 
-  /** Optional CEFR level (A1..C2) — fixed list, self-reported. */
+  /** Optional CEFR level (A1..C2 or "No sé mi nivel") — fixed list, self-reported. */
   @Column({ type: 'varchar', nullable: true })
   nivel: string | null;
+
+  /** v2 — course format (grupo regular/semi/intensivo, particulares). Fixed list. */
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  modalidad: string | null;
+
+  /** v2 — optional country (one of the 7 served + "Otro"). Fixed list. */
+  @Column({ type: 'varchar', nullable: true })
+  pais: string | null;
+
+  /** equipe — role segment (professor vs. administrativo). Fixed list. */
+  @Column({ type: 'varchar', nullable: true })
+  rol: string | null;
 
   /** Optional "¿hace cuánto estudias?" bracket — fixed list. */
   @Column({ type: 'varchar', nullable: true })

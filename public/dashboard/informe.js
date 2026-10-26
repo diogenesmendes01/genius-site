@@ -1,7 +1,8 @@
-/* Informe imprimible de la Encuesta de Satisfacción.
- * Lee los filtros de la URL (?nivel=&profesor=&canal=&from=&to=), pide los
- * agregados a GET /api/surveys/stats (cookie de admin) y arma un informe
- * pensado para imprimir / guardar como PDF desde el navegador. */
+/* Informe imprimible de una encuesta (alumnos por defecto, ?survey=equipe
+ * para la del equipo). Lee los filtros de la URL (?survey=&nivel=&profesor=
+ * &canal=&modalidad=&from=&to=), pide los agregados a GET /api/surveys/stats
+ * (cookie de admin) y arma un informe pensado para imprimir / guardar como
+ * PDF desde el navegador. */
 
 (function () {
   'use strict';
@@ -40,11 +41,19 @@
     el('statusBox').hidden = true;
     el('report').hidden = false;
 
+    var survey = data.survey || { key: 'alumnos', allowProfesor: true, allowContact: true };
+    var isAlumnos = survey.key === 'alumnos';
+    if (survey.name) {
+      el('reportTitle').textContent = 'Informe — ' + survey.name;
+      document.title = 'Informe — ' + survey.name + ' · Genius Idiomas';
+    }
+
     /* ── meta ── */
     var filtros = [];
     if (params.get('nivel')) filtros.push('Nivel: ' + params.get('nivel'));
     if (params.get('profesor')) filtros.push('Profesor/a: ' + params.get('profesor'));
     if (params.get('canal')) filtros.push('Canal: ' + params.get('canal'));
+    if (params.get('modalidad')) filtros.push('Modalidad: ' + params.get('modalidad'));
     var periodo = params.get('from') && params.get('to')
       ? params.get('from') + ' → ' + params.get('to')
       : 'Todo el histórico';
@@ -56,15 +65,18 @@
 
     /* ── KPIs ── */
     var nps = data.nps || {};
+    var cont = data.continuar || {};
     var npsTxt = nps.score == null ? '—' : (nps.score > 0 ? '+' + nps.score : String(nps.score));
     el('kpis').innerHTML = [
-      { l: 'NPS', v: npsTxt, h: (nps.promoters || 0) + ' promotores · ' + (nps.detractors || 0) + ' detractores' },
+      { l: isAlumnos ? 'NPS' : 'eNPS', v: npsTxt, h: (nps.promoters || 0) + ' promotores · ' + (nps.detractors || 0) + ' detractores' },
       { l: 'Satisfacción', v: data.csatAvg != null ? data.csatAvg + ' / 5' : '—', h: 'promedio general' },
-      { l: 'Respuestas', v: data.total || 0, h: (data.identified || 0) + ' identificadas' },
-      { l: 'Aceptan contacto', v: data.contactOk || 0, h: 'para seguimiento' },
-      { l: 'Testimonios', v: data.testimonioOk || 0, h: 'autorizados' },
+      isAlumnos ? { l: 'Piensan continuar', v: cont.pctPositivo != null ? cont.pctPositivo + '%' : '—', h: (cont.enRiesgo || 0) + ' en riesgo de ' + (cont.respondieron || 0) } : null,
+      isAlumnos ? { l: 'No saben su nivel', v: data.nivelDesconocido || 0, h: 'eligieron "No sé mi nivel"' } : null,
+      { l: 'Respuestas', v: data.total || 0, h: survey.allowContact ? (data.identified || 0) + ' identificadas' : 'anónimas' },
+      survey.allowContact ? { l: 'Aceptan contacto', v: data.contactOk || 0, h: 'para seguimiento' } : null,
+      survey.allowContact ? { l: 'Testimonios', v: data.testimonioOk || 0, h: 'autorizados' } : null,
       { l: 'Posibles duplicados', v: data.possibleDuplicates || 0, h: 'misma red/IP' },
-    ].map(function (k) {
+    ].filter(Boolean).map(function (k) {
       return '<div class="kpi"><div class="l">' + esc(k.l) + '</div><div class="v">' + esc(k.v) + '</div><div class="h">' + esc(k.h) + '</div></div>';
     }).join('');
 
@@ -95,30 +107,59 @@
 
     /* ── distribuciones de selección única ── */
     var dists = data.distributions || {};
+    el('secDistributions').hidden = Object.keys(dists).length === 0;
     el('distributions').innerHTML = Object.keys(dists).map(function (qid) {
       return distBlock(dists[qid].label, dists[qid].dist, false);
     }).join('');
 
     /* ── multi-selección ── */
     var multi = data.multi || {};
+    el('secMulti').hidden = Object.keys(multi).length === 0;
     el('multi').innerHTML = Object.keys(multi).map(function (qid) {
       return distBlock(multi[qid].label, multi[qid].dist, true);
     }).join('');
 
-    /* ── profesores ── */
+    /* ── por segmento (modalidad / función / tiempo), enmascarado bajo minN ── */
+    var breakdowns = data.breakdowns || [];
+    el('secBreakdowns').hidden = breakdowns.length === 0;
+    el('breakdowns').innerHTML = breakdowns.map(function (b) {
+      var rows = b.groups.map(function (g) {
+        if (g.insufficient) {
+          return '<tr><td>' + esc(g.value) + '</td><td class="num">' + esc(g.count) + '</td>' +
+            '<td colspan="2" style="color:#606060">Menos de ' + esc(b.minN) + ' respuestas · sin números</td></tr>';
+        }
+        return '<tr><td>' + esc(g.value) + '</td><td class="num">' + esc(g.count) + '</td>' +
+          '<td class="num">' + esc(g.nps == null ? '—' : (g.nps > 0 ? '+' + g.nps : g.nps)) + '</td>' +
+          '<td class="num">' + esc(g.csatAvg != null ? g.csatAvg : '—') + '</td></tr>';
+      });
+      if (b.sinDato > 0) {
+        rows.push('<tr><td style="color:#606060">Sin dato</td><td class="num">' + esc(b.sinDato) + '</td><td class="num">—</td><td class="num">—</td></tr>');
+      }
+      return '<div><h3>' + esc(b.label) + '</h3><table><thead><tr><th>' + esc(b.label) +
+        '</th><th class="num">Respuestas</th><th class="num">NPS</th><th class="num">Satisf.</th></tr></thead><tbody>' +
+        (rows.join('') || '<tr><td colspan="4" style="color:#606060">Sin datos.</td></tr>') + '</tbody></table></div>';
+    }).join('');
+
+    /* ── profesores (solo encuestas con atribución a profesor/a) ── */
+    el('secProfessors').hidden = !survey.allowProfesor;
     var profs = data.professors || [];
     var rows = profs.map(function (p) {
+      if (p.insufficient) {
+        return '<tr><td>' + esc(p.profesor || '—') + '</td>' +
+          '<td class="num">' + esc(p.count) + '</td>' +
+          '<td colspan="3" style="color:#606060">Menos de ' + esc(p.minN || 3) + ' respuestas · sin promedios</td></tr>';
+      }
       return '<tr><td>' + esc(p.profesor || '—') + '</td>' +
         '<td class="num">' + esc(p.count) + '</td>' +
         '<td class="num">' + esc(p.avgClaridad != null ? p.avgClaridad : '—') + '</td>' +
-        '<td class="num">' + esc(p.avgPaciencia != null ? p.avgPaciencia : '—') + '</td>' +
-        '<td class="num">' + esc(p.nps > 0 ? '+' + p.nps : p.nps) + '</td></tr>';
+        '<td class="num">' + esc(p.avgFeedback != null ? p.avgFeedback : '—') + '</td>' +
+        '<td class="num">' + esc(p.nps == null ? '—' : (p.nps > 0 ? '+' + p.nps : p.nps)) + '</td></tr>';
     });
     if (data.unidentified > 0) {
       rows.push('<tr><td style="color:#606060">Sin identificar</td><td class="num">' + esc(data.unidentified) + '</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>');
     }
     el('professors').innerHTML = rows.length
-      ? '<table><thead><tr><th>Profesor/a</th><th class="num">Respuestas</th><th class="num">Prom. claridad</th><th class="num">Prom. paciencia</th><th class="num">NPS</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>'
+      ? '<table><thead><tr><th>Profesor/a</th><th class="num">Respuestas</th><th class="num">Prom. claridad</th><th class="num">Prom. feedback</th><th class="num">NPS</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>'
       : '<p style="color:#606060">Sin respuestas con profesor/a identificado.</p>';
 
     /* ── semanal ── */
@@ -133,7 +174,7 @@
     el('comments').innerHTML = comments.length
       ? comments.map(function (c) {
           var chips = [
-            c.question, c.nivel ? 'Nivel ' + c.nivel : null,
+            c.question, c.nivel ? 'Nivel ' + c.nivel : null, c.modalidad,
             c.profesor ? 'Prof.: ' + c.profesor : null, c.canal,
             c.createdAt ? new Date(c.createdAt).toLocaleDateString('es') : null,
           ].filter(Boolean).map(function (m) { return '<span class="m">' + esc(m) + '</span>'; });
@@ -143,8 +184,9 @@
       : '<p style="color:#606060">Sin comentarios en el período.</p>';
 
     el('reportFoot').textContent =
-      'Informe generado desde el dashboard de Genius Idiomas · Encuesta de Satisfacción de Alumnos. ' +
-      'Los promedios usan escala 1–5; el NPS va de −100 a +100. "Posibles duplicados" es solo un aviso (misma red/IP).';
+      'Informe generado desde el dashboard de Genius Idiomas · ' + (survey.name || 'Encuesta') + '. ' +
+      'Los promedios usan escala 1–5; el NPS va de −100 a +100. "Posibles duplicados" es solo un aviso (misma red/IP). ' +
+      'Los grupos con menos de ' + (survey.minGroupN || 3) + ' respuestas aparecen sin números para proteger el anonimato.';
   }
 
   function hbar(label, value, max, valueText, gold) {

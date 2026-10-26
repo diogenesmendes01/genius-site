@@ -16,7 +16,7 @@ const CURRENCY_LOCALE = {
 // Date picker state — `preset` controls which KPIs we send from/to for.
 // Only Overview and Financial are date-sensitive; Academic + Turmas +
 // Commercial are period-based on the server and ignore from/to.
-const DATE_PICKER_APPLIES_TO = new Set(['overview', 'financial', 'encuesta']);
+const DATE_PICKER_APPLIES_TO = new Set(['overview', 'financial', 'encuesta', 'equipo']);
 const state = {
   user: null,
   charts: {},
@@ -24,9 +24,9 @@ const state = {
   activeTab: 'overview',
   // Cache per tab so switching back and forth doesn't re-hit /api. Invalidated
   // by refreshBtn or the 60s auto-timer.
-  loaded: { overview: false, academic: false, turmas: false, financial: false, commercial: false, encuesta: false },
+  loaded: { overview: false, academic: false, turmas: false, financial: false, commercial: false, encuesta: false, equipo: false },
   // Encuesta tab filters (nivel / profesor / canal) — session-only.
-  encFilters: { nivel: '', profesor: '', canal: '' },
+  encFilters: { nivel: '', profesor: '', canal: '', modalidad: '' },
   // Multi-currency state — `displayCurrency` is the user's view choice
   // (persisted in localStorage). `rates` is the USD-base table from
   // /api/dashboard/currency-rates, lazy-loaded on first auth'd render.
@@ -123,7 +123,7 @@ function bindEvents() {
   });
 
   // Encuesta tab filters — re-fetch the stats with the new params.
-  [['encNivel', 'nivel'], ['encProfesor', 'profesor'], ['encCanal', 'canal']].forEach(
+  [['encNivel', 'nivel'], ['encProfesor', 'profesor'], ['encCanal', 'canal'], ['encModalidad', 'modalidad']].forEach(
     ([id, key]) => {
       const select = el(id);
       if (!select) return;
@@ -143,6 +143,25 @@ function bindEvents() {
   el('encCsvBtn')?.addEventListener('click', () => {
     window.location.href = `${API}/surveys/export.csv?${encQueryString()}`;
   });
+
+  // Equipo: same report/CSV, keyed to the staff survey (date range only).
+  el('eqReportBtn')?.addEventListener('click', () => {
+    window.open(`/dashboard/informe.html?${eqQueryString()}`, '_blank');
+  });
+  el('eqCsvBtn')?.addEventListener('click', () => {
+    window.location.href = `${API}/surveys/export.csv?${eqQueryString()}`;
+  });
+}
+
+function eqQueryString() {
+  const params = new URLSearchParams();
+  params.set('survey', 'equipe');
+  const r = computeDateRange();
+  if (r.from && r.to) {
+    params.set('from', r.from);
+    params.set('to', r.to);
+  }
+  return params.toString();
 }
 
 // Query string for the Encuesta report/CSV: date range + tab filters.
@@ -270,6 +289,7 @@ function loadTab(name, force) {
   if (name === 'financial') return loadFinancial(force);
   if (name === 'commercial') return loadCommercial(force);
   if (name === 'encuesta') return loadEncuesta(force);
+  if (name === 'equipo') return loadEquipo(force);
 }
 
 // ─── Auth flow ───
@@ -1104,10 +1124,13 @@ async function loadEncuesta(force) {
 
   // KPIs
   const nps = data.nps || {};
+  const continuar = data.continuar || {};
   const npsValue = nps.score == null ? '—' : (nps.score > 0 ? `+${nps.score}` : String(nps.score));
   el('encuestaKpis').innerHTML = [
     { label: 'NPS', value: npsValue, hint: `${nps.promoters ?? 0} promotores · ${nps.detractors ?? 0} detractores`, accent: true, variant: nps.score != null && nps.score < 0 ? 'danger' : '' },
     { label: 'Satisfacción general', value: data.csatAvg != null ? `${data.csatAvg} / 5` : '—', hint: 'promedio 1–5' },
+    { label: 'Piensan continuar', value: continuar.pctPositivo != null ? `${continuar.pctPositivo}%` : '—', hint: `${continuar.enRiesgo ?? 0} en riesgo de ${continuar.respondieron ?? 0}`, variant: (continuar.enRiesgo || 0) > 0 ? 'warning' : 'success' },
+    { label: 'No saben su nivel', value: data.nivelDesconocido ?? 0, hint: 'eligieron "No sé mi nivel"', variant: (data.nivelDesconocido || 0) > 0 ? 'warning' : '' },
     { label: 'Respuestas', value: data.total ?? 0, hint: `${data.identified ?? 0} identificadas` },
     { label: 'Aceptan contacto', value: data.contactOk ?? 0, hint: 'para seguimiento' },
     { label: 'Testimonios autorizados', value: data.testimonioOk ?? 0, hint: 'para la landing', variant: 'success' },
@@ -1123,6 +1146,8 @@ async function loadEncuesta(force) {
   );
   renderEncAverages(data.averages || []);
 
+  renderDistributionChart('encContinuarChart', (data.distributions?.continuar?.dist) || {}, '#059669');
+  renderDistributionChart('encSoporteChart', (data.distributions?.soporte_tiempo?.dist) || {}, '#1a2456');
   renderDistributionChart('encProgresoChart', (data.distributions?.progreso?.dist) || {}, '#DCAF63');
   renderDistributionChart('encCanalChart', data.canales || {}, '#1a2456');
   renderDistributionChart('encContenidoChart', (data.multi?.contenido_extra?.dist) || {}, '#DCAF63');
@@ -1135,8 +1160,8 @@ async function loadEncuesta(force) {
   applyPartialBanner(data);
 }
 
-function renderEncNpsBar(nps, total) {
-  const target = el('encNpsBar');
+function renderEncNpsBar(nps, total, targetId = 'encNpsBar') {
+  const target = el(targetId);
   if (!target) return;
   if (!total) {
     target.innerHTML = '<p class="enc-empty">Sin respuestas todavía.</p>';
@@ -1156,12 +1181,12 @@ function renderEncNpsBar(nps, total) {
     </div>`;
 }
 
-function renderEncAverages(averages) {
-  destroyChart('encAveragesChart');
-  const canvas = el('encAveragesChart');
+function renderEncAverages(averages, canvasId = 'encAveragesChart') {
+  destroyChart(canvasId);
+  const canvas = el(canvasId);
   if (!canvas) return;
   const rows = averages.filter((a) => a.avg != null).sort((a, b) => b.avg - a.avg);
-  state.charts.encAveragesChart = new Chart(canvas.getContext('2d'), {
+  state.charts[canvasId] = new Chart(canvas.getContext('2d'), {
     type: 'bar',
     data: {
       labels: rows.map((a) => a.label),
@@ -1188,12 +1213,21 @@ function renderEncProfessors(professors, unidentified) {
     return;
   }
   const npsCell = (v) => (v == null ? '—' : v > 0 ? `+${v}` : String(v));
-  const rows = professors.map((p) => `
+  // Teachers with fewer than `minN` responses show the count but not the
+  // numbers: with n=1 they are noise and identify the student.
+  const rows = professors.map((p) => p.insufficient
+    ? `
+    <tr>
+      <td>${escapeHtml(p.profesor || '—')}</td>
+      <td>${escapeHtml(String(p.count))}</td>
+      <td colspan="3" style="color:var(--gray-text)">Menos de ${escapeHtml(String(p.minN ?? 3))} respuestas · sin promedios</td>
+    </tr>`
+    : `
     <tr>
       <td>${escapeHtml(p.profesor || '—')}</td>
       <td>${escapeHtml(String(p.count))}</td>
       <td>${escapeHtml(p.avgClaridad != null ? String(p.avgClaridad) : '—')}</td>
-      <td>${escapeHtml(p.avgPaciencia != null ? String(p.avgPaciencia) : '—')}</td>
+      <td>${escapeHtml(p.avgFeedback != null ? String(p.avgFeedback) : '—')}</td>
       <td>${escapeHtml(npsCell(p.nps))}</td>
     </tr>`);
   if (unidentified > 0) {
@@ -1207,8 +1241,8 @@ function renderEncProfessors(professors, unidentified) {
   tbody.innerHTML = rows.join('');
 }
 
-function renderEncComments(comments) {
-  const target = el('encComments');
+function renderEncComments(comments, targetId = 'encComments') {
+  const target = el(targetId);
   if (!target) return;
   if (!comments.length) {
     target.innerHTML = '<p class="enc-empty">Sin comentarios todavía.</p>';
@@ -1218,6 +1252,7 @@ function renderEncComments(comments) {
     const chips = [
       c.question ? `<span class="enc-chip">${escapeHtml(c.question)}</span>` : '',
       c.nivel ? `<span class="enc-chip">Nivel ${escapeHtml(c.nivel)}</span>` : '',
+      c.modalidad ? `<span class="enc-chip">${escapeHtml(c.modalidad)}</span>` : '',
       c.profesor ? `<span class="enc-chip">Prof.: ${escapeHtml(c.profesor)}</span>` : '',
       c.canal ? `<span class="enc-chip">${escapeHtml(c.canal)}</span>` : '',
       c.createdAt ? `<span class="enc-chip">${escapeHtml(new Date(c.createdAt).toLocaleDateString('es'))}</span>` : '',
@@ -1227,6 +1262,63 @@ function renderEncComments(comments) {
       <div class="enc-comment">
         <p>"${escapeHtml(c.text)}"</p>
         <div class="enc-comment__meta">${chips}</div>
+      </div>`;
+  }).join('');
+}
+
+// ─── Equipo (pesquisa de clima) ───
+async function loadEquipo(force) {
+  const data = await fetchTab(`${API}/surveys/stats?${eqQueryString()}`, force);
+  if (!data) return;
+  state.loaded.equipo = true;
+
+  const nps = data.nps || {};
+  const npsValue = nps.score == null ? '—' : (nps.score > 0 ? `+${nps.score}` : String(nps.score));
+  const minN = data.survey?.minGroupN ?? 5;
+  el('equipoKpis').innerHTML = [
+    { label: 'eNPS', value: npsValue, hint: `${nps.promoters ?? 0} promotores · ${nps.detractors ?? 0} detractores`, accent: true, variant: nps.score != null && nps.score < 0 ? 'danger' : '' },
+    { label: 'Satisfacción general', value: data.csatAvg != null ? `${data.csatAvg} / 5` : '—', hint: 'promedio 1–5' },
+    { label: 'Respuestas', value: data.total ?? 0, hint: `grupos con menos de ${minN} no se muestran` },
+    { label: 'Posibles duplicados', value: data.possibleDuplicates ?? 0, hint: 'misma red/IP (solo aviso)', variant: (data.possibleDuplicates || 0) > 0 ? 'warning' : '' },
+  ].map(kpiCard).join('');
+
+  renderEncNpsBar(nps, data.total ?? 0, 'eqNpsBar');
+  renderMonthlyLine(
+    'eqWeeklyChart',
+    (data.weekly || []).map((w) => ({ month: w.week.slice(5), value: w.count })),
+    '#DCAF63',
+    false,
+  );
+  renderEncAverages(data.averages || [], 'eqAveragesChart');
+  renderEqBreakdowns(data.breakdowns || []);
+  renderEncComments(data.comments || [], 'eqComments');
+
+  applyPartialBanner(data);
+}
+
+/** One small table per segment column; masked groups show the count only. */
+function renderEqBreakdowns(breakdowns) {
+  const target = el('eqBreakdowns');
+  if (!target) return;
+  if (!breakdowns.length || breakdowns.every((b) => !b.groups.length)) {
+    target.innerHTML = '<p class="enc-empty">Sin respuestas todavía.</p>';
+    return;
+  }
+  const npsCell = (v) => (v == null ? '—' : v > 0 ? `+${v}` : String(v));
+  target.innerHTML = breakdowns.map((b) => {
+    const rows = b.groups.map((g) => g.insufficient
+      ? `<tr><td>${escapeHtml(g.value)}</td><td>${escapeHtml(String(g.count))}</td><td colspan="2" style="color:var(--gray-text)">Menos de ${escapeHtml(String(b.minN))} respuestas · sin números</td></tr>`
+      : `<tr><td>${escapeHtml(g.value)}</td><td>${escapeHtml(String(g.count))}</td><td>${escapeHtml(npsCell(g.nps))}</td><td>${escapeHtml(g.csatAvg != null ? String(g.csatAvg) : '—')}</td></tr>`);
+    if (b.sinDato > 0) {
+      rows.push(`<tr><td style="color:var(--gray-text)">Sin dato</td><td>${escapeHtml(String(b.sinDato))}</td><td>—</td><td>—</td></tr>`);
+    }
+    return `
+      <h3 class="card__subtitle">${escapeHtml(b.label)}</h3>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead><tr><th>${escapeHtml(b.label)}</th><th>Respuestas</th><th>eNPS</th><th>Satisfacción</th></tr></thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
       </div>`;
   }).join('');
 }
@@ -1246,6 +1338,7 @@ function syncEncFilterOptions(options) {
   fill('encNivel', (options.niveles || []).map((n) => ({ value: n, label: n })), state.encFilters.nivel);
   fill('encProfesor', (options.profesores || []).map((p) => ({ value: p.norm, label: p.label })), state.encFilters.profesor);
   fill('encCanal', (options.canales || []).map((c) => ({ value: c, label: c })), state.encFilters.canal);
+  fill('encModalidad', (options.modalidades || []).map((m) => ({ value: m, label: m })), state.encFilters.modalidad);
 }
 
 // ─── Shared UI helpers for the new tabs ───

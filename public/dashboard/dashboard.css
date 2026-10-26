@@ -325,6 +325,15 @@ body {
   margin-bottom: 1rem;
   letter-spacing: 0.02em;
 }
+.card__subtitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gray-text);
+  margin: 1rem 0 0.5rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.card__subtitle:first-child { margin-top: 0; }
 .card--notes {
   background: var(--cream);
   color: var(--gray-text);

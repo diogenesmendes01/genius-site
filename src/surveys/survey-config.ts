@@ -1,5 +1,6 @@
 /**
- * Single source of truth for the student satisfaction survey.
+ * Single source of truth for the STUDENT satisfaction survey (v2),
+ * registered as `alumnos` in survey-registry.ts.
  *
  * The wizard frontend (public/encuesta) renders itself from this structure
  * via GET /api/surveys/config, and SurveysService validates every submitted
@@ -11,67 +12,43 @@
  *   - 'answers' → a row in survey_answers (question_id + value)
  *   - 'ui'      → wizard-only control (e.g. the Sí/No that reveals a field);
  *                 never sent to the API
+ *
+ * v2 (2026-10): shorter core (15 required instead of 22), teacher chosen
+ * from a fixed list instead of free text, new segmentation (modalidad,
+ * país), and new questions that target what the July 2026 comments raised:
+ * intention to continue, clarity about one's level, access to materials and
+ * support response time. Question ids kept from v1 keep their meaning so
+ * the history stays comparable; ids that were removed live in
+ * LEGACY_ANSWER_IDS so old answers still show up in the CSV export.
  */
 
-export interface SurveySelectDef {
-  /** Column name on survey_responses this select writes to. */
-  id: string;
-  label: string;
-  /** First option is the empty placeholder. */
-  options: string[];
-}
+import {
+  SurveyDefinition,
+  SurveyQuestion,
+  SurveyStep,
+  SurveyUiStrings,
+  answerQuestions,
+  validateAnswers as validateAnswersFor,
+} from './survey-types';
 
-export interface SurveyConsentDef {
-  /** Boolean column on survey_responses. */
-  id: string;
-  label: string;
-}
-
-export interface SurveyShowIf {
-  id: string;
-  equals?: string;
-  includes?: string;
-}
-
-export interface SurveyQuestion {
-  id: string;
-  type:
-    | 'nps'
-    | 'stars'
-    | 'scale5'
-    | 'radio'
-    | 'checks'
-    | 'text'
-    | 'textarea'
-    | 'selects'
-    | 'consent';
-  store: 'column' | 'answers' | 'ui';
-  text?: string;
-  required?: boolean;
-  /** scale5 / stars: caption for each value 1..5. */
-  labels?: string[];
-  /** radio / checks: allowed options. */
-  options?: string[];
-  /** radio presentation hint for the wizard. */
-  variant?: 'cards' | 'list';
-  placeholder?: string;
-  maxLength?: number;
-  selects?: SurveySelectDef[];
-  checks?: SurveyConsentDef[];
-  showIf?: SurveyShowIf;
-  /** nps: end-of-scale captions. */
-  ends?: [string, string];
-}
-
-export interface SurveyStep {
-  id: string;
-  label: string;
-  title: string;
-  sub?: string;
-  questions: SurveyQuestion[];
-}
+export type {
+  SurveyConsentDef,
+  SurveyDefinition,
+  SurveyQuestion,
+  SurveySelectDef,
+  SurveyShowIf,
+  SurveyStep,
+} from './survey-types';
 
 export const NIVEL_OPTIONS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+/**
+ * Students told us (July 2026) they often do not know their level. Letting
+ * them say so turns a blank into a KPI ("No saben su nivel") instead of a
+ * guess.
+ */
+export const NIVEL_DESCONOCIDO = 'No sé mi nivel';
+export const NIVEL_ALLOWED = [...NIVEL_OPTIONS, NIVEL_DESCONOCIDO];
+
 export const TIEMPO_OPTIONS = [
   'Menos de 3 meses',
   'De 3 a 6 meses',
@@ -79,12 +56,134 @@ export const TIEMPO_OPTIONS = [
   'Más de 1 año',
 ];
 
+/** Course formats as sold on the landing page. */
+export const MODALIDAD_OPTIONS = [
+  'Grupo regular',
+  'Grupo semi-intensivo',
+  'Grupo intensivo',
+  'Clases particulares',
+  'No estoy seguro/a',
+];
+
+/** The 7 countries Genius serves + escape hatch. */
+export const PAIS_OPTIONS = [
+  'Costa Rica',
+  'Panamá',
+  'El Salvador',
+  'Honduras',
+  'Nicaragua',
+  'Guatemala',
+  'Belice',
+  'Otro',
+];
+
+/**
+ * Teachers, as students know them. Keep this list in sync with the active
+ * roster (ERP → Usuarios con papel PROFESSOR): add a name when someone
+ * joins, remove it when they leave. Order is alphabetical in the wizard.
+ *
+ * Replaces the free-text field of v1, where "Celia", "Celia Avila" and
+ * "Celia Falcao" became three different rows.
+ */
+export const PROFESOR_OPTIONS = [
+  'Alice Barbosa',
+  'Celia Falcao Avila',
+  'Erbesson De Lima',
+  'Henrique Avila',
+  'Isabelle Cerqueira',
+  'Kessia Morais',
+  'Larissa Pereira Avila',
+  'Leticia Moraes',
+  'Licia',
+  'Luisa Pereira',
+  'Matheus',
+  'Patricia Falcao',
+  'Suzana Carvalho',
+  'Vitor Avila',
+];
+
+/** Select values that mean "no single teacher to attribute this to". */
+export const PROFESOR_SIN_IDENTIFICAR = [
+  'Tengo más de un profesor/a',
+  'Prefiero no decir',
+];
+
+export const PROFESOR_SELECT_OPTIONS = [
+  ...PROFESOR_OPTIONS,
+  ...PROFESOR_SIN_IDENTIFICAR,
+];
+
+/** `continuar` answers that count as "piensa seguir". */
+export const CONTINUAR_POSITIVO = ['Sí, seguro', 'Probablemente sí'];
+export const CONTINUAR_OPTIONS = [
+  ...CONTINUAR_POSITIVO,
+  'No estoy seguro/a',
+  'Probablemente no',
+  'No',
+];
+/** Answers that reveal the "¿qué te haría quedarte?" follow-up. */
+export const CONTINUAR_RIESGO = CONTINUAR_OPTIONS.filter(
+  (o) => !CONTINUAR_POSITIVO.includes(o),
+);
+
+/**
+ * Below this many responses a teacher's averages/NPS are not shown: with
+ * n=1 the number is noise and the "anonymous" answer is trivially
+ * attributable to one student.
+ */
+export const MIN_PROFESSOR_N = 3;
+
 export const SURVEY_STEPS: SurveyStep[] = [
+  {
+    id: 'sobre_ti',
+    label: 'Tu curso',
+    title: 'Cuéntanos sobre tu curso',
+    sub: 'Solo para agrupar las respuestas. Nada de esto te identifica.',
+    questions: [
+      {
+        id: 'modalidad',
+        type: 'radio',
+        variant: 'cards',
+        store: 'column',
+        required: true,
+        text: '¿En qué modalidad estudias?',
+        options: MODALIDAD_OPTIONS,
+      },
+      {
+        id: 'curso',
+        type: 'selects',
+        store: 'column',
+        selects: [
+          {
+            id: 'profesor',
+            label: 'Tu profesor/a',
+            required: true,
+            options: ['Selecciona…', ...PROFESOR_SELECT_OPTIONS],
+          },
+          {
+            id: 'tiempo',
+            label: '¿Hace cuánto estudias con nosotros?',
+            options: ['Selecciona…', ...TIEMPO_OPTIONS],
+          },
+        ],
+      },
+      {
+        id: 'ubicacion',
+        type: 'selects',
+        store: 'column',
+        text: 'Opcional',
+        selects: [
+          { id: 'pais', label: 'País', options: ['Selecciona…', ...PAIS_OPTIONS] },
+          { id: 'nivel', label: 'Nivel', options: ['Selecciona…', ...NIVEL_ALLOWED] },
+        ],
+      },
+    ],
+  },
   {
     id: 'general',
     label: 'General',
     title: 'Tu experiencia con Genius',
-    sub: 'Dos preguntas rápidas para empezar.',
+    sub: 'Lo más importante está aquí. Dos minutos.',
     questions: [
       {
         id: 'csat',
@@ -105,88 +204,67 @@ export const SURVEY_STEPS: SurveyStep[] = [
         type: 'nps',
         store: 'column',
         required: true,
-        text: '¿Recomendarías Genius a un amigo, familiar o compañero de trabajo?',
-        ends: ['No lo recomendaría', 'Lo recomendaría con seguridad'],
+        text: '¿Qué tan probable es que recomiendes Genius a un amigo, familiar o colega?',
+        ends: ['Nada probable', 'Muy probable'],
       },
       {
-        id: 'lo_mejor',
+        id: 'nps_motivo',
         type: 'textarea',
-        store: 'answers',
-        maxLength: 500,
-        text: '¿Qué es lo que más te gusta de estudiar en Genius?',
-        placeholder: 'Escribe aquí… (opcional)',
-      },
-      {
-        id: 'a_mejorar',
-        type: 'textarea',
-        store: 'answers',
-        maxLength: 500,
-        text: '¿Qué crees que Genius debería mejorar?',
-        placeholder: 'Sé sincero/a, nos ayuda muchísimo… (opcional)',
-      },
-    ],
-  },
-  {
-    id: 'online',
-    label: 'Online',
-    title: 'Clases online',
-    sub: 'Sobre el acceso, la plataforma y la calidad de las clases.',
-    questions: [
-      {
-        id: 'online_acceso',
-        type: 'scale5',
         store: 'answers',
         required: true,
-        text: '¿Qué tan fácil es para ti acceder a las clases online?',
-        labels: ['Muy difícil', 'Difícil', 'Regular', 'Fácil', 'Muy fácil'],
+        maxLength: 300,
+        text: '¿Cuál es la razón principal de tu nota?',
+        placeholder: 'Una o dos frases bastan…',
       },
       {
-        id: 'online_plataforma',
+        id: 'continuar',
         type: 'radio',
         variant: 'list',
         store: 'answers',
         required: true,
-        text: '¿La plataforma o herramienta utilizada para las clases funciona bien para ti?',
+        text: '¿Piensas seguir estudiando con Genius en los próximos 6 meses?',
+        options: CONTINUAR_OPTIONS,
+      },
+      {
+        id: 'continuar_motivo',
+        type: 'text',
+        store: 'answers',
+        maxLength: 300,
+        showIf: { id: 'continuar', oneOf: CONTINUAR_RIESGO },
+        text: '¿Qué te haría quedarte?',
+        placeholder: 'Cuéntanos con sinceridad…',
+      },
+    ],
+  },
+  {
+    id: 'clases',
+    label: 'Clases',
+    title: 'Clases y progreso',
+    sub: 'Sobre tu avance, el nivel, los materiales y la plataforma.',
+    questions: [
+      {
+        id: 'progreso',
+        type: 'radio',
+        variant: 'list',
+        store: 'answers',
+        required: true,
+        text: '¿Sientes que estás progresando en el aprendizaje del portugués?',
         options: [
-          'Sí, funciona muy bien',
-          'Funciona bien la mayoría de las veces',
-          'A veces tengo problemas',
-          'Tengo problemas con frecuencia',
+          'Sí, mucho',
+          'Sí, poco a poco',
+          'Más o menos',
+          'No mucho',
+          'No siento progreso todavía',
         ],
       },
       {
-        id: 'online_calidad',
+        id: 'progreso_claridad',
         type: 'scale5',
         store: 'answers',
         required: true,
-        text: '¿Cómo evalúas la calidad de las clases online?',
-        labels: ['Muy mala', 'Mala', 'Regular', 'Buena', 'Excelente'],
+        text: '¿Sabes con claridad en qué nivel estás y qué te falta para avanzar?',
+        labels: ['Nada claro', 'Poco claro', 'Más o menos', 'Claro', 'Totalmente claro'],
       },
-      {
-        id: 'online_efectividad',
-        type: 'radio',
-        variant: 'list',
-        store: 'answers',
-        required: true,
-        text: '¿Sientes que las clases online te permiten aprender de forma clara y efectiva?',
-        options: ['Sí, totalmente', 'Sí, en parte', 'Más o menos', 'No mucho', 'No'],
-      },
-      {
-        id: 'online_mejora',
-        type: 'textarea',
-        store: 'answers',
-        maxLength: 500,
-        text: '¿Qué podría mejorar en la experiencia de las clases online?',
-        placeholder: 'Escribe aquí… (opcional)',
-      },
-    ],
-  },
-  {
-    id: 'contenido',
-    label: 'Contenido',
-    title: 'Contenido y metodología',
-    sub: 'Sobre el nivel, los materiales y lo que quieres aprender.',
-    questions: [
       {
         id: 'contenido_nivel',
         type: 'radio',
@@ -203,20 +281,6 @@ export const SURVEY_STEPS: SurveyStep[] = [
         ],
       },
       {
-        id: 'ayuda_comunicacion',
-        type: 'scale5',
-        store: 'answers',
-        required: true,
-        text: '¿Las clases te ayudan a mejorar tu comunicación en portugués?',
-        labels: [
-          'No me ayudan',
-          'Me ayudan poco',
-          'De forma regular',
-          'Bastante',
-          'Mucho',
-        ],
-      },
-      {
         id: 'materiales',
         type: 'scale5',
         store: 'answers',
@@ -224,6 +288,123 @@ export const SURVEY_STEPS: SurveyStep[] = [
         text: '¿Cómo evalúas los materiales utilizados en clase?',
         labels: ['Muy malos', 'Malos', 'Regulares', 'Buenos', 'Excelentes'],
       },
+      {
+        id: 'materiales_acceso',
+        type: 'radio',
+        variant: 'list',
+        store: 'answers',
+        text: '¿Tienes acceso al material (libro o PDF) fuera de la clase?',
+        options: ['Sí, siempre', 'A veces', 'No', 'No sabía que existía'],
+      },
+      {
+        id: 'online_plataforma',
+        type: 'radio',
+        variant: 'list',
+        store: 'answers',
+        required: true,
+        text: '¿La plataforma o herramienta utilizada para las clases funciona bien para ti?',
+        options: [
+          'Sí, funciona muy bien',
+          'Funciona bien la mayoría de las veces',
+          'A veces tengo problemas',
+          'Tengo problemas con frecuencia',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'profesor',
+    label: 'Profesor/a',
+    title: 'Tu profesor/a',
+    sub: 'Tus respuestas ayudan a los profesores a mejorar. Se muestran solo en conjunto.',
+    questions: [
+      {
+        id: 'prof_claridad',
+        type: 'scale5',
+        store: 'answers',
+        required: true,
+        text: '¿Cómo evalúas la claridad del profesor/a al explicar el contenido?',
+        labels: ['Muy poco claro/a', 'Poco claro/a', 'Regular', 'Claro/a', 'Muy claro/a'],
+      },
+      {
+        id: 'prof_participacion',
+        type: 'scale5',
+        store: 'answers',
+        required: true,
+        text: '¿El profesor/a estimula tu participación durante la clase?',
+        labels: ['Nunca', 'Rara vez', 'A veces', 'Casi siempre', 'Siempre'],
+      },
+      {
+        id: 'prof_feedback',
+        type: 'scale5',
+        store: 'answers',
+        required: true,
+        text: '¿Recibes correcciones y retroalimentación que te ayudan a mejorar?',
+        labels: ['Nunca', 'Rara vez', 'A veces', 'Casi siempre', 'Siempre'],
+      },
+      {
+        id: 'prof_sugerencia',
+        type: 'textarea',
+        store: 'answers',
+        maxLength: 500,
+        text: '¿Qué sugerencia le darías al profesor/a para mejorar las clases?',
+        placeholder: 'Escribe aquí… (opcional)',
+      },
+    ],
+  },
+  {
+    id: 'escuela',
+    label: 'Escuela',
+    title: 'Organización y comunicación',
+    sub: 'Sobre los avisos, el soporte y la atención de Genius.',
+    questions: [
+      {
+        id: 'informacion',
+        type: 'radio',
+        variant: 'list',
+        store: 'answers',
+        required: true,
+        text: '¿Recibes la información necesaria sobre horarios, clases, cambios o avisos importantes?',
+        options: ['Sí, siempre', 'Casi siempre', 'A veces', 'Rara vez', 'No'],
+      },
+      {
+        id: 'soporte',
+        type: 'scale5',
+        store: 'answers',
+        text: '¿Cómo evalúas el soporte o atención cuando necesitas ayuda?',
+        labels: ['Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'],
+        optOut: 'No he necesitado ayuda',
+      },
+      {
+        id: 'soporte_tiempo',
+        type: 'radio',
+        variant: 'list',
+        store: 'answers',
+        text: 'Cuando escribes a Genius, ¿en cuánto tiempo te responden?',
+        options: [
+          'El mismo día',
+          'En 1 o 2 días',
+          'Más de 2 días',
+          'Casi nunca me responden',
+          'Nunca he escrito',
+        ],
+      },
+      {
+        id: 'org_mejora',
+        type: 'textarea',
+        store: 'answers',
+        maxLength: 500,
+        text: '¿Hay algo en la organización de Genius que deberíamos mejorar?',
+        placeholder: 'Escribe aquí… (opcional)',
+      },
+    ],
+  },
+  {
+    id: 'final',
+    label: 'Final',
+    title: 'Para terminar',
+    sub: 'Todo en esta página es opcional.',
+    questions: [
       {
         id: 'contenido_extra',
         type: 'checks',
@@ -252,21 +433,6 @@ export const SURVEY_STEPS: SurveyStep[] = [
         placeholder: 'Cuéntanos…',
       },
       {
-        id: 'progreso',
-        type: 'radio',
-        variant: 'list',
-        store: 'answers',
-        required: true,
-        text: '¿Sientes que estás progresando en el aprendizaje del portugués?',
-        options: [
-          'Sí, mucho',
-          'Sí, poco a poco',
-          'Más o menos',
-          'No mucho',
-          'No siento progreso todavía',
-        ],
-      },
-      {
         id: 'necesita_mejorar',
         type: 'checks',
         store: 'answers',
@@ -283,136 +449,15 @@ export const SURVEY_STEPS: SurveyStep[] = [
           'Otro',
         ],
       },
-    ],
-  },
-  {
-    id: 'profesor',
-    label: 'Profesor/a',
-    title: 'Tu profesor/a',
-    sub: 'Tus respuestas ayudan a los profesores a mejorar.',
-    questions: [
       {
-        id: 'profe_identificar',
-        type: 'radio',
-        variant: 'cards',
-        store: 'ui',
-        text: '¿Deseas identificar a tu profesor/a?',
-        options: ['Sí', 'No'],
-      },
-      {
-        id: 'profesor',
+        id: 'necesita_mejorar_otro',
         type: 'text',
-        store: 'column',
-        maxLength: 120,
-        showIf: { id: 'profe_identificar', equals: 'Sí' },
-        text: 'Nombre del profesor/a:',
-        placeholder: 'Escribe el nombre…',
-      },
-      {
-        id: 'prof_claridad',
-        type: 'scale5',
         store: 'answers',
-        required: true,
-        text: '¿Cómo evalúas la claridad del profesor/a al explicar el contenido?',
-        labels: ['Muy poco claro/a', 'Poco claro/a', 'Regular', 'Claro/a', 'Muy claro/a'],
+        maxLength: 200,
+        showIf: { id: 'necesita_mejorar', includes: 'Otro' },
+        text: 'Escribe qué te gustaría mejorar:',
+        placeholder: 'Cuéntanos…',
       },
-      {
-        id: 'prof_paciencia',
-        type: 'scale5',
-        store: 'answers',
-        required: true,
-        text: '¿El profesor/a demuestra paciencia y disposición para ayudar?',
-        labels: ['Nunca', 'Rara vez', 'A veces', 'Casi siempre', 'Siempre'],
-      },
-      {
-        id: 'prof_participacion',
-        type: 'scale5',
-        store: 'answers',
-        required: true,
-        text: '¿El profesor/a estimula tu participación durante la clase?',
-        labels: ['Nunca', 'Rara vez', 'A veces', 'Casi siempre', 'Siempre'],
-      },
-      {
-        id: 'prof_correccion',
-        type: 'scale5',
-        store: 'answers',
-        required: true,
-        text: '¿El profesor/a corrige tus errores de una forma clara y respetuosa?',
-        labels: ['Nunca', 'Rara vez', 'A veces', 'Casi siempre', 'Siempre'],
-      },
-      {
-        id: 'prof_puntualidad',
-        type: 'radio',
-        variant: 'list',
-        store: 'answers',
-        required: true,
-        text: '¿Cómo evalúas la puntualidad del profesor/a?',
-        options: ['Excelente', 'Buena', 'Regular', 'Mala', 'No aplica'],
-      },
-      {
-        id: 'prof_valoras',
-        type: 'textarea',
-        store: 'answers',
-        maxLength: 500,
-        text: '¿Qué es lo que más valoras del profesor/a?',
-        placeholder: 'Escribe aquí… (opcional)',
-      },
-      {
-        id: 'prof_sugerencia',
-        type: 'textarea',
-        store: 'answers',
-        maxLength: 500,
-        text: '¿Qué sugerencia le darías al profesor/a para mejorar las clases?',
-        placeholder: 'Escribe aquí… (opcional)',
-      },
-    ],
-  },
-  {
-    id: 'escuela',
-    label: 'Escuela',
-    title: 'Organización y comunicación',
-    sub: 'Sobre la comunicación, los avisos y el soporte de Genius.',
-    questions: [
-      {
-        id: 'comunicacion',
-        type: 'scale5',
-        store: 'answers',
-        required: true,
-        text: '¿Cómo evalúas la comunicación de Genius contigo?',
-        labels: ['Muy mala', 'Mala', 'Regular', 'Buena', 'Excelente'],
-      },
-      {
-        id: 'informacion',
-        type: 'radio',
-        variant: 'list',
-        store: 'answers',
-        required: true,
-        text: '¿Recibes la información necesaria sobre horarios, clases, cambios o avisos importantes?',
-        options: ['Sí, siempre', 'Casi siempre', 'A veces', 'Rara vez', 'No'],
-      },
-      {
-        id: 'soporte',
-        type: 'scale5',
-        store: 'answers',
-        text: '¿Cómo evalúas el soporte o atención cuando necesitas ayuda?',
-        labels: ['Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'],
-      },
-      {
-        id: 'org_mejora',
-        type: 'textarea',
-        store: 'answers',
-        maxLength: 500,
-        text: '¿Hay algo en la organización de Genius que deberíamos mejorar?',
-        placeholder: 'Escribe aquí… (opcional)',
-      },
-    ],
-  },
-  {
-    id: 'final',
-    label: 'Final',
-    title: 'Para terminar',
-    sub: 'Todo en esta página es opcional.',
-    questions: [
       {
         id: 'comentario_final',
         type: 'textarea',
@@ -420,20 +465,6 @@ export const SURVEY_STEPS: SurveyStep[] = [
         maxLength: 500,
         text: '¿Hay algún comentario, sugerencia o felicitación que te gustaría compartir?',
         placeholder: 'Escribe aquí… (opcional)',
-      },
-      {
-        id: 'curso',
-        type: 'selects',
-        store: 'column',
-        text: 'Sobre tu curso de portugués (opcional)',
-        selects: [
-          { id: 'nivel', label: 'Nivel', options: ['Selecciona…', ...NIVEL_OPTIONS] },
-          {
-            id: 'tiempo',
-            label: '¿Hace cuánto estudias con nosotros?',
-            options: ['Selecciona…', ...TIEMPO_OPTIONS],
-          },
-        ],
       },
       {
         id: 'contacto_ok',
@@ -477,45 +508,83 @@ export const SURVEY_STEPS: SurveyStep[] = [
   },
 ];
 
-/** Questions persisted in survey_answers, keyed by question id. */
-export const ANSWER_QUESTIONS: ReadonlyMap<string, SurveyQuestion> = new Map(
-  SURVEY_STEPS.flatMap((s) => s.questions)
-    .filter((q) => q.store === 'answers')
-    .map((q) => [q.id, q]),
-);
+/** Spanish wizard chrome for the student survey. */
+export const ALUMNOS_UI: SurveyUiStrings = {
+  lang: 'es',
+  loading: 'Cargando encuesta…',
+  loadError: 'No pudimos cargar la encuesta. Por favor recarga la página o inténtalo más tarde.',
+  forbidden: 'Este enlace no es válido. Pide a Genius el enlace correcto de la encuesta.',
+  back: '← Atrás',
+  next: 'Continuar →',
+  submit: 'Enviar respuestas',
+  sending: 'Enviando…',
+  requiredAlert: 'Por favor responde las preguntas marcadas con * antes de continuar.',
+  tooMany: 'Demasiados envíos seguidos. Espera un minuto e inténtalo de nuevo.',
+  sendError: 'Hubo un error al enviar tus respuestas. Por favor inténtalo de nuevo.',
+  thanksTitle: '¡Gracias por tu opinión!',
+  thanksBody:
+    'Tus respuestas fueron enviadas. Cada comentario nos ayuda a hacer de Genius una mejor experiencia para ti.',
+  doneTitle: 'Ya respondiste esta encuesta',
+  doneBody: '¡Gracias por tu opinión! Solo se puede responder una vez por persona.',
+  privacy:
+    'Tus respuestas se guardan de forma segura y solo el equipo de Genius puede verlas. ' +
+    'Si dejaste un contacto, te escribiremos en máximo 5 días hábiles.',
+  charHint: 'máx. {n} caracteres',
+};
+
+/**
+ * v1 question ids no longer asked. They are rejected on new submissions
+ * (unknown question) but kept here so the CSV export still has a column
+ * for the answers already stored and the comments feed keeps its labels.
+ */
+export const LEGACY_ANSWER_IDS = [
+  'lo_mejor',
+  'a_mejorar',
+  'online_acceso',
+  'online_calidad',
+  'online_efectividad',
+  'online_mejora',
+  'ayuda_comunicacion',
+  'prof_paciencia',
+  'prof_correccion',
+  'prof_puntualidad',
+  'prof_valoras',
+  'comunicacion',
+];
 
 /** Open-text questions whose values feed the dashboard comments feed. */
 export const COMMENT_QUESTIONS: Record<string, string> = {
+  nps_motivo: 'Razón de la nota',
+  continuar_motivo: 'Qué le haría quedarse',
+  prof_sugerencia: 'Sugerencia al profesor/a',
+  org_mejora: 'Organización',
+  comentario_final: 'Comentario final',
+  // legacy (v1) — still displayed for stored answers
   lo_mejor: 'Lo que más le gusta',
   a_mejorar: 'Debería mejorar',
   online_mejora: 'Mejorar en clases online',
   prof_valoras: 'Lo que valora del profesor/a',
-  prof_sugerencia: 'Sugerencia al profesor/a',
-  org_mejora: 'Organización',
-  comentario_final: 'Comentario final',
 };
 
 /** scale5 questions surfaced as "promedios" bars in the dashboard. */
 export const AVERAGE_QUESTIONS: Record<string, string> = {
   prof_claridad: 'Claridad del profesor/a',
-  prof_paciencia: 'Paciencia del profesor/a',
   prof_participacion: 'Estímulo a participar',
-  prof_correccion: 'Corrección respetuosa',
-  ayuda_comunicacion: 'Ayuda a comunicarte',
-  comunicacion: 'Comunicación de Genius',
-  soporte: 'Soporte / atención',
-  online_calidad: 'Calidad clases online',
-  online_acceso: 'Acceso a las clases',
+  prof_feedback: 'Correcciones y feedback',
+  progreso_claridad: 'Claridad sobre su nivel',
   materiales: 'Materiales',
+  soporte: 'Soporte / atención',
 };
 
 /** Single-choice questions whose distribution the dashboard charts. */
 export const DISTRIBUTION_QUESTIONS: Record<string, string> = {
+  continuar: 'Intención de continuar',
   progreso: 'Progreso percibido',
-  online_plataforma: 'Funcionamiento de la plataforma',
   contenido_nivel: 'Contenido vs. nivel',
+  materiales_acceso: 'Acceso al material fuera de clase',
+  online_plataforma: 'Funcionamiento de la plataforma',
   informacion: 'Recibe información necesaria',
-  prof_puntualidad: 'Puntualidad del profesor/a',
+  soporte_tiempo: 'Tiempo de respuesta del soporte',
 };
 
 /** Multi-select questions charted as "lo que más piden". */
@@ -524,92 +593,35 @@ export const MULTI_QUESTIONS: Record<string, string> = {
   necesita_mejorar: 'Habilidades que quieren mejorar',
 };
 
-export interface AnswerValidationResult {
-  errors: string[];
-  /** Sanitised answers: only known questions, values coerced/trimmed. */
-  clean: Record<string, number | string | string[]>;
-}
+/** The student survey, as the engine sees it. */
+export const ALUMNOS_SURVEY: SurveyDefinition = {
+  key: 'alumnos',
+  name: 'Encuesta de Satisfacción de Alumnos',
+  ui: ALUMNOS_UI,
+  steps: SURVEY_STEPS,
+  segments: {
+    modalidad: { label: 'Modalidad', options: MODALIDAD_OPTIONS },
+    pais: { label: 'País', options: PAIS_OPTIONS },
+    nivel: { label: 'Nivel', options: NIVEL_ALLOWED },
+    tiempo: { label: 'Tiempo con Genius', options: TIEMPO_OPTIONS },
+  },
+  breakdownBy: ['modalidad'],
+  allowProfesor: true,
+  allowContact: true,
+  minGroupN: MIN_PROFESSOR_N,
+  commentMeta: true,
+  comments: COMMENT_QUESTIONS,
+  averages: AVERAGE_QUESTIONS,
+  distributions: DISTRIBUTION_QUESTIONS,
+  multi: MULTI_QUESTIONS,
+  legacyAnswerIds: LEGACY_ANSWER_IDS,
+};
 
-/**
- * Validate the free-form `answers` object of a submission against the
- * config. Unknown question ids, wrong types, out-of-range scale values and
- * options outside the whitelist are all rejected — mirrors what the global
- * ValidationPipe does for the typed DTO fields.
- */
-export function validateAnswers(input: unknown): AnswerValidationResult {
-  const errors: string[] = [];
-  const clean: Record<string, number | string | string[]> = {};
-  const answers = (input ?? {}) as Record<string, unknown>;
+/** Questions persisted in survey_answers, keyed by question id. */
+export const ANSWER_QUESTIONS: ReadonlyMap<string, SurveyQuestion> =
+  answerQuestions(ALUMNOS_SURVEY);
 
-  if (typeof answers !== 'object' || Array.isArray(answers)) {
-    return { errors: ['answers debe ser un objeto'], clean };
-  }
-
-  for (const [id, raw] of Object.entries(answers)) {
-    const q = ANSWER_QUESTIONS.get(id);
-    if (!q) {
-      errors.push(`pregunta desconocida: ${id}`);
-      continue;
-    }
-    switch (q.type) {
-      case 'scale5': {
-        const n = Number(raw);
-        if (!Number.isInteger(n) || n < 1 || n > 5) {
-          errors.push(`${id}: valor fuera de la escala 1-5`);
-        } else {
-          clean[id] = n;
-        }
-        break;
-      }
-      case 'radio': {
-        if (typeof raw !== 'string' || !(q.options ?? []).includes(raw)) {
-          errors.push(`${id}: opción inválida`);
-        } else {
-          clean[id] = raw;
-        }
-        break;
-      }
-      case 'checks': {
-        if (!Array.isArray(raw) || raw.some((v) => typeof v !== 'string')) {
-          errors.push(`${id}: se esperaba una lista de opciones`);
-          break;
-        }
-        const allowed = new Set(q.options ?? []);
-        const invalid = (raw as string[]).filter((v) => !allowed.has(v));
-        if (invalid.length) {
-          errors.push(`${id}: opciones inválidas (${invalid.join(', ')})`);
-        } else if (raw.length > 0) {
-          clean[id] = [...new Set(raw as string[])];
-        }
-        break;
-      }
-      case 'text':
-      case 'textarea': {
-        if (typeof raw !== 'string') {
-          errors.push(`${id}: se esperaba texto`);
-          break;
-        }
-        const trimmed = raw.trim();
-        const max = q.maxLength ?? 500;
-        if (trimmed.length > max) {
-          errors.push(`${id}: máximo ${max} caracteres`);
-        } else if (trimmed.length > 0) {
-          clean[id] = trimmed;
-        }
-        break;
-      }
-      default:
-        errors.push(`${id}: tipo no soportado en answers`);
-    }
-  }
-
-  // Required questions (only unconditional ones — conditional questions are
-  // optional by design).
-  for (const q of ANSWER_QUESTIONS.values()) {
-    if (q.required && !q.showIf && clean[q.id] === undefined) {
-      errors.push(`falta responder: ${q.id}`);
-    }
-  }
-
-  return { errors, clean };
+/** Validate a student-survey `answers` object (see survey-types.ts). */
+export function validateAnswers(input: unknown) {
+  return validateAnswersFor(ALUMNOS_SURVEY, input);
 }
