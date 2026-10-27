@@ -122,6 +122,12 @@ export interface SurveyDefinition {
   minGroupN: number;
   /** Whether comments carry segment chips (nivel/modalidad/profesor). */
   commentMeta: boolean;
+  /**
+   * When true, the per-response list and the CSV export omit the segment
+   * columns, so a row (segments + free text) can never identify a person.
+   * Segments then exist only aggregated and masked in `breakdowns`.
+   */
+  strictAnonymity?: boolean;
   /** Open-text questions shown in the comments feed (id → label). */
   comments: Record<string, string>;
   /** scale5 questions averaged in the dashboard (id → label). */

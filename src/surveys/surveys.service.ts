@@ -160,7 +160,10 @@ export class SurveysService {
       ...answerQuestions(def).keys(),
       ...def.legacyAnswerIds.filter((id) => present.has(id)),
     ];
-    const segmentCols = Object.keys(def.segments) as SegmentColumn[];
+    // Strict anonymity (equipe): no segment columns next to free text.
+    const segmentCols = def.strictAnonymity
+      ? []
+      : (Object.keys(def.segments) as SegmentColumn[]);
 
     const header = [
       'fecha',
@@ -220,7 +223,7 @@ export class SurveysService {
       survey: def.key,
       count: rows.length,
       entries: rows.map((r) => ({
-        ...stripIpHash(r),
+        ...(def.strictAnonymity ? stripSegments(stripIpHash(r)) : stripIpHash(r)),
         // Same salted IP hash seen more than once in this set → flag it so
         // the operator can eyeball possible duplicates (never auto-blocked).
         possibleDuplicate: !!(r.ipHash && (hashCounts.get(r.ipHash) ?? 0) > 1),
@@ -541,6 +544,16 @@ function csvCell(value: string): string {
 function stripIpHash(row: SurveyResponseEntity): Omit<SurveyResponseEntity, 'ipHash'> {
   const { ipHash: _ipHash, ...rest } = row;
   return rest;
+}
+
+/**
+ * Strict anonymity: a row with segments + free text can identify someone in
+ * a small team, so the per-response view carries no segment at all.
+ */
+function stripSegments<T extends Record<string, unknown>>(row: T) {
+  const copy: Record<string, unknown> = { ...row };
+  for (const col of SEGMENT_COLUMNS) copy[col] = null;
+  return copy as T;
 }
 
 /** lowercase, no accents, collapsed whitespace — groups "Ana", "ana martínez". */

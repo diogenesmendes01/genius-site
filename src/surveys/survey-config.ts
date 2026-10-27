@@ -86,20 +86,18 @@ export const PAIS_OPTIONS = [
  * "Celia Falcao" became three different rows.
  */
 export const PROFESOR_OPTIONS = [
+  // Active roster confirmed by the school on 2026-10-26.
+  'Adriana Loureiro',
   'Alice Barbosa',
-  'Celia Falcao Avila',
-  'Erbesson De Lima',
-  'Henrique Avila',
-  'Isabelle Cerqueira',
-  'Kessia Morais',
-  'Larissa Pereira Avila',
+  'Célia Avila',
+  'Giovani Machado',
+  'Karen Machado',
+  'Kessia Gomes',
   'Leticia Moraes',
-  'Licia',
-  'Luisa Pereira',
-  'Matheus',
-  'Patricia Falcao',
-  'Suzana Carvalho',
-  'Vitor Avila',
+  'Licia Omena',
+  'Luisa Araujo',
+  'Matheus Joseph',
+  'Suzana Barreto',
 ];
 
 /** Select values that mean "no single teacher to attribute this to". */
@@ -125,6 +123,22 @@ export const CONTINUAR_OPTIONS = [
 export const CONTINUAR_RIESGO = CONTINUAR_OPTIONS.filter(
   (o) => !CONTINUAR_POSITIVO.includes(o),
 );
+
+/**
+ * Main reason behind a possible exit. Each one calls for a different
+ * action (price → commercial; schedule → secretaría; pace/progress →
+ * pedagogical; support → operations), so it is asked as a closed list.
+ */
+export const SALIDA_MOTIVO_OPTIONS = [
+  'El precio',
+  'Los horarios',
+  'Me cuesta seguir el ritmo',
+  'Siento poco progreso',
+  'La atención o el soporte',
+  'Un motivo personal (tiempo, trabajo, mudanza…)',
+  'Ya cumplí mi objetivo',
+  'Otro',
+];
 
 /**
  * Below this many responses a teacher's averages/NPS are not shown: with
@@ -226,6 +240,15 @@ export const SURVEY_STEPS: SurveyStep[] = [
         options: CONTINUAR_OPTIONS,
       },
       {
+        id: 'salida_motivo',
+        type: 'radio',
+        variant: 'list',
+        store: 'answers',
+        showIf: { id: 'continuar', oneOf: CONTINUAR_RIESGO },
+        text: '¿Cuál sería el motivo principal?',
+        options: SALIDA_MOTIVO_OPTIONS,
+      },
+      {
         id: 'continuar_motivo',
         type: 'text',
         store: 'answers',
@@ -257,12 +280,22 @@ export const SURVEY_STEPS: SurveyStep[] = [
           'No siento progreso todavía',
         ],
       },
+      // Two questions on purpose: not knowing the level and not knowing the
+      // path forward call for different fixes (placement vs. feedback).
       {
-        id: 'progreso_claridad',
+        id: 'nivel_claridad',
         type: 'scale5',
         store: 'answers',
         required: true,
-        text: '¿Sabes con claridad en qué nivel estás y qué te falta para avanzar?',
+        text: '¿Sabes con claridad en qué nivel de portugués estás hoy?',
+        labels: ['Nada claro', 'Poco claro', 'Más o menos', 'Claro', 'Totalmente claro'],
+      },
+      {
+        id: 'avance_claridad',
+        type: 'scale5',
+        store: 'answers',
+        required: true,
+        text: '¿Sabes qué te falta para avanzar al siguiente nivel?',
         labels: ['Nada claro', 'Poco claro', 'Más o menos', 'Claro', 'Totalmente claro'],
       },
       {
@@ -571,7 +604,8 @@ export const AVERAGE_QUESTIONS: Record<string, string> = {
   prof_claridad: 'Claridad del profesor/a',
   prof_participacion: 'Estímulo a participar',
   prof_feedback: 'Correcciones y feedback',
-  progreso_claridad: 'Claridad sobre su nivel',
+  nivel_claridad: 'Sabe en qué nivel está',
+  avance_claridad: 'Sabe qué le falta para avanzar',
   materiales: 'Materiales',
   soporte: 'Soporte / atención',
 };
@@ -579,6 +613,7 @@ export const AVERAGE_QUESTIONS: Record<string, string> = {
 /** Single-choice questions whose distribution the dashboard charts. */
 export const DISTRIBUTION_QUESTIONS: Record<string, string> = {
   continuar: 'Intención de continuar',
+  salida_motivo: 'Motivo principal de una posible salida',
   progreso: 'Progreso percibido',
   contenido_nivel: 'Contenido vs. nivel',
   materiales_acceso: 'Acceso al material fuera de clase',

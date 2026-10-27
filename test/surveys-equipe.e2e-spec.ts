@@ -27,7 +27,7 @@ function equipePayload(rol = PROFESSOR, nps = 9) {
   };
   const role =
     rol === PROFESSOR
-      ? { ped_material: 3, ped_nivel_clareza: 2, ped_nivelamento: 2, ped_turmas: 4, ped_dificuldade: 3, ped_troca: 2 }
+      ? { ped_material: 3, ped_material_acesso: 2, ped_nivel_clareza: 2, ped_nivelamento: 2, ped_turmas: 4, ped_dificuldade: 3, ped_troca: 2 }
       : { adm_processos: 3, adm_informacao: 4, adm_prazo: 3, adm_ferramentas: 2 };
   return {
     survey: 'equipe',
@@ -111,7 +111,9 @@ describe('Surveys — pesquisa de clima da equipe (/equipe)', () => {
       expect(entry.contacto).toBeNull();
       expect(entry.contactoOk).toBe(false);
       expect(entry.profesor).toBeNull();
-      expect(entry.rol).toBe(PROFESSOR);
+      // Strict anonymity: no segment next to the free text of one person.
+      expect(entry.rol).toBeNull();
+      expect(entry.tiempo).toBeNull();
       expect(entry.survey).toBe('equipe');
     });
 
@@ -182,7 +184,7 @@ describe('Surveys — pesquisa de clima da equipe (/equipe)', () => {
       expect(adm.insufficient).toBe(true);
     });
 
-    it('exports a CSV with rol/tiempo and without contact columns', async () => {
+    it('exports a CSV without segment or contact columns (strict anonymity)', async () => {
       const resp = await request(app.getHttpServer())
         .get('/api/surveys/export.csv?survey=equipe')
         .set('Cookie', adminCookie)
@@ -190,7 +192,9 @@ describe('Surveys — pesquisa de clima da equipe (/equipe)', () => {
       expect(resp.headers['content-disposition']).toContain('encuesta-equipe-');
       const lines = resp.text.replace(/^﻿/, '').split('\r\n');
       const header = lines[0].split(';');
-      expect(header.slice(0, 6)).toEqual(['fecha', 'canal', 'rol', 'tiempo', 'nps', 'csat']);
+      expect(header.slice(0, 4)).toEqual(['fecha', 'canal', 'nps', 'csat']);
+      expect(header).not.toContain('rol');
+      expect(header).not.toContain('tiempo');
       expect(header).not.toContain('nombre');
       expect(header).not.toContain('profesor');
       expect(header).toContain('ped_nivel_clareza');

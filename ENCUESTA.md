@@ -10,8 +10,9 @@ Revisão feita a partir do informe de julho/2026 (10 respostas, médias de
 professor todas no teto, e comentários pedindo clareza sobre o nível,
 acesso ao material e resposta mais rápida do suporte).
 
-- **Mais curta**: 15 perguntas obrigatórias (eram 22). Saíram as que mediam a
-  mesma coisa (3 de aulas online, 4 de professor, `comunicacion`,
+- **Mais curta**: 16 perguntas obrigatórias (eram 22); 29 no percurso
+  típico e 35 contando as condicionais e as opcionais do fim. Saíram as que
+  mediam a mesma coisa (3 de aulas online, 4 de professor, `comunicacion`,
   `lo_mejor`/`a_mejorar`).
 - **Professor em lista fechada** (`PROFESOR_OPTIONS` em `survey-config.ts`)
   com "Tengo más de un profesor/a" e "Prefiero no decir". Acaba com
@@ -22,11 +23,23 @@ acesso ao material e resposta mais rápida do suporte).
   coluna, filtro no dashboard e coluna no CSV. O nível ganhou a opção
   **"No sé mi nivel"**, que aparece como KPI.
 - **Perguntas novas, ligadas aos comentários de julho**: razão da nota do NPS
-  (`nps_motivo`), intenção de continuar nos próximos 6 meses (`continuar`,
-  com "¿qué te haría quedarte?" para quem está em dúvida), clareza sobre o
-  próprio nível (`progreso_claridad`), acesso ao material fora da aula
-  (`materiales_acceso`) e tempo de resposta do suporte (`soporte_tiempo`).
-  `soporte` ganhou a saída "No he necesitado ayuda", que não entra na média.
+  (`nps_motivo`), intenção de continuar nos próximos 6 meses (`continuar`;
+  para quem está em dúvida aparecem o motivo principal em lista fechada,
+  `salida_motivo`, e "¿qué te haría quedarte?"), clareza sobre o próprio
+  nível em duas perguntas separadas (`nivel_claridad`: sabe em que nível
+  está; `avance_claridad`: sabe o que falta para avançar), acesso ao material
+  fora da aula (`materiales_acceso`) e tempo de resposta do suporte
+  (`soporte_tiempo`). `soporte` ganhou a saída "No he necesitado ayuda", que
+  não entra na média.
+- **Prazo de atendimento que a escola promete** (referência para ler
+  `soporte_tiempo` e a pergunta da equipe "respondo no prazo"): primeira
+  resposta em até 1 dia útil, solução em até 2 dias úteis.
+- **Como localizar o aluno em risco**: a resposta é anônima por padrão. Quem
+  marca "no estoy seguro/a" ou pior e autoriza contato (`contacto_ok`) deixa
+  nome e e-mail/WhatsApp, que ficam nas colunas `nombre`/`contacto` da
+  resposta, visíveis só no dashboard (login de admin) e no CSV. A secretaria
+  filtra a listagem por intenção de continuar e liga para esses em até 5 dias.
+  Quem não autoriza contato entra só na contagem.
 - **Anonimato por professor**: com menos de 3 respostas
   (`MIN_PROFESSOR_N`) a linha mostra só a contagem, sem médias nem NPS.
 - **Histórico preservado**: os ids mantidos (`csat`, `nps`, `progreso`,
@@ -43,13 +56,24 @@ WhatsApp) é o maior problema a resolver. Sugestão:
 
 | Quando | Como | Meta |
 |---|---|---|
-| Pesquisa principal, 2× ao ano (antes das renovações) | Semana 1: professor abre `?src=en-clase` nos últimos 5 min da aula. Semana 2: lembrete no grupo (`?src=whatsapp`). | ≥ 50% dos alunos ativos |
-| Pulso de boas-vindas na 4ª semana | 5 perguntas (`?src=onboarding`) | Pegar problema antes do 1º cancelamento |
-| Pesquisa de saída ao cancelar | 3 perguntas enviadas pela secretaria | 100% dos cancelamentos |
+| Pesquisa principal, 2× ao ano (antes das renovações) | Semana 1: professor compartilha o link (`?src=en-clase`) ao final da aula e deixa claro que cada um responde depois, em particular, quando quiser. Ninguém responde na frente do professor nem é cobrado individualmente. Semana 2: lembrete no grupo (`?src=whatsapp`). | Referência: 50% dos alunos ativos. A taxa sozinha não valida nem invalida a rodada: conferir quem respondeu por modalidade e professor e dar peso menor aos grupos pouco representados. Uma reclamação concreta merece ação mesmo com poucas respostas. |
+| Pulso de boas-vindas na 4ª semana | Previsto: 5 perguntas (`?src=onboarding`). **Pendente**: hoje o link ainda abre o questionário completo. | Pegar problema antes do 1º cancelamento |
+| Pesquisa de saída ao cancelar | Previsto: 3 perguntas enviadas pela secretaria. **Pendente**: idem. | 100% dos cancelamentos |
 
 Os dois últimos ainda usam o mesmo questionário; para separá-los basta
 registrar novas definições no motor multi-pesquisa (ver abaixo), como foi
 feito com a pesquisa da equipe.
+
+**Antes do envio geral**: um piloto com 5 a 8 alunos (e 3 pessoas da equipe,
+na pesquisa de clima) para conferir entendimento das perguntas, duração e os
+caminhos condicionais.
+
+**Rastreio das ações**: cada rodada gera uma tabela com problema
+identificado, ação, responsável, prazo e resultado observado. Para retenção,
+comparar quem marcou risco com quem renovou ou cancelou de fato; para
+suporte, conferir os horários reais dos atendimentos; para aprendizagem,
+usar avaliações além do progresso percebido. As ligações para alunos em
+risco começam durante a coleta, não depois do informe.
 
 ## Motor multi-pesquisa
 
@@ -83,21 +107,29 @@ Desde a v2 o mesmo motor serve mais de uma pesquisa. Cada uma é uma
 ## Pesquisa de clima da equipe (`/equipe`)
 
 Pesquisa anônima em português com professores e equipe administrativa,
-desenhada em outubro/2026 junto com a v2 dos alunos. ~26 perguntas em 7
-etapas: função e tempo de casa (só para segmentar), satisfação geral + eNPS +
-razão da nota + "me vejo aqui em 12 meses", condições de trabalho, gestão e
-comunicação, desenvolvimento e reconhecimento, um bloco pedagógico (só
-professores, espelhando o que os alunos disseram sobre nivelamento e
-material) ou de processos (só administrativo), e quatro abertas.
+desenhada em outubro/2026 junto com a v2 dos alunos. 7 etapas; 31 perguntas
+no percurso de professor (27 obrigatórias) e 28 no administrativo (24
+obrigatórias): função e tempo de casa (só para segmentar), satisfação geral +
+eNPS + razão da nota + "me vejo aqui em 12 meses", condições de trabalho,
+gestão e comunicação, desenvolvimento e reconhecimento, um bloco pedagógico
+(só professores, espelhando o que os alunos disseram sobre nivelamento e
+material, com material "adequado" e "acessível" em perguntas separadas) ou
+de processos (só administrativo), e quatro abertas.
 
 **Anonimato, por desenho:**
 
 - Nenhum campo de nome ou contato; mesmo que um cliente envie, o backend
   descarta.
-- Só dois cortes (função e tempo de casa). Nenhum grupo com menos de **5**
-  respostas mostra eNPS ou média (`MIN_GRUPO_N`), nem no dashboard nem no
-  informe nem no CSV há como cruzar comentário com função: os comentários
-  saem sem chips.
+- Só dois cortes (função e tempo de casa), e só agregados: nenhum grupo com
+  menos de **5** respostas mostra eNPS ou média (`MIN_GRUPO_N`).
+- **Nada liga um comentário a uma pessoa** (`strictAnonymity`): os
+  comentários saem sem chips, e a listagem por resposta e o CSV da equipe
+  não trazem função nem tempo de casa. Numa equipe de 15 a 20 pessoas,
+  função + tempo + um texto livre bastariam para identificar alguém.
+- Mesmo assim, um comentário muito específico pode revelar quem escreveu.
+  A mensagem de abertura deve dizer isso com clareza: "escreva o que quiser
+  que a direção leia; evite detalhes que só você saberia, se preferir não ser
+  identificado".
 - O dashboard (aba **Equipo**) não tem filtros por pessoa; só o período de
   datas do cabeçalho.
 
@@ -108,7 +140,8 @@ página fica aberta como a dos alunos. Troque o token a cada rodada.
 
 **Como aplicar:** mensagem da direção anunciando a pesquisa, o porquê, o
 anonimato e **a data em que os resultados voltam** para a equipe; janela de
-10 dias com lembrete no dia 5 e no dia 9; meta de ≥ 80% de resposta; leitura
+10 dias com lembrete no dia 5 e no dia 9; referência de 80% de resposta
+(abaixo disso, ler como sinal, não como retrato da equipe); leitura
 do eNPS, 3 itens mais baixos, 3 mais altos e cruzamento com os temas dos
 alunos; devolutiva com 3 compromissos e responsável; repetir em 6 meses com
 as mesmas perguntas. Ideal rodar 1–2 semanas depois da pesquisa dos alunos.
